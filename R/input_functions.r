@@ -18,6 +18,8 @@
 
 # surveynet - Function for defining surveynet based on input parameters
 # param tacke - ucitan shp
+
+
 surveynet.shp <- function(tacke, plan_opazanja, fix_x = list(), fix_y = list(), st_dir, st_dist, dest_crs = NA){
   for(i in names(tacke)){
     if(i == "Name"){
@@ -80,4 +82,6 @@ surveynet.shp <- function(tacke, plan_opazanja, fix_x = list(), fix_y = list(), 
 
   return(ul_podaci_lista)
 }
+
+#
 
