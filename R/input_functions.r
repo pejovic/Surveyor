@@ -24,7 +24,6 @@ setwd(wDir)
 getwd()
 
 
-
 # Treba napraviti funkcije surveynet.shp, surveynet.kml i surveynet.xls koje ce imati ulazne parametre:
 #    1. points - putanja do shp, kml fajla koji sadrzi tacke i opciono informaciju o fixaciji tacke.
 #    2. observations - putanja do shp ili kml fajla koji sadrzi linije merenja koja su po defaultu i pravac i duzina i u sebi opciono sadrze informaciju
@@ -58,6 +57,18 @@ surveynet.shp <- function(points, observations, fix_x = list(), fix_y = list(), 
 
   # TODO Check funkcija ide ovde
 
+  # Check function for point names, that can not be just numbers -> must contain letter
+  points$Name <- as.character(points$Name)
+  vec <- c(1:99999)
+  j = 1
+  for(i in points$Name){
+    if(i %in% vec){
+      points$Name[j] <- paste("T",i, sep = "")
+      j = j +1
+
+    }
+  }
+
   # Transformation to the destination CRS
   if (is.na(dest_crs)){
     dest_crs <- 3857
@@ -83,12 +94,13 @@ surveynet.shp <- function(points, observations, fix_x = list(), fix_y = list(), 
   points$Point_object[points$Name %in% points_object] <- TRUE
 
   # Observational plan - adding new columns
-  observations %<>% mutate(distance = TRUE,
+  observations %<>% mutate(from = NA,
+                           to = NA,
+                           distance = TRUE,
                            direction = TRUE,
                            standard_dir = st_dir,
-                           standard_dist = st_dist,
-                           from = NA,
-                           to = NA)
+                           standard_dist = st_dist
+  )
 
   # Observational plan - defining and ading names for first and last points for observations
   # Creating data frame from sf class object observations, with goal to extract names for first and last points
@@ -108,6 +120,7 @@ surveynet.shp <- function(points, observations, fix_x = list(), fix_y = list(), 
 
   # Adding columns Names for stations and observation point with values from constraint exactly match coordinates
   # TODO srediti da radi i za y
+
   observations_1$station <- points$Name[match(observations_1$x_station, st_coordinates(points)[,1])]
   observations_1$obs.point <- points$Name[match(observations_1$x_obs.point, st_coordinates(points)[,1])]
   observations_1$id <- coord_1$L1
@@ -130,7 +143,7 @@ u1 <- surveynet.shp(points = points1, observations = observations1, fix_x = list
 points2 <- st_read(dsn='Primer_2_ulazni_podaci_marina_Visnjicka_banja/shapefiles','tacke')
 observations2 <- st_read(dsn='Primer_2_ulazni_podaci_marina_Visnjicka_banja/shapefiles','plan_opazanja')
 
-u2 <- surveynet.shp(points = points2, observations = observations2, fix_x = list("1"), fix_y = list("1","3"), st_dir = 3, st_dist = 3, dest_crs = NA)
+u2 <- surveynet.shp(points = points2, observations = observations2, fix_x = list("T1"), fix_y = list("T1","T3"), st_dir = 3, st_dist = 3, dest_crs = NA)
 
 
 ##################
@@ -158,7 +171,8 @@ net_spatial_view <- function(points, observations){
     xlab("\nLongitude [deg]") +
     ylab("Latitude [deg]\n") +
     ggtitle("Observational plan and points [geodetic network and object points]")+
-    guides(col = guide_legend())
+    guides(col = guide_legend())+
+    theme_bw()
   return(net_view)
 
 }
@@ -201,6 +215,19 @@ surveynet.kml <- function(points, observations, fix_x = list(), fix_y = list(), 
   }
 
   # TODO Check funkcija ide ovde
+
+  # Check function for point names, that can not be just numbers -> must contain letter
+  points$Name <- as.character(points$Name)
+  vec <- c(1:99999)
+  j = 1
+  for(i in points$Name){
+    if(i %in% vec){
+      points$Name[j] <- paste("T",i, sep = "")
+      j = j +1
+
+    }
+  }
+
 
   # Transformation to the destination CRS
   if (is.na(dest_crs)){
@@ -308,8 +335,7 @@ net_spatial_view(points = k2[[1]], observations = k2[[2]])
 # surveynet.xls
 ###############
 
-
-surveynet.xlsx <- function(points, observations, fix_x = list(), fix_y = list(), st_dir, st_dist, dest_crs = NA, points_object = list()){
+surveynet.xlsx <- function(points = points, observations = observations, fix_x = list(), fix_y = list(), st_dir, st_dist, dest_crs = NA, points_object = list()){
   # If column "Description" is necessary, delete it;
   j=1
   for(i in names(points)){
@@ -327,10 +353,53 @@ surveynet.xlsx <- function(points, observations, fix_x = list(), fix_y = list(),
     j_1 = j_1 + 1
   }
 
+
+  # TODO Check funkcija ide ovde
+
+  # Check function for point names, that can not be just numbers -> must contain letter
+  points$Name <- as.character(points$Name)
+  vec <- c(1:99999)
+  j = 1
+  for(i in points$Name){
+    if(i %in% vec){
+      points$Name[j] <- paste("T",i, sep = "")
+      j = j +1
+
+    }
+  }
+
+  observations$from <- as.character(observations$from)
+  vec <- c(1:99999)
+  j = 1
+  for(i in observations$from){
+    if(i %in% vec){
+      observations$from[j] <- paste("T",i, sep = "")
+      j = j +1
+
+    }
+  }
+
+  observations$to <- as.character(observations$to)
+  vec <- c(1:99999)
+  j = 1
+  for(i in observations$to){
+    if(i %in% vec){
+      observations$to[j] <- paste("T",i, sep = "")
+      j = j +1
+
+    }
+  }
+
   # Create geometry columns for points
   if (is.na(dest_crs)){
     dest_crs <- 3857
   }
+
+  observations$x_station <- points$x[match(observations$from, points$Name)]
+  observations$y_station <- points$y[match(observations$from, points$Name)]
+  observations$x_obs.point <- points$x[match(observations$to, points$Name)]
+  observations$y_obs.point <- points$y[match(observations$to, points$Name)]
+
   points <- points %>% as.data.frame %>% sf::st_as_sf(coords = c("x","y")) %>% sf::st_set_crs(dest_crs)
 
   dt <- as.data.table(observations)
@@ -343,12 +412,13 @@ surveynet.xlsx <- function(points, observations, fix_x = list(), fix_y = list(),
     , by = id
     ]
   dt_1 <- sf::st_as_sf(dt_1)
-  dt_1 %<>% mutate(distance = observations$distance,
+  dt_1 %<>% mutate(from = observations$from,
+                   to = observations$to,
+                   distance = observations$distance,
                    direction = observations$direction,
                    standard_dir = observations$standard_dir,
-                   standard_dist = observations$standard_dist,
-                   from = observations$from,
-                   to = observations$to)
+                   standard_dist = observations$standard_dist
+  )
 
   dt_1 <- dt_1 %>% sf::st_set_crs(dest_crs)
   observations <- dt_1
@@ -450,6 +520,11 @@ check_net <- function(points, observations){
 
 }
 
-
 check_net(points = u1[[1]], observations = u1[[2]])
+
+
+
+
+
+
 
