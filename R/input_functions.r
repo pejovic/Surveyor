@@ -1,7 +1,7 @@
 # Project: Surveyer
 # Description: Package of Land and Engineering Surveying utilities
 # Authors: Milutin Pejovic, Milan Kilibarda, Branislav Bajat, Aleksandar Sekulic and Petar Bursac
-#
+
 rm(list = ls())
 
 # Packages
@@ -17,12 +17,9 @@ library(rgdal)
 library(leaflet)
 library(xlsx)
 library(data.table)
-
-# Radni direktorijum
-wDir <- 'D:/R_projects/Surveyer_podaci/R_Surveyor/Radni_5'
-setwd(wDir)
-getwd()
-
+library(mapview)
+library(mapedit)
+library(leaflet.extras)
 
 # Treba napraviti funkcije surveynet.shp, surveynet.kml i surveynet.xls koje ce imati ulazne parametre:
 #    1. points - putanja do shp, kml fajla koji sadrzi tacke i opciono informaciju o fixaciji tacke.
@@ -38,6 +35,123 @@ getwd()
 #    surveynet.xls funkcija ucitava xls fajl u kome je u jednom sheet-u upisane tacke koje imaju sve ove atribute,a u drugom sheet-u merenja koja imaju sve ove atribute.
 
 # surveynet - Function for defining surveynet based on input parameters
+
+
+################
+# surveynet.xlsx
+################
+
+surveynet.xlsx <- function(points = points, observations = observations, fix_x = list(), fix_y = list(), st_dir, st_dist, dest_crs = NA, points_object = list()){
+  # If column "Description" is necessary, delete it;
+  j=1
+  for(i in names(points)){
+    if (i == "NA."){
+      points <- subset(points, select = -c(j))
+    }
+    j=j+1
+  }
+
+  j_1=1
+  for(i in names(observations)){
+    if (i == "NA."){
+      observations <- subset(observations, select = -c(j_1))
+    }
+    j_1 = j_1 + 1
+  }
+
+
+  # TODO Check funkcija ide ovde
+
+  # Check function for point names, that can not be just numbers -> must contain letter
+  points$Name <- as.character(points$Name)
+  vec <- c(1:99999)
+  j = 1
+  for(i in points$Name){
+    if(i %in% vec){
+      points$Name[j] <- paste("T",i, sep = "")
+      j = j +1
+
+    }
+  }
+
+  observations$from <- as.character(observations$from)
+  vec <- c(1:99999)
+  j = 1
+  for(i in observations$from){
+    if(i %in% vec){
+      observations$from[j] <- paste("T",i, sep = "")
+      j = j +1
+
+    }
+  }
+
+  observations$to <- as.character(observations$to)
+  vec <- c(1:99999)
+  j = 1
+  for(i in observations$to){
+    if(i %in% vec){
+      observations$to[j] <- paste("T",i, sep = "")
+      j = j +1
+
+    }
+  }
+
+  # Create geometry columns for points
+  if (is.na(dest_crs)){
+    dest_crs <- 3857
+  }
+
+  observations$x_station <- points$x[match(observations$from, points$Name)]
+  observations$y_station <- points$y[match(observations$from, points$Name)]
+  observations$x_obs.point <- points$x[match(observations$to, points$Name)]
+  observations$y_obs.point <- points$y[match(observations$to, points$Name)]
+
+  points <- points %>% as.data.frame %>% sf::st_as_sf(coords = c("x","y")) %>% sf::st_set_crs(dest_crs)
+
+  dt <- as.data.table(observations)
+  dt_1 <- dt[
+    , {
+      geometry <- sf::st_linestring(x = matrix(c(x_station, x_obs.point, y_station, y_obs.point), ncol = 2))
+      geometry <- sf::st_sfc(geometry)
+      geometry <- sf::st_sf(geometry = geometry)
+    }
+    , by = id
+    ]
+  dt_1 <- sf::st_as_sf(dt_1)
+  dt_1 %<>% mutate(from = observations$from,
+                   to = observations$to,
+                   distance = observations$distance,
+                   direction = observations$direction,
+                   standard_dir = observations$standard_dir,
+                   standard_dist = observations$standard_dist
+  )
+
+  dt_1 <- dt_1 %>% sf::st_set_crs(dest_crs)
+  observations <- dt_1
+
+  # Creating list
+  survey_net <- list(points,observations)
+
+  return(survey_net)
+
+}
+
+
+# Examples
+points_xlsx <- read.xlsx(file = "Ikea_Beograd.xlsx", sheetName = "Points")
+observations_xlsx <- read.xlsx(file = "Ikea_Beograd.xlsx", sheetName = "Observations")
+
+xlsx1 <- surveynet.xlsx(points = points_xlsx, observations = observations_xlsx, fix_x = list(), fix_y = list(), st_dir = 3, st_dist = 3, dest_crs = 3857, points_object = list())
+
+points_xlsx_1 <- read.xlsx(file = "Visnjicka_banja.xlsx", sheetName = "Points")
+observations_xlsx_1 <- read.xlsx(file = "Visnjicka_banja.xlsx", sheetName = "Observations")
+
+xlsx2 <- surveynet.xlsx(points = points_xlsx_1, observations = observations_xlsx_1, fix_x = list(), fix_y = list(), st_dir = 3, st_dist = 3, dest_crs = 3857)
+
+# Examples
+net_spatial_view(points = xlsx1[[1]], observations = xlsx1[[2]])
+net_spatial_view(points = xlsx2[[1]], observations = xlsx2[[2]])
+
 
 ###############
 # surveynet.shp
@@ -72,6 +186,8 @@ surveynet.shp <- function(points, observations, fix_x = list(), fix_y = list(), 
   # Transformation to the destination CRS
   if (is.na(dest_crs)){
     dest_crs <- 3857
+    points <- points %>% st_transform(dest_crs)
+    observations <- observations %>% st_transform(dest_crs)
   }
   if (st_crs(points)$epsg == "4326"){
     points <- points %>% st_transform(dest_crs)
@@ -135,6 +251,7 @@ surveynet.shp <- function(points, observations, fix_x = list(), fix_y = list(), 
 }
 
 # Examples
+
 points1 <- st_read(dsn='Primer_1_ulazni_podaci_Ikea_Beograd','Tacke_mreza_objekat_1')
 observations1 <- st_read(dsn='Primer_1_ulazni_podaci_Ikea_Beograd','Plan_opazanja')
 
@@ -143,43 +260,14 @@ u1 <- surveynet.shp(points = points1, observations = observations1, fix_x = list
 points2 <- st_read(dsn='Primer_2_ulazni_podaci_marina_Visnjicka_banja/shapefiles','tacke')
 observations2 <- st_read(dsn='Primer_2_ulazni_podaci_marina_Visnjicka_banja/shapefiles','plan_opazanja')
 
-u2 <- surveynet.shp(points = points2, observations = observations2, fix_x = list("T1"), fix_y = list("T1","T3"), st_dir = 3, st_dist = 3, dest_crs = NA)
+observations3 <- readOGR("Primer_2_ulazni_podaci_marina_Visnjicka_banja/shapefiles/plan_opazanja.shp")
+observations4 <- st_as_sf(observations3)
+
+points3 <- readOGR("Primer_2_ulazni_podaci_marina_Visnjicka_banja/shapefiles/tacke.shp")
+points4 <- st_as_sf(points3)
 
 
-##################
-# net_spatial_view
-##################
-
-# Function for spatial data visualisation trough package ggplot2
-
-net_spatial_view <- function(points, observations){
-
-  points$fill_p <- "red"
-  points$fill_p[points$Point_object == TRUE] <- "DeepSkyBlue"
-
-  # Example to add little different type of observations
-  # observations$distance[1:3] <- FALSE
-  # observations$direction[5:7] <- FALSE
-  # observations$fill_o <- "LightGoldenRodYellow"
-
-  observations$fill_o <- ifelse(observations$distance == TRUE & observations$direction == FALSE,"LightGoldenRodYellow", ifelse(observations$distance == FALSE & observations$direction == TRUE, "Khaki","orange"))
-
-  net_view <- ggplot(data=observations) +
-    geom_sf(size=1,stroke=1, color = observations$fill_o)+
-    geom_sf(data=points, shape = 24, fill = points$fill_p, size=2.5, stroke=2) +
-    geom_sf_text(data=points, aes(label=Name,hjust = 1.5, vjust =1.5))+
-    xlab("\nLongitude [deg]") +
-    ylab("Latitude [deg]\n") +
-    ggtitle("Observational plan and points [geodetic network and object points]")+
-    guides(col = guide_legend())+
-    theme_bw()
-  return(net_view)
-
-}
-
-# Examples
-net_spatial_view(points = u1[[1]], observations = u1[[2]])
-net_spatial_view(points = u2[[1]], observations = u2[[2]])
+u2 <- surveynet.shp(points = points4, observations = observations4, fix_x = list("T1"), fix_y = list("T1","T3"), st_dir = 3, st_dist = 3, dest_crs = NA)
 
 
 ###############
@@ -310,9 +398,7 @@ surveynet.kml <- function(points, observations, fix_x = list(), fix_y = list(), 
 
   return(survey_net)
 
-
 }
-
 
 # Examples
 points_kml1 <- st_read(dsn='Primer_1_ulazni_podaci_Ikea_Beograd/KML/Tacke_mreza_objekat.kml','Tacke_mreza_objekat')
@@ -330,121 +416,73 @@ k2 <- surveynet.kml(points = points_kml2, observations = observations_kml2, fix_
 net_spatial_view(points = k1[[1]], observations = k1[[2]])
 net_spatial_view(points = k2[[1]], observations = k2[[2]])
 
+##################
+# net_spatial_view
+##################
 
-###############
-# surveynet.xls
-###############
+# Function for spatial data visualisation trough package ggplot2
 
-surveynet.xlsx <- function(points = points, observations = observations, fix_x = list(), fix_y = list(), st_dir, st_dist, dest_crs = NA, points_object = list()){
-  # If column "Description" is necessary, delete it;
-  j=1
-  for(i in names(points)){
-    if (i == "NA."){
-      points <- subset(points, select = -c(j))
-    }
-    j=j+1
-  }
+net_spatial_view <- function(points, observations){
 
-  j_1=1
-  for(i in names(observations)){
-    if (i == "NA."){
-      observations <- subset(observations, select = -c(j_1))
-    }
-    j_1 = j_1 + 1
-  }
+  points$fill_p <- "red"
+  points$fill_p[points$Point_object == TRUE] <- "DeepSkyBlue"
 
+  # Example to add little different type of observations
+  # observations$distance[1:3] <- FALSE
+  # observations$direction[5:7] <- FALSE
+  # observations$fill_o <- "LightGoldenRodYellow"
 
-  # TODO Check funkcija ide ovde
+  observations$fill_o <- ifelse(observations$distance == TRUE & observations$direction == FALSE,"LightGoldenRodYellow", ifelse(observations$distance == FALSE & observations$direction == TRUE, "Khaki","orange"))
 
-  # Check function for point names, that can not be just numbers -> must contain letter
-  points$Name <- as.character(points$Name)
-  vec <- c(1:99999)
-  j = 1
-  for(i in points$Name){
-    if(i %in% vec){
-      points$Name[j] <- paste("T",i, sep = "")
-      j = j +1
-
-    }
-  }
-
-  observations$from <- as.character(observations$from)
-  vec <- c(1:99999)
-  j = 1
-  for(i in observations$from){
-    if(i %in% vec){
-      observations$from[j] <- paste("T",i, sep = "")
-      j = j +1
-
-    }
-  }
-
-  observations$to <- as.character(observations$to)
-  vec <- c(1:99999)
-  j = 1
-  for(i in observations$to){
-    if(i %in% vec){
-      observations$to[j] <- paste("T",i, sep = "")
-      j = j +1
-
-    }
-  }
-
-  # Create geometry columns for points
-  if (is.na(dest_crs)){
-    dest_crs <- 3857
-  }
-
-  observations$x_station <- points$x[match(observations$from, points$Name)]
-  observations$y_station <- points$y[match(observations$from, points$Name)]
-  observations$x_obs.point <- points$x[match(observations$to, points$Name)]
-  observations$y_obs.point <- points$y[match(observations$to, points$Name)]
-
-  points <- points %>% as.data.frame %>% sf::st_as_sf(coords = c("x","y")) %>% sf::st_set_crs(dest_crs)
-
-  dt <- as.data.table(observations)
-  dt_1 <- dt[
-    , {
-      geometry <- sf::st_linestring(x = matrix(c(x_station, x_obs.point, y_station, y_obs.point), ncol = 2))
-      geometry <- sf::st_sfc(geometry)
-      geometry <- sf::st_sf(geometry = geometry)
-    }
-    , by = id
-    ]
-  dt_1 <- sf::st_as_sf(dt_1)
-  dt_1 %<>% mutate(from = observations$from,
-                   to = observations$to,
-                   distance = observations$distance,
-                   direction = observations$direction,
-                   standard_dir = observations$standard_dir,
-                   standard_dist = observations$standard_dist
-  )
-
-  dt_1 <- dt_1 %>% sf::st_set_crs(dest_crs)
-  observations <- dt_1
-
-  # Creating list
-  survey_net <- list(points,observations)
-
-  return(survey_net)
+  net_view <- ggplot(data=observations) +
+    geom_sf(size=1,stroke=1, color = observations$fill_o)+
+    geom_sf(data=points, shape = 24, fill = points$fill_p, size=2.5, stroke=2) +
+    geom_sf_text(data=points, aes(label=Name,hjust = 1.5, vjust =1.5))+
+    xlab("\nLongitude [deg]") +
+    ylab("Latitude [deg]\n") +
+    ggtitle("Observational plan and points [geodetic network and object points]")+
+    guides(col = guide_legend())+
+    theme_bw()
+  return(net_view)
 
 }
 
+# Examples
+net_spatial_view(points = u1[[1]], observations = u1[[2]])
+net_spatial_view(points = u2[[1]], observations = u2[[2]])
+
+
+##########################################
+# net_spatial_view_web [package:: mapview]
+##########################################
+
+# Function for spatial data visualisation at web maps
+
+net_spatial_view_web <- function(points, observations){
+  Points <- st_transform(points, 4326)
+  Observations <- st_transform(observations, 4326)
+
+  Points$type <- "Geodetic network"
+  Points$type[Points$Point_object == TRUE] <- "Points at object"
+
+  # Example to add little different type of observations
+  Observations$distance[1:3] <- FALSE
+  Observations$direction[5:7] <- FALSE
+
+  Observations$type[Observations$distance == TRUE & Observations$direction == FALSE] <- "Distance"
+  Observations$type[Observations$distance == FALSE & Observations$direction == TRUE] <- "Direction"
+  Observations$type[Observations$distance == TRUE & Observations$direction == TRUE] <- "Both"
+
+  web_map_1 <- mapview(Points, zcol = "type", col.regions = c("red","grey")) + mapview(Observations, zcol = "type")
+  # web_map <- mapview(list(Points, Observations))
+
+  return(web_map_1)
+
+}
 
 # Examples
-points_xlsx <- read.xlsx(file = "Ikea_Beograd.xlsx", sheetName = "Points")
-observations_xlsx <- read.xlsx(file = "Ikea_Beograd.xlsx", sheetName = "Observations")
-
-xlsx1 <- surveynet.xlsx(points = points_xlsx, observations = observations_xlsx, fix_x = list(), fix_y = list(), st_dir = 3, st_dist = 3, dest_crs = 3857, points_object = list())
-
-points_xlsx_1 <- read.xlsx(file = "Visnjicka_banja.xlsx", sheetName = "Points")
-observations_xlsx_1 <- read.xlsx(file = "Visnjicka_banja.xlsx", sheetName = "Observations")
-
-xlsx2 <- surveynet.xlsx(points = points_xlsx_1, observations = observations_xlsx_1, fix_x = list(), fix_y = list(), st_dir = 3, st_dist = 3, dest_crs = 3857)
-
-# Examples
-net_spatial_view(points = xlsx1[[1]], observations = xlsx1[[2]])
-net_spatial_view(points = xlsx2[[1]], observations = xlsx2[[2]])
+net_spatial_view_web(points = u1[[1]], observations = u1[[2]])
+net_spatial_view_web(points = u2[[1]], observations = u2[[2]])
 
 
 ###########
@@ -523,7 +561,155 @@ check_net <- function(points, observations){
 check_net(points = u1[[1]], observations = u1[[2]])
 
 
+###################
+# surveynet.mapedit
+###################
 
+# Function for interactive adding points on web maps and storage as sf [Simple Feature]
+surveynet.mapedit_add <- function(){
+  created <- mapview() %>% editMap()
+  return(created$finished)
+}
+
+# Function for visualisation trough mapview package
+surveynet.mapedit_view <- function(points = points){
+  Points <- mapview(points)
+  return(Points)
+}
+
+# Function for preparing points - sf attribute table check
+surveynet.mapedit_points <- function(points = points){
+  j=1
+  for(i in names(points)){
+    if (i == "_leaflet_id"){
+      points <- subset(points, select = -c(j))
+    }
+    j=j+1
+  }
+  j=1
+  for(i in names(points)){
+    if (i == "feature_type"){
+      points <- subset(points, select = -c(j))
+    }
+    j=j+1
+  }
+
+  for(i in names(points)){
+    if(i == "id"){
+      break
+    } else {
+      points$id <- (1:length(points$geometry))
+    }
+  }
+  points <- points %>% rename("Name" = "id")
+
+  points$Name <- as.character(points$Name)
+  vec <- c(1:99999)
+  j = 1
+  for(i in points$Name){
+    if(i %in% vec){
+      points$Name[j] <- paste("T",i, sep = "")
+      j = j +1
+
+    }
+  }
+  return(points)
+}
+
+# Function for creating observations from points - all
+surveynet.mapedit_observations <- function(points = points){
+  res = expand.grid(to = points$Name, from = points$Name) # combine values from two columns in all posible combinations
+  res <- as.data.frame(res[!(res$to == res$from), ]) # delete rows with same values in two columns
+  rownames(res) <- 1:nrow(res) # reorder index number of rows
+  res <- res[ ,c("from","to")] # reorder columns
+  return(res)
+}
+
+# create complete sf object - points and observations
+surveynet.mapedit <- function(points = points, observations = observations, fix_x = list(), fix_y = list(), st_dir, st_dist, dest_crs = NA, points_object = list()){
+
+  if (is.na(dest_crs)){
+    dest_crs <- 3857
+    points <- points %>% st_transform(dest_crs)
+  }
+  if (st_crs(points)$epsg == "4326"){
+    points <- points %>% st_transform(dest_crs)
+    message("\nPoints data are reprojected to the destination Coordinate Reference System!\n")
+    message(st_crs(points))
+  }
+
+  # Defining datum for points
+  points %<>% mutate(FIX_X = FALSE, FIX_Y = FALSE)
+
+  points$FIX_X[points$Name %in% fix_x] <- TRUE
+  points$FIX_Y[points$Name %in% fix_y] <- TRUE
+
+  points %<>% mutate(Point_object = FALSE)
+  points$Point_object[points$Name %in% points_object] <- TRUE
+
+
+  points$x <- st_coordinates(points)[,1]
+  points$y <- st_coordinates(points)[,2]
+
+  observations$x_station <- points$x[match(observations$from, points$Name)]
+  observations$y_station <- points$y[match(observations$from, points$Name)]
+  observations$x_obs.point <- points$x[match(observations$to, points$Name)]
+  observations$y_obs.point <- points$y[match(observations$to, points$Name)]
+
+  observations$id <- 1:nrow(observations)
+
+  observations %<>% mutate(distance = TRUE,
+                           direction = TRUE,
+                           standard_dir = st_dir,
+                           standard_dist = st_dist
+  )
+
+  dt <- as.data.table(observations)
+  dt_1 <- dt[
+    , {
+      geometry <- sf::st_linestring(x = matrix(c(x_station, x_obs.point, y_station, y_obs.point), ncol = 2))
+      geometry <- sf::st_sfc(geometry)
+      geometry <- sf::st_sf(geometry = geometry)
+    }
+    , by = id
+    ]
+
+  dt_1 <- sf::st_as_sf(dt_1)
+
+  dt_1 %<>% mutate(from = observations$from,
+                   to = observations$to,
+                   distance = observations$distance,
+                   direction = observations$direction,
+                   standard_dir = observations$standard_dir,
+                   standard_dist = observations$standard_dist
+  )
+
+  dt_1 <- dt_1 %>% sf::st_set_crs(dest_crs)
+  observations <- dt_1
+
+  # Observational plan - adding new columns
+  observations %<>% mutate(distance = TRUE,
+                           direction = TRUE,
+                           standard_dir = st_dir,
+                           standard_dist = st_dist
+  )
+
+  points <- subset(points, select = -c(x,y))
+  # Creating list
+  survey_net_mapedit <- list(points,observations)
+
+  return(survey_net_mapedit)
+}
+
+# Example
+net_points <- surveynet.mapedit_add()
+surveynet.mapedit_view(points = net_points)
+
+points <- surveynet.mapedit_points(points = net_points)
+
+observations <- surveynet.mapedit_observations(points = points)
+
+me <- surveynet.mapedit(points = points, observations = observations, fix_x = list(), fix_y = list(), st_dir = 3, st_dist = 3, dest_crs = NA, points_object = list())
 
 
 

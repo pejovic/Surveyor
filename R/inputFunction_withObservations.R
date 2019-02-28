@@ -1,7 +1,7 @@
 # Project: Surveyer
 # Description: Package of Land and Engineering Surveying utilities
 # Authors: Milutin Pejovic, Milan Kilibarda, Branislav Bajat, Aleksandar Sekulic and Petar Bursac
-#
+
 rm(list = ls())
 
 # Packages
@@ -113,24 +113,24 @@ surveynet2DAdjustment_Import.xlsx <- function(points = points, observations = ob
   observations$Semi.major.Azimuth <- as.character(observations$Semi.major.Azimuth)
 
   # Separate angle observations to degrees, minutes and seconds
-  observations <- observations %>% separate(H..Circle, c("HC_deg", "A"), "Â°")
+  observations <- observations %>% separate(H..Circle, c("HC_deg", "A"), "?.°")
   observations <- observations %>% separate(A, c("HC_min", "B"), "'")
   observations <- observations %>% separate(B, c("HC_sec", 'C'), '"')
 
-  observations <- observations %>% separate(V..Circle, c("VC_deg", "A1"), "Â°")
+  observations <- observations %>% separate(V..Circle, c("VC_deg", "A1"), "?.°")
   observations <- observations %>% separate(A1, c("VC_min", "B1"), "'")
   observations <- observations %>% separate(B1, c("VC_sec", 'C1'), '"')
 
-  observations <- observations %>% separate(H..Angle, c("HA_deg", "A2"), "Â°")
+  observations <- observations %>% separate(H..Angle, c("HA_deg", "A2"), "?.°")
   observations <- observations %>% separate(A2, c("HA_min", "B2"), "'")
   observations <- observations %>% separate(B2, c("HA_sec", 'C2'), '"')
 
   observations <- observations %>% separate(V..Angle, c("VA_deg1", "VA_deg"), "Z")
-  observations <- observations %>% separate(VA_deg, c("VA_deg", "A3"), "Â°")
+  observations <- observations %>% separate(VA_deg, c("VA_deg", "A3"), "?.°")
   observations <- observations %>% separate(A3, c("VA_min", "B3"), "'")
   observations <- observations %>% separate(B3, c("VA_sec", 'C3'), '"')
 
-  observations <- observations %>% separate(Semi.major.Azimuth, c("AZ_deg", "A4"), "Â°")
+  observations <- observations %>% separate(Semi.major.Azimuth, c("AZ_deg", "A4"), "?.°")
   observations <- observations %>% separate(A4, c("AZ_min", "B4"), "'")
   observations <- observations %>% separate(B4, c("AZ_sec", 'C4'), '"')
 
@@ -291,7 +291,16 @@ rastojanja$DS7 <- sqrt((rastojanja$x - rastojanja$x[[7]])^2 + (rastojanja$y - ra
 
 #################################
 points_xlsx.1 <- read.xlsx(file = "Merenja_Toranj_Avala/Avala_geodetic_network_observations - good coord.xlsx", sheetName = "Points")
-observations_xlsx.1 <- read.xlsx(file = "Merenja_Toranj_Avala/Avala_geodetic_network_observations.xlsx", sheetName = "Observations", as.data.frame=TRUE)
+observations_xlsx.1 <- read.xlsx(path = "Merenja_Toranj_Avala/Avala_geodetic_network_observations - good coord.xlsx", sheetName = "Observations", as.data.frame=TRUE)
+
+library(readxl)
+observations_xlsx.2 <- readxl::read_xlsx( "Merenja_Toranj_Avala/Avala_geodetic_network_observations - good coord.xlsx", sheet = "Observations")
+
+observations_xlsx.2 %<>%
+  mutate(HzC = str_replace_all(`H. Circle`, "([?'])", "_")) %>%
+  mutate(HzC = str_replace_all(`HzC`, '(["])', "")) %>%
+  separate(HzC, "_", into = c("HzD", "HzM", "HzS"))
+
 
 xlsx_Avala.1 <- surveynet2DAdjustment_Import.xlsx(points = points_xlsx.1, observations = observations_xlsx.1, fix_x = list(), fix_y = list(), st_dir = 3, st_dist = 3, dest_crs = 3857, points_object = list())
 

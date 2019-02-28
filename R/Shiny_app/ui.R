@@ -1,3 +1,10 @@
+source("D:/R_projects/Shiny_app/Test_6/inputFunction_shp.R")
+source("D:/R_projects/Shiny_app/Test_6/function_netSpatialView.R")
+source("D:/R_projects/Shiny_app/Test_6/inputFunction_kml.R")
+source("D:/R_projects/Shiny_app/Test_6/inputFunction_xlsx.R")
+source("D:/R_projects/Shiny_app/Test_6/function_netSpatialViewWeb.R")
+#source("D:/R_projects/Shiny_app/Test_6/inputFunction_mapEdit.R")
+
 library(shiny)
 library(shinythemes)
 library(leaflet)
@@ -12,74 +19,189 @@ library(sp)
 library(rgdal)
 library(leaflet)
 library(xlsx)
+# readxl
+# writexl
 library(data.table)
+library(plotly)
+library(mapview)
+library(shinycssloaders)
 
 
-shinyUI(fluidPage(
-  
-  tags$script(HTML(
-    "document.body.style.backgroundColor = 'sapphire';"
-  )),
-  tags$script(HTML(
-    "document.body.style.fontFamily = 'Verdana';"
-  )),
-  
-  
-  
-  theme = shinytheme("superhero"),
-  themeSelector(),
-  
-  
-  
-  titlePanel("Input functions - Surveyer"),
-  tags$b("Surveyer|R"),
-  
-  sidebarLayout(
-    sidebarPanel(
-      
-      
-      fileInput(inputId = "fileSHP_points", label = "Upload points vector file. Choose shapefile:",
-                multiple = TRUE, accept = c('.shp','.dbf','.sbn','.sbx','.shx','.prj')),
-      
-      fileInput(inputId = "fileSHP_observations", label = "Upload observations vector file. Choose shapefile:",
-                multiple = TRUE, accept = c('.shp','.dbf','.sbn','.sbx','.shx','.prj')),
-      
-      # fileInput(inputId = "fileKML_points", label = "Upload points vector KML file. Choose .kml:",
-      #           multiple = TRUE, accept = c('.shp','.dbf','.sbn','.sbx','.shx','.prj')),
-      # 
-      # fileInput(inputId = "fileKML_observations", label = "Upload observations vector KML file. Choose .kml:",
-      #           multiple = TRUE, accept = c('.kml')),
-      # 
-      # fileInput(inputId = "fileXLSX_points", label = "Upload points xlsx file. Choose .xlsx:",
-      #           multiple = TRUE, accept = c('.xlsx')),
-      # 
-      # fileInput(inputId = "fileXLSX_observations", label = "Upload observations xlsx file. Choose .xlsx:",
-      #           multiple = TRUE, accept = c('.xlsx')),
-      
-      
+shinyUI(
+  tagList(
+    #shinythemes::themeSelector(),
+    tags$script(HTML(
+      "document.body.style.backgroundColor = 'sapphire';"
+    )),
+    tags$script(HTML(
+      "document.body.style.fontFamily = 'Verdana';"
+    )),
 
-      
-      p("Made by:", a("R Shiny", href = "http://shiny.rstudio.com"),"."),
-      img(src = "https://www.bu.edu/library/files/2016/03/RShiny-logo.png", width = "70px", height = "70px")
-      
-      
-      
-      
-      
-    ),
-    
-    
-    mainPanel(
-      
-      leafletOutput("mymap", height = 550),
-      p("Points"),
-      verbatimTextOutput("points_shp"),
-      p("Observations"),
-      verbatimTextOutput("observations_shp"),
-      p("Spatial view - Geodetic network and observations"),
-      plotlyOutput("net_spatial_view_shp")
-      
-      
-      
-    ))
-))
+    #titlePanel("Input functions|Surveyer|R"),
+    #tags$b("Surveyer|R"),
+
+    navbarPage(
+      "Surveyer|R",
+      theme = shinytheme("cerulean"),
+      tabPanel("InputData_surveynet",
+
+               mainPanel(
+                 tabsetPanel(
+                   tabPanel("InputData_xlsx",
+                            sidebarPanel(
+                              fileInput(inputId = "fileXLSX", label = "Upload points and observations file. Choose Excel - xlsx file:",
+                                        multiple = TRUE, accept = c('.xlsx')),
+                              numericInput(inputId = "epsg_xlsx", "Destination CRS [EPSG code]: ", value = 3857)
+
+
+                            ),
+                            mainPanel(
+                              leafletOutput("mymap2", height = 550) %>% withSpinner(color="#0dc5c1"),
+                              actionButton(inputId ='go2', label='Calculate', class = "btn-primary btn-block"),
+                              navlistPanel(
+                                tabPanel("Points", verbatimTextOutput(outputId = "points_xlsx_3")%>% withSpinner(color="#0dc5c1")),
+                                tabPanel("Observations", verbatimTextOutput(outputId = "observations_xlsx_3")%>% withSpinner(color="#0dc5c1")),
+                                tabPanel("netSpatialView", plotOutput("netSpatialView_xlsx")%>% withSpinner(color="#0dc5c1"))
+
+                              )
+                            )
+
+                   ),
+                   tabPanel("InputData_kml",
+                            sidebarPanel(
+                              fileInput(inputId = "fileKML_points", label = "Upload points vector file. Choose kml file:",
+                                        multiple = TRUE, accept = c('.kml')),
+
+                              fileInput(inputId = "fileKML_observations", label = "Upload observations vector file. Choose kml file:",
+                                        multiple = TRUE, accept = c('.kml')),
+                              numericInput(inputId = "st_dir_kml", "StDev direction: ", value = 3),
+                              numericInput(inputId = "st_dist_kml", "StDev distance: ", value = 3),
+                              numericInput(inputId = "epsg_kml", "Destination CRS [EPSG code]: ", value = 3857),
+                              textInput(inputId = "fix_x_kml", "Datum [fix X for Points] (e.g. A,B)"),
+                              textInput(inputId = "fix_y_kml", "Datum [fix Y for Points] (e.g. A,B)"),
+                              textInput(inputId = "points_obj_kml", "Geodetic network points at object (e.g. A,B)")
+                            ),
+                            mainPanel(
+                              leafletOutput("mymap1", height = 550) %>% withSpinner(color="#0dc5c1"),
+                              actionButton(inputId ='go1', label='Calculate', class = "btn-primary btn-block"),
+                              navlistPanel(
+                                tabPanel("Points", verbatimTextOutput(outputId = "points_kml_3") %>% withSpinner(color="#0dc5c1")),
+                                tabPanel("Observations", verbatimTextOutput(outputId = "observations_kml_3") %>% withSpinner(color="#0dc5c1")),
+                                tabPanel("netSpatialView", plotOutput("netSpatialView_kml") %>% withSpinner(color="#0dc5c1"))
+                              )
+
+                            )
+
+                   ),
+                   tabPanel("InputData_shp",
+                            sidebarPanel(
+                              fileInput(inputId = "fileSHP_points", label = "Upload points vector file. Choose shapefile:",
+                                        multiple = TRUE, accept = c('.shp','.dbf','.sbn','.sbx','.shx','.prj')),
+
+                              fileInput(inputId = "fileSHP_observations", label = "Upload observations vector file. Choose shapefile:",
+                                        multiple = TRUE, accept = c('.shp','.dbf','.sbn','.sbx','.shx','.prj')),
+                              numericInput(inputId = "st_dir_shp", "StDev direction: ", value = 3),
+                              numericInput(inputId = "st_dist_shp", "StDev distance: ", value = 3),
+                              numericInput(inputId = "epsg_shp", "Destination CRS [EPSG code]: ", value = 3857),
+                              textInput(inputId = "fix_x_shp", "Datum [fix X for Points] (e.g. A,B)"),
+                              textInput(inputId = "fix_y_shp", "Datum [fix Y for Points] (e.g. A,B)"),
+                              textInput(inputId = "points_obj_shp", "Geodetic network points at object (e.g. A,B)")
+
+
+                            ),
+                            mainPanel(
+                              leafletOutput("mymap", height = 550) %>% withSpinner(color="#0dc5c1"),
+                              actionButton(inputId ='go', label='Calculate', class = "btn-primary btn-block"),
+                              navlistPanel(
+                                tabPanel("Points", verbatimTextOutput(outputId = "points_shp_3") %>% withSpinner(color="#0dc5c1")),
+                                tabPanel("Observations", verbatimTextOutput(outputId = "observations_shp_3") %>% withSpinner(color="#0dc5c1")),
+                                tabPanel("netSpatialView",plotOutput("netSpatialView_shp") %>% withSpinner(color="#0dc5c1"))
+
+
+
+
+                              )
+
+
+
+                            )
+
+                   )
+                   #             tabPanel("InputData_mapEdit",
+                   #                      sidebarPanel(
+                   #                        numericInput(inputId = "st_dir_me", "StDev direction: ", value = 3),
+                   #                        numericInput(inputId = "st_dist_me", "StDev distance: ", value = 3),
+                   #                        numericInput(inputId = "epsg_me", "Destination CRS [EPSG code]: ", value = 3857),
+                   #                        textInput(inputId = "fix_x_me", "Datum [fix X for Points] (e.g. A,B)"),
+                   #                        textInput(inputId = "fix_y_me", "Datum [fix Y for Points] (e.g. A,B)"),
+                   #                        textInput(inputId = "points_obj_me", "Geodetic network points at object (e.g. A,B)")
+                   #                      ),
+                   #                      mainPanel(
+                   #                        actionButton(inputId ='go_me_draw', label='Web Map', class = "btn-primary btn-block"),
+                   #                        editModUI("map_me", height = 550),
+                   #                        #leafletOutput("map_me", height = 550) %>% withSpinner(color="#0dc5c1"),
+                   #                        actionButton(inputId ='go_me', label='Calculate', class = "btn-primary btn-block"),
+                   #                        navlistPanel(
+                   #                          tabPanel("Points", verbatimTextOutput(outputId = "points_me_3") %>% withSpinner(color="#0dc5c1")),
+                   #                          tabPanel("Observations", verbatimTextOutput(outputId = "observations_me_3") %>% withSpinner(color="#0dc5c1")),
+                   #                          tabPanel("netSpatialView", plotOutput("netSpatialView_me") %>% withSpinner(color="#0dc5c1"))
+                   #                        )
+                   #
+                   #                      )
+                   #
+                   #             )
+
+
+
+
+                 )
+                 , width = 12 )
+      ),
+
+
+
+      tabPanel("1D Optimization", "Blank"
+
+
+      ),
+      tabPanel("1D Adjustment", "Blank"
+
+
+      ),
+      tabPanel("2D Optimization", "Blank"
+
+
+      ),
+      tabPanel("2D Adjustment", "Blank"
+
+
+      ),
+      tabPanel("Deformation Analysis", "Blank"
+
+
+      ),
+      tabPanel("Coordinate Transformation", "Blank"
+
+
+      )
+
+
+
+    )
+  )
+)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
