@@ -1,7 +1,7 @@
 # Project: Surveyer
 # Description: Package of Land and Engineering Surveying utilities
 # Authors: Milutin Pejovic, Milan Kilibarda, Branislav Bajat, Aleksandar Sekulic and Petar Bursac
-#
+# Date:
 
 
 # Functions:
