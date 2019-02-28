@@ -41,7 +41,12 @@ library(leaflet.extras)
 # surveynet.xlsx
 ################
 
-surveynet.xlsx <- function(points = points, observations = observations, fix_x = list(), fix_y = list(), st_dir, st_dist, dest_crs = NA, points_object = list()){
+# Parameters:
+#    1. points -  Excel file sheet with attributes related to points - geodetic network [Example: Data/Input/xlsx]
+#    2. observations - Excel file sheet with attributes related to observations [Example: Data/Input/xlsx]
+#    3. dest_crs - destination Coordinate Reference System - set EPSG code [default: 3857 - Web Mercator projection coordinate system]
+
+surveynet.xlsx <- function(points = points, observations = observations, dest_crs = NA){
   # If column "Description" is necessary, delete it;
   j=1
   for(i in names(points)){
@@ -141,12 +146,12 @@ surveynet.xlsx <- function(points = points, observations = observations, fix_x =
 points_xlsx <- read.xlsx(file = "Ikea_Beograd.xlsx", sheetName = "Points")
 observations_xlsx <- read.xlsx(file = "Ikea_Beograd.xlsx", sheetName = "Observations")
 
-xlsx1 <- surveynet.xlsx(points = points_xlsx, observations = observations_xlsx, fix_x = list(), fix_y = list(), st_dir = 3, st_dist = 3, dest_crs = 3857, points_object = list())
+xlsx1 <- surveynet.xlsx(points = points_xlsx, observations = observations_xlsx, dest_crs = 3857)
 
 points_xlsx_1 <- read.xlsx(file = "Visnjicka_banja.xlsx", sheetName = "Points")
 observations_xlsx_1 <- read.xlsx(file = "Visnjicka_banja.xlsx", sheetName = "Observations")
 
-xlsx2 <- surveynet.xlsx(points = points_xlsx_1, observations = observations_xlsx_1, fix_x = list(), fix_y = list(), st_dir = 3, st_dist = 3, dest_crs = 3857)
+xlsx2 <- surveynet.xlsx(points = points_xlsx_1, observations = observations_xlsx_1, dest_crs = 3857)
 
 # Examples
 net_spatial_view(points = xlsx1[[1]], observations = xlsx1[[2]])
@@ -156,6 +161,16 @@ net_spatial_view(points = xlsx2[[1]], observations = xlsx2[[2]])
 ###############
 # surveynet.shp
 ###############
+
+# Parameters:
+#    1. points -  sf object with geometry type POINT - geodetic network [Example: Data/Input/shp]
+#    2. observations - sf object with geometry type LINESTRING [Example: Data/Input/shp]
+#    3. fix_x - list with names of points that define datum - X coordinate
+#    3. fix_y - list with names of points that define datum - Y coordinate
+#    4. st_dir - "a priori" standard deviation for direction observations ["]
+#    5. st_dist - "a priori" standard deviation for distance observations [mm]
+#    6. dest_crs - destination Coordinate Reference System - set EPSG code [default: 3857 - Web Mercator projection coordinate system]
+#    7. points_object - list with names of points that represnt object of interests
 
 surveynet.shp <- function(points, observations, fix_x = list(), fix_y = list(), st_dir, st_dist, dest_crs = NA, points_object = list()){
   for(i in names(points)){
@@ -273,6 +288,16 @@ u2 <- surveynet.shp(points = points4, observations = observations4, fix_x = list
 ###############
 # surveynet.kml
 ###############
+
+# Parameters:
+#    1. points -  sf object with geometry type POINT - geodetic network [Example: Data/Input/kml]
+#    2. observations - sf object with geometry type LINESTRING [Example: Data/Input/kml]
+#    3. fix_x - list with names of points that define datum - X coordinate
+#    3. fix_y - list with names of points that define datum - Y coordinate
+#    4. st_dir - "a priori" standard deviation for direction observations ["]
+#    5. st_dist - "a priori" standard deviation for distance observations [mm]
+#    6. dest_crs - destination Coordinate Reference System - set EPSG code [default: 3857 - Web Mercator projection coordinate system]
+#    7. points_object - list with names of points that represnt object of interests
 
 surveynet.kml <- function(points, observations, fix_x = list(), fix_y = list(), st_dir, st_dist, dest_crs = NA, points_object = list()){
   for(i in names(points)){
@@ -421,6 +446,9 @@ net_spatial_view(points = k2[[1]], observations = k2[[2]])
 ##################
 
 # Function for spatial data visualisation trough package ggplot2
+# Parameters:
+#    1. points -  sf object with geometry type POINT and related attributes as product from surveynet.xxx function
+#    2. observations - sf object with geometry type LINESTRING and related attributes as product from surveynet.xxx function
 
 net_spatial_view <- function(points, observations){
 
@@ -457,6 +485,9 @@ net_spatial_view(points = u2[[1]], observations = u2[[2]])
 ##########################################
 
 # Function for spatial data visualisation at web maps
+# Parameters:
+#    1. points -  sf object with geometry type POINT and related attributes as product from surveynet.xxx function
+#    2. observations - sf object with geometry type LINESTRING and related attributes as product from surveynet.xxx function
 
 net_spatial_view_web <- function(points, observations){
   Points <- st_transform(points, 4326)
@@ -490,6 +521,10 @@ net_spatial_view_web(points = u2[[1]], observations = u2[[2]])
 ###########
 
 # Function for checking input data for errors - geometrical and topological consistency, redudancy etc.
+# Parameters:
+#    1. points -  sf object with geometry type POINT and related attributes as product from surveynet.xxx function
+#    2. observations - sf object with geometry type LINESTRING and related attributes as product from surveynet.xxx function
+
 check_net <- function(points, observations){
 
   observations_1 <- data.frame(station = NA,obs.point = NA, x_station = NA,y_station = NA,x_obs.point = NA,y_obs.point = NA)
@@ -572,12 +607,18 @@ surveynet.mapedit_add <- function(){
 }
 
 # Function for visualisation trough mapview package
+# Parameters:
+#    1. points -  sf object with geometry type POINT and related attributes as product from function surveynet.mapedit_add
+
 surveynet.mapedit_view <- function(points = points){
   Points <- mapview(points)
   return(Points)
 }
 
 # Function for preparing points - sf attribute table check
+# Parameters:
+#    1. points -  sf object with geometry type POINT and related attributes as product from function surveynet.mapedit_add
+
 surveynet.mapedit_points <- function(points = points){
   j=1
   for(i in names(points)){
@@ -617,6 +658,9 @@ surveynet.mapedit_points <- function(points = points){
 }
 
 # Function for creating observations from points - all
+# Parameters:
+#    1. points -  sf object with geometry type POINT and related attributes as product from function surveynet.mapedit_points
+
 surveynet.mapedit_observations <- function(points = points){
   res = expand.grid(to = points$Name, from = points$Name) # combine values from two columns in all posible combinations
   res <- as.data.frame(res[!(res$to == res$from), ]) # delete rows with same values in two columns
@@ -626,6 +670,17 @@ surveynet.mapedit_observations <- function(points = points){
 }
 
 # create complete sf object - points and observations
+# Parameters:
+#    1. points -  sf object with geometry type POINT and related attributes as product from function surveynet.mapedit_points
+#    2. observations - sf object with geometry type LINESTRING and related attributes as product from function surveynet.mapedit_observations
+#    3. fix_x - list with names of points that define datum - X coordinate
+#    3. fix_y - list with names of points that define datum - Y coordinate
+#    4. st_dir - "a priori" standard deviation for direction observations ["]
+#    5. st_dist - "a priori" standard deviation for distance observations [mm]
+#    6. dest_crs - destination Coordinate Reference System - set EPSG code [default: 3857 - Web Mercator projection coordinate system]
+#    7. points_object - list with names of points that represnt object of interests
+
+
 surveynet.mapedit <- function(points = points, observations = observations, fix_x = list(), fix_y = list(), st_dir, st_dist, dest_crs = NA, points_object = list()){
 
   if (is.na(dest_crs)){
