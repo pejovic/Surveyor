@@ -23,10 +23,12 @@ wDir <- 'D:/R_projects/Surveyer_podaci/R_Surveyor/Radni_6_ulaz_sa_merenjima/'
 setwd(wDir)
 getwd()
 
+# Parameters:
+#    1. points -  Excel file sheet with attributes related to points - geodetic network [Example: Data/Input/With_observations]
+#    2. observations - Excel file sheet with attributes related to observations [Example: Data/Input/With_observations]
+#    3. dest_crs - destination Coordinate Reference System - set EPSG code [default: 3857 - Web Mercator projection coordinate system]
 
-
-
-surveynet2DAdjustment_Import.xlsx <- function(points = points, observations = observations, fix_x = list(), fix_y = list(), st_dir, st_dist, dest_crs = NA, points_object = list()){
+surveynet2DAdjustment_Import.xlsx <- function(points = points, observations = observations, dest_crs = NA){
 
   # If column "Description" is necessary, delete it;
   j=1
@@ -113,24 +115,24 @@ surveynet2DAdjustment_Import.xlsx <- function(points = points, observations = ob
   observations$Semi.major.Azimuth <- as.character(observations$Semi.major.Azimuth)
 
   # Separate angle observations to degrees, minutes and seconds
-  observations <- observations %>% separate(H..Circle, c("HC_deg", "A"), "?.°")
+  observations <- observations %>% separate(H..Circle, c("HC_deg", "A"), "Â°")
   observations <- observations %>% separate(A, c("HC_min", "B"), "'")
   observations <- observations %>% separate(B, c("HC_sec", 'C'), '"')
 
-  observations <- observations %>% separate(V..Circle, c("VC_deg", "A1"), "?.°")
+  observations <- observations %>% separate(V..Circle, c("VC_deg", "A1"), "Â°")
   observations <- observations %>% separate(A1, c("VC_min", "B1"), "'")
   observations <- observations %>% separate(B1, c("VC_sec", 'C1'), '"')
 
-  observations <- observations %>% separate(H..Angle, c("HA_deg", "A2"), "?.°")
+  observations <- observations %>% separate(H..Angle, c("HA_deg", "A2"), "Â°")
   observations <- observations %>% separate(A2, c("HA_min", "B2"), "'")
   observations <- observations %>% separate(B2, c("HA_sec", 'C2'), '"')
 
   observations <- observations %>% separate(V..Angle, c("VA_deg1", "VA_deg"), "Z")
-  observations <- observations %>% separate(VA_deg, c("VA_deg", "A3"), "?.°")
+  observations <- observations %>% separate(VA_deg, c("VA_deg", "A3"), "Â°")
   observations <- observations %>% separate(A3, c("VA_min", "B3"), "'")
   observations <- observations %>% separate(B3, c("VA_sec", 'C3'), '"')
 
-  observations <- observations %>% separate(Semi.major.Azimuth, c("AZ_deg", "A4"), "?.°")
+  observations <- observations %>% separate(Semi.major.Azimuth, c("AZ_deg", "A4"), "Â°")
   observations <- observations %>% separate(A4, c("AZ_min", "B4"), "'")
   observations <- observations %>% separate(B4, c("AZ_sec", 'C4'), '"')
 
@@ -232,15 +234,16 @@ surveynet2DAdjustment_Import.xlsx <- function(points = points, observations = ob
 
 }
 
-
-
-
-
 ##################
 # net_spatial_view
 ##################
 
 # Function for spatial data visualisation trough package ggplot2
+
+# Function for spatial data visualisation trough package ggplot2
+# Parameters:
+#    1. points -  sf object with geometry type POINT and related attributes as product from surveynet2DAdjustment_Import.___ function
+#    2. observations - sf object with geometry type LINESTRING and related attributes as product from ssurveynet2DAdjustment_Import.___ function
 
 net_spatial_view_2DAdjustment_Import <- function(points, observations){
 
@@ -291,7 +294,7 @@ rastojanja$DS7 <- sqrt((rastojanja$x - rastojanja$x[[7]])^2 + (rastojanja$y - ra
 
 #################################
 points_xlsx.1 <- read.xlsx(file = "Merenja_Toranj_Avala/Avala_geodetic_network_observations - good coord.xlsx", sheetName = "Points")
-observations_xlsx.1 <- read.xlsx(path = "Merenja_Toranj_Avala/Avala_geodetic_network_observations - good coord.xlsx", sheetName = "Observations", as.data.frame=TRUE)
+observations_xlsx.1 <- read.xlsx(file = "Merenja_Toranj_Avala/Avala_geodetic_network_observations - good coord.xlsx", sheetName = "Observations", as.data.frame=TRUE)
 
 library(readxl)
 observations_xlsx.2 <- readxl::read_xlsx( "Merenja_Toranj_Avala/Avala_geodetic_network_observations - good coord.xlsx", sheet = "Observations")
@@ -302,7 +305,7 @@ observations_xlsx.2 %<>%
   separate(HzC, "_", into = c("HzD", "HzM", "HzS"))
 
 
-xlsx_Avala.1 <- surveynet2DAdjustment_Import.xlsx(points = points_xlsx.1, observations = observations_xlsx.1, fix_x = list(), fix_y = list(), st_dir = 3, st_dist = 3, dest_crs = 3857, points_object = list())
+xlsx_Avala.1 <- surveynet2DAdjustment_Import.xlsx(points = points_xlsx.1, observations = observations_xlsx.1, dest_crs = 3857)
 
 net_spatial_view_2DAdjustment_Import(points = xlsx_Avala.1[[1]], observations = xlsx_Avala.1[[2]])
 
