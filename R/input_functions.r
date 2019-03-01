@@ -20,6 +20,7 @@ library(data.table)
 library(mapview)
 library(mapedit)
 library(leaflet.extras)
+library(here)
 
 # Treba napraviti funkcije surveynet.shp, surveynet.kml i surveynet.xls koje ce imati ulazne parametre:
 #    1. points - putanja do shp, kml fajla koji sadrzi tacke i opciono informaciju o fixaciji tacke.
@@ -143,8 +144,8 @@ surveynet.xlsx <- function(points = points, observations = observations, dest_cr
 
 
 # Examples
-points_xlsx <- read.xlsx(file = "Ikea_Beograd.xlsx", sheetName = "Points")
-observations_xlsx <- read.xlsx(file = "Ikea_Beograd.xlsx", sheetName = "Observations")
+points_xlsx <- readxl::read_xlsx(path = here::here("Data/Input/Without_observations/xlsx/Ikea_Beograd.xlsx"), sheet = "Points")
+observations_xlsx <- readxl::read_xlsx(path = here::here("Data/Input/Without_observations/xlsx/Ikea_Beograd.xlsx"), sheet = "Observations")
 
 xlsx1 <- surveynet.xlsx(points = points_xlsx, observations = observations_xlsx, dest_crs = 3857)
 
