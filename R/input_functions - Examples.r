@@ -2,6 +2,26 @@
 # Description: Package of Land and Engineering Surveying utilities
 # Authors: Milutin Pejovic, Milan Kilibarda, Branislav Bajat, Aleksandar Sekulic and Petar Bursac
 
+rm(list = ls())
+
+# Packages
+library(tidyverse)
+library(magrittr)
+library(ggplot2)
+library(geomnet)
+library(ggnetwork)
+library(sf)
+library(ggmap)
+library(sp)
+library(rgdal)
+library(leaflet)
+library(xlsx)
+library(data.table)
+library(mapview)
+library(mapedit)
+library(leaflet.extras)
+library(here)
+
 # Treba napraviti funkcije surveynet.shp, surveynet.kml i surveynet.xls koje ce imati ulazne parametre:
 #    1. points - putanja do shp, kml fajla koji sadrzi tacke i opciono informaciju o fixaciji tacke.
 #    2. observations - putanja do shp ili kml fajla koji sadrzi linije merenja koja su po defaultu i pravac i duzina i u sebi opciono sadrze informaciju
@@ -123,6 +143,22 @@ surveynet.xlsx <- function(points = points, observations = observations, dest_cr
 }
 
 
+# Examples
+points_xlsx <- readxl::read_xlsx(path = here::here("Data/Input/Without_observations/xlsx/Ikea_Beograd.xlsx"), sheet = "Points")
+observations_xlsx <- readxl::read_xlsx(path = here::here("Data/Input/Without_observations/xlsx/Ikea_Beograd.xlsx"), sheet = "Observations")
+
+xlsx1 <- surveynet.xlsx(points = points_xlsx, observations = observations_xlsx, dest_crs = 3857)
+
+points_xlsx_1 <- read.xlsx(file = "Visnjicka_banja.xlsx", sheetName = "Points")
+observations_xlsx_1 <- read.xlsx(file = "Visnjicka_banja.xlsx", sheetName = "Observations")
+
+xlsx2 <- surveynet.xlsx(points = points_xlsx_1, observations = observations_xlsx_1, dest_crs = 3857)
+
+# Examples
+net_spatial_view(points = xlsx1[[1]], observations = xlsx1[[2]])
+net_spatial_view(points = xlsx2[[1]], observations = xlsx2[[2]])
+
+
 ###############
 # surveynet.shp
 ###############
@@ -229,6 +265,25 @@ surveynet.shp <- function(points, observations, fix_x = list(), fix_y = list(), 
 
   return(survey_net)
 }
+
+# Examples
+
+points1 <- st_read(dsn='Primer_1_ulazni_podaci_Ikea_Beograd','Tacke_mreza_objekat_1')
+observations1 <- st_read(dsn='Primer_1_ulazni_podaci_Ikea_Beograd','Plan_opazanja')
+
+u1 <- surveynet.shp(points = points1, observations = observations1, fix_x = list("A","B"), fix_y = list("A","B"), st_dir = 3, st_dist = 3, dest_crs = NA, points_object = list("T1","T2","T3","T4") )
+
+points2 <- st_read(dsn='Primer_2_ulazni_podaci_marina_Visnjicka_banja/shapefiles','tacke')
+observations2 <- st_read(dsn='Primer_2_ulazni_podaci_marina_Visnjicka_banja/shapefiles','plan_opazanja')
+
+observations3 <- readOGR("Primer_2_ulazni_podaci_marina_Visnjicka_banja/shapefiles/plan_opazanja.shp")
+observations4 <- st_as_sf(observations3)
+
+points3 <- readOGR("Primer_2_ulazni_podaci_marina_Visnjicka_banja/shapefiles/tacke.shp")
+points4 <- st_as_sf(points3)
+
+
+u2 <- surveynet.shp(points = points4, observations = observations4, fix_x = list("T1"), fix_y = list("T1","T3"), st_dir = 3, st_dist = 3, dest_crs = NA)
 
 
 ###############
@@ -371,6 +426,21 @@ surveynet.kml <- function(points, observations, fix_x = list(), fix_y = list(), 
 
 }
 
+# Examples
+points_kml1 <- st_read(dsn='Primer_1_ulazni_podaci_Ikea_Beograd/KML/Tacke_mreza_objekat.kml','Tacke_mreza_objekat')
+observations_kml1 <- st_read(dsn='Primer_1_ulazni_podaci_Ikea_Beograd/KML/Plan_opazanja.kml','Plan_opazanja')
+
+k1 <- surveynet.kml(points = points_kml1, observations = observations_kml1, fix_x = list("A","B"), fix_y = list("A","B"), st_dir = 3, st_dist = 3, dest_crs = 3857, points_object = list("T1","T2","T3","T4") )
+
+points_kml2 <- st_read(dsn='Primer_2_ulazni_podaci_marina_Visnjicka_banja/KML/Tacke.kml','Tacke')
+observations_kml2 <- st_read(dsn='Primer_2_ulazni_podaci_marina_Visnjicka_banja/KML/Plan_opazanja.kml','Plan_opazanja')
+
+k2 <- surveynet.kml(points = points_kml2, observations = observations_kml2, fix_x = list("1"), fix_y = list("1","3"), st_dir = 3, st_dist = 3, dest_crs = NA)
+
+
+# Examples
+net_spatial_view(points = k1[[1]], observations = k1[[2]])
+net_spatial_view(points = k2[[1]], observations = k2[[2]])
 
 ##################
 # net_spatial_view
@@ -406,6 +476,10 @@ net_spatial_view <- function(points, observations){
 
 }
 
+# Examples
+net_spatial_view(points = u1[[1]], observations = u1[[2]])
+net_spatial_view(points = u2[[1]], observations = u2[[2]])
+
 
 ##########################################
 # net_spatial_view_web [package:: mapview]
@@ -437,6 +511,11 @@ net_spatial_view_web <- function(points, observations){
   return(web_map_1)
 
 }
+
+# Examples
+net_spatial_view_web(points = u1[[1]], observations = u1[[2]])
+net_spatial_view_web(points = u2[[1]], observations = u2[[2]])
+
 
 ###########
 # check_net
@@ -514,6 +593,9 @@ check_net <- function(points, observations){
 
 
 }
+
+check_net(points = u1[[1]], observations = u1[[2]])
+
 
 ###################
 # surveynet.mapedit
@@ -674,5 +756,17 @@ surveynet.mapedit <- function(points = points, observations = observations, fix_
 
   return(survey_net_mapedit)
 }
+
+# Example
+net_points <- surveynet.mapedit_add()
+surveynet.mapedit_view(points = net_points)
+
+points <- surveynet.mapedit_points(points = net_points)
+
+observations <- surveynet.mapedit_observations(points = points)
+
+me <- surveynet.mapedit(points = points, observations = observations, fix_x = list(), fix_y = list(), st_dir = 3, st_dist = 3, dest_crs = NA, points_object = list())
+
+
 
 
