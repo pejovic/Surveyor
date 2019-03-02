@@ -11,7 +11,9 @@
 ### coeficients for distances #####################################################
 
 coef_d <- function (pt1, pt2, pts) {
-  coords <- pts@coords
+  pt1 <- as.numeric(pt1)
+  pt2 <- as.numeric(pt2)
+  coords <- pts
   vec_d <- c(rep(0, length(coords)))
   x_coords <- coords[, 1]
   y_coords <- coords[, 2]
@@ -28,10 +30,10 @@ coef_d <- function (pt1, pt2, pts) {
   dx <- (x2-x1)*1000
   dy <- (y2-y1)*1000
   d <- sqrt(dx^2+dy^2)
-  A <- ifelse( pts$fix_x[i] == 0, pts$fix_x[i]*(-dx/d), (-dx/d))
-  B <- ifelse( pts$fix_y[i] == 0, pts$fix_y[i]*(dy/d),(dy/d))
-  A1 <- ifelse( pts$fix_x[j] == 0,-pts$fix_x[j]*(-dy/d), -(-dy/d))
-  B1 <- ifelse( pts$fix_y[j] == 0,-pts$fix_y[j]*(dy/d),-(dy/d))
+  A <- (-dx/d) #ifelse( pts$fix_x[i] == 0, pts$fix_x[i]*(-dx/d), (-dx/d))
+  B <- (dy/d) #ifelse( pts$fix_y[i] == 0, pts$fix_y[i]*(dy/d),(dy/d))
+  A1 <- -(-dx/d) #ifelse( pts$fix_x[j] == 0,-pts$fix_x[j]*(-dy/d), -(-dy/d))
+  B1 <- -(dy/d) #ifelse( pts$fix_y[j] == 0,-pts$fix_y[j]*(dy/d),-(dy/d))
   vec_d[2*i-1] <- A
   vec_d[2*j-1] <- (A1)
   vec_d[2*i] <- B
@@ -42,7 +44,9 @@ coef_d <- function (pt1, pt2, pts) {
 ### coeficients for directions (pravac) #####################################################
 
 coef_p <- function (pt1, pt2, pts) {
-  coords <- pts@coords
+  pt1 <- as.numeric(pt1)
+  pt2 <- as.numeric(pt2)
+  coords <- pts
   vec_p <- c(rep(0, length(coords)))
   ro <- 180/pi*3600
   x_coords <- coords[, 1]
@@ -60,10 +64,10 @@ coef_p <- function (pt1, pt2, pts) {
   dx <- (x2-x1)*1000
   dy <- (y2-y1)*1000
   d <- sqrt(dx^2 + dy^2)
-  A <- ifelse( pts$fix_x[i] == 0, pts$fix_x[i]*(ro*dy/d^2), (ro*dy/d^2))
-  B <- ifelse( pts$fix_y[i] == 0, pts$fix_y[i]*(-ro*dx/d^2), (-ro*dx/d^2))
-  A1 <- ifelse( pts$fix_x[j] == 0,-pts$fix_x[j]*(ro*dy/d^2), -(ro*dy/d^2))
-  B1 <- ifelse( pts$fix_y[j]==0,-pts$fix_y[j]*(-ro*dx/d^2), -(-ro*dx/d^2))
+  A <- (ro*dy/d^2) #ifelse( pts$fix_x[i] == 0, pts$fix_x[i]*(ro*dy/d^2), (ro*dy/d^2))
+  B <- (-ro*dx/d^2) #ifelse( pts$fix_y[i] == 0, pts$fix_y[i]*(-ro*dx/d^2), (-ro*dx/d^2))
+  A1 <- -(ro*dy/d^2) #ifelse( pts$fix_x[j] == 0,-pts$fix_x[j]*(ro*dy/d^2), -(ro*dy/d^2))
+  B1 <- -(-ro*dx/d^2) #ifelse( pts$fix_y[j]==0,-pts$fix_y[j]*(-ro*dx/d^2), -(-ro*dx/d^2))
   vec_p[2*i-1] <- A
   vec_p[2*j-1] <- (A1)
   vec_p[2*i] <- B
