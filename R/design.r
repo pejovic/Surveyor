@@ -107,10 +107,15 @@ design.snet <- function(survey.net){
     error = function(e) {
       x = Qx = matlib::Ginv(N)
     })
-  return(Qx)
+  colnames(Qx) <- colnames(N)
+  rownames(Qx) <- rownames(N)
+  Kl <- A %*% tcrossprod(Qx, A)
+  Qv <- solve(W) - Kl
+
+  design <- list(A = A, W = W, Qx = Qx, Kl = Kl, Qv = Qv)
+
+  return(design)
 }
-
-
 
 design.snet(survey.net =  ib)
 
