@@ -39,7 +39,7 @@ vb <- surveynet.xlsx(points = vb_points, observations = vb_obs, dest_crs = 3857)
 
 
 fix.params <- function(survey.net){
-  coord.fix <- survey.net[[1]] %>% st_drop_geometry() %>% t() %>% as.data.frame(stringsAsFactors = FALSE) %>%
+  survey.net[[1]] %>% st_drop_geometry() %>% t() %>% as.data.frame(stringsAsFactors = FALSE) %>%
     rownames_to_column() %>%
     `colnames<-`(.[1,]) %>%
     .[-1,] %>%
@@ -47,7 +47,6 @@ fix.params <- function(survey.net){
     filter(Name %in% c("FIX_X", "FIX_Y")) %>%
     gather(key = Point, value = fix, -c(Name)) %>%
     .[["fix"]] != "FALSE"
-  return(coord.fix)
 }
 
 
