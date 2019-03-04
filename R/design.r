@@ -22,6 +22,7 @@ library(mapview)
 library(mapedit)
 library(leaflet.extras)
 library(here)
+library(matlib)
 
 source(here("R/input_functions.r"))
 source(here("R/functions.r"))
@@ -34,6 +35,20 @@ vb_points <- readxl::read_xlsx(path = here::here("Data/Input/Without_observation
 vb_obs <- readxl::read_xlsx(path = here::here("Data/Input/Without_observations/xlsx/VB.xlsx"), sheet = "Observations", col_types = c("numeric", "text", "text", "logical", "logical", "numeric", "numeric"))
 
 vb <- surveynet.xlsx(points = vb_points, observations = vb_obs, dest_crs = 3857)
+
+
+
+fix.params <- function(survey.net){
+  coord.fix <- survey.net[[1]] %>% st_drop_geometry() %>% t() %>% as.data.frame(stringsAsFactors = FALSE) %>%
+    rownames_to_column() %>%
+    `colnames<-`(.[1,]) %>%
+    .[-1,] %>%
+    `rownames<-`(NULL) %>%
+    filter(Name %in% c("FIX_X", "FIX_Y")) %>%
+    gather(key = Point, value = fix, -c(Name)) %>%
+    .[["fix"]] != "FALSE"
+  return(coord.fix)
+}
 
 
 Amat <- function(survey.net){
@@ -49,19 +64,55 @@ Amat <- function(survey.net){
 
   Z_mat <- survey.net[[2]] %>% filter(direction) %>%
     spread(key = from, value = direction, fill = FALSE) %>%
-    select(survey.net[[1]]$Name) %>%
+    select(survey.net[[1]]$Name[!survey.net[[1]]$Point_object]) %>%
     st_drop_geometry() %>%
     as.matrix()*1
 
+  fix <- fix.params(survey.net)
+
   rest_mat <- matrix(0, nrow = dim(A_dist)[1], ncol = dim(Z_mat)[2])
 
-  A <- rbind(cbind(A_dir, Z_mat), cbind(A_dist, rest_mat))
+  A <- cbind(rbind(A_dir, A_dist)[, !fix], rbind(Z_mat, rest_mat))
 
-  colnames(A) <- c(paste(rep(survey.net[[1]]$Name, each = 2), rep(c("x", "y"), length(survey.net[[1]]$Name)), sep = "_"), paste(colnames(Z_mat), "z", sep = "_"))
+  colnames(A) <- c(paste(rep(survey.net[[1]]$Name, each = 2), rep(c("x", "y"), length(survey.net[[1]]$Name)), sep = "_")[!fix], paste(colnames(Z_mat), "z", sep = "_"))
   return(A)
 }
 
 Amat(survey.net = vb)
 
 
-vb[[1]] %>% st_drop_geometry() %>% select(FIX_X, FIX_Y) %>% as.matrix()*1 %>% c()
+ib_points <- readxl::read_xlsx(path = here::here("Data/Input/Without_observations/xlsx/IB.xlsx"), sheet = "Points", col_types = c("text", "numeric", "numeric", "logical", "logical", "logical"))
+ib_obs <- readxl::read_xlsx(path = here::here("Data/Input/Without_observations/xlsx/IB.xlsx"), sheet = "Observations", col_types = c("numeric", "text", "text", "logical", "logical", "numeric", "numeric"))
+ib <- surveynet.xlsx(points = ib_points, observations = ib_obs, dest_crs = 3857)
+
+Amat(survey.net = ib)
+
+# Weights matrix
+Wmat <- function(survey.net, apriori = 1){
+  #TODO: Omoguciti zadavanje i drugih kovariacionih formi izmedju merenja.
+  obs.data <- survey.net[[2]] %>% st_drop_geometry() %>%
+    gather(key = type, value = standard, -c(id, from, to, distance, direction)) %>%
+    select(from, to, standard)
+  return(diag(apriori^2/obs.data$standard^2))
+}
+
+
+design.snet <- function(survey.net){
+  A <- Amat(survey.net)
+  W <- Wmat(survey.net)
+  N <- crossprod(A, W) %*% A
+  Qx <- tryCatch(
+    {
+      x = Qx = solve(N)
+    },
+    error = function(e) {
+      x = Qx = matlib::Ginv(N)
+    })
+  return(Qx)
+}
+
+
+
+design.snet(survey.net =  ib)
+
+
