@@ -105,36 +105,38 @@ coef_p <- function (pt1, pt2, pts, units, axes = c("Easting", "Northing")) {
 
 
 # Funkcija koja izdvaja elemente Qx matrice u listu za elipsu svake tacke
-Qxy <- function(Qx, n, fixd = fix) {
+Qxy <- function(Qx, n, fixd = fix){
   k = 0
   fixd <- cbind(fixd, fixd[,1] + fixd[, 2])
   Qxxx <- as.list(rep(NA, dim(fixd)[1]))
-  for(i in 1:dim(fixd)[1]) {
-    k = fixd[i,1] + fixd[i, 2] + k
-    if(fixd[i,3] == 1){
-      Qxxx[[i]] <- diag(fixd[i, c(1,2)])*Qx[k, k] }
-    else if (fixd[i,3] == 2) {
+  for(i in 1:length(Qxxx)){
+    k = fixd[i, 1] + fixd[i, 2] + k
+    if(fixd[i, 3] == 1){
+      Qxxx[[i]] <- diag(fixd[i, c(1, 2)])*Qx[k, k]
+      }
+    else if (fixd[i, 3] == 2){
       Qxxx[[i]] <- cbind(c(Qx[k-1, k-1], Qx[k-1, k]), c(Qx[k, k-1], Qx[k, k]))
     } else {
       Qxxx[[i]] <- diag(fixd[i, c(1, 2)])
     }
   }
+  names(Qxxx) <- colnames(Qx)
   return(Qxxx)
 }
-#######################################################################
+#
 
-elipsa<-function(Qxyt) {
-  k<-sqrt((Qxyt[1,1]-Qxyt[2,2])^2+4*Qxyt[1,2]^2)
-  lambda1<-0.5*(Qxyt[1,1]+Qxyt[2,2]+k)
-  lambda2<-0.5*(Qxyt[1,1]+Qxyt[2,2]-k)
-  A<-sqrt(lambda1)
-  B<-sqrt(lambda2)
-  teta<-ifelse((Qxyt[1,1]-Qxyt[2,2])==0,0,0.5*atan(2*Qxyt[1,2]/(Qxyt[1,1]-Qxyt[2,2])))
-  teta<-ifelse(teta>=0,teta,teta+2*pi)
-  elip<-c(A,B,teta*180/pi)
+error.ellipse <- function(Qxyt) {
+  k <- sqrt((Qxyt[1, 1]-Qxyt[2, 2])^2 + 4*Qxyt[1, 2]^2)
+  lambda1 <- 0.5*(Qxyt[1, 1] + Qxyt[2, 2]+k)
+  lambda2 <- 0.5*(Qxyt[1, 1] + Qxyt[2, 2]-k)
+  A <- sqrt(lambda1)
+  B <- sqrt(lambda2)
+  teta <- ifelse((Qxyt[1, 1] - Qxyt[2, 2]) == 0, 0, 0.5*atan(2*Qxyt[1, 2]/(Qxyt[1, 1] - Qxyt[2, 2])))
+  teta <- ifelse(teta >= 0, teta, teta + 2*pi)
+  ellipse <- c(A, B, teta*180/pi)
   return(elip)
 }
-#########################################################
+#
 
 
 

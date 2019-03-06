@@ -121,8 +121,10 @@ design.snet <- function(survey.net, apriori = 1, result.units = list("mm", "cm",
   rownames(Qx) <- rownames(N)
   Kl <- A %*% tcrossprod(Qx, A)
   Qv <- solve(W) - Kl
+  fix = survey.net[[1]] %>% st_drop_geometry() %>% dplyr::select(FIX_X, FIX_Y) == FALSE
+  Qxy.list <- Qxy(Qx, n = lenght(used.points), fixd = fix*1)
 
-  design <- list(A = A, W = W, Qx = Qx, Kl = Kl, Qv = Qv)
+  design <- list(A = A, W = W, Qx = Qx, Kl = Kl, Qv = Qv, Qxy.list = Qxy.list)
 
   return(design)
 }
@@ -130,8 +132,10 @@ design.snet <- function(survey.net, apriori = 1, result.units = list("mm", "cm",
 # Ne radi dobro inverziju!!! Matrica nije simetricna!
 
 ib[[1]] <- filter(ib[[1]], Name != "T4")
-dd <- design.snet(survey.net =  ib, result.units = "mm")
+dd <- design.snet(survey.net =  vb, result.units = "mm")
 Qx <- dd$Qx
+dd$Qxy.list
+
 nn = dim(ib[[1]])[1] # TODO: ovde treba isto uzeti used.points samo. Odnosno biti siguran koliko ima tacaka za koje se racuna elipsa
 fix = ib[[1]] %>% st_drop_geometry() %>% dplyr::select(FIX_X, FIX_Y) == FALSE
 fix <- fix*1
