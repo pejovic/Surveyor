@@ -17,11 +17,7 @@ library(rgdal)
 library(leaflet)
 library(xlsx)
 library(data.table)
-
-# Radni direktorijum
-wDir <- 'D:/R_projects/Surveyer_podaci/R_Surveyor/Radni_6_ulaz_sa_merenjima/'
-setwd(wDir)
-getwd()
+library(readxl)
 
 # Parameters:
 #    1. points -  Excel file sheet with attributes related to points - geodetic network [Example: Data/Input/With_observations]
@@ -84,87 +80,77 @@ surveynet2DAdjustment_Import.xlsx <- function(points = points, observations = ob
   }
 
   # Conversion values of distances - Slope. raw [from factor to numeric without lossing infromation]
-  observations$Slope..raw. <- as.character(observations$Slope..raw.)
+  observations$`Slope (raw)` <- as.character(observations$`Slope (raw)`)
 
   j <- 1
-  for(i in observations$Slope..raw.){
+  for(i in observations$`Slope (raw)`){
     if(i == "NA"){
-      observations$Slope..raw.[j] <- NA
+      observations$`Slope (raw)`[j] <- NA
     }
     j <- j+1
 
   }
 
-  observations$Slope..raw. <- as.numeric(observations$Slope..raw.)
+  observations$`Slope (raw)` <- as.numeric(observations$`Slope (raw)`)
 
   # Replacing NA values for distances with 0
   j <- 1
-  for(i in observations$Slope..raw.){
+  for(i in observations$`Slope (raw)`){
 
     if(is.na(i)){
-      observations$Slope..raw.[j] <- 0
+      observations$`Slope (raw)`[j] <- 0
     }
     j <- j+1
 
   }
-  # Conversion from factor to character
-  observations$H..Circle <- as.character(observations$H..Circle)
-  observations$V..Circle <- as.character(observations$V..Circle)
-  observations$H..Angle <- as.character(observations$H..Angle)
-  observations$V..Angle <- as.character(observations$V..Angle)
-  observations$Semi.major.Azimuth <- as.character(observations$Semi.major.Azimuth)
 
-  # Separate angle observations to degrees, minutes and seconds
-  observations <- observations %>% separate(H..Circle, c("HC_deg", "A"), "Â°")
-  observations <- observations %>% separate(A, c("HC_min", "B"), "'")
-  observations <- observations %>% separate(B, c("HC_sec", 'C'), '"')
-
-  observations <- observations %>% separate(V..Circle, c("VC_deg", "A1"), "Â°")
-  observations <- observations %>% separate(A1, c("VC_min", "B1"), "'")
-  observations <- observations %>% separate(B1, c("VC_sec", 'C1'), '"')
-
-  observations <- observations %>% separate(H..Angle, c("HA_deg", "A2"), "Â°")
-  observations <- observations %>% separate(A2, c("HA_min", "B2"), "'")
-  observations <- observations %>% separate(B2, c("HA_sec", 'C2'), '"')
-
-  observations <- observations %>% separate(V..Angle, c("VA_deg1", "VA_deg"), "Z")
-  observations <- observations %>% separate(VA_deg, c("VA_deg", "A3"), "Â°")
-  observations <- observations %>% separate(A3, c("VA_min", "B3"), "'")
-  observations <- observations %>% separate(B3, c("VA_sec", 'C3'), '"')
-
-  observations <- observations %>% separate(Semi.major.Azimuth, c("AZ_deg", "A4"), "Â°")
-  observations <- observations %>% separate(A4, c("AZ_min", "B4"), "'")
-  observations <- observations %>% separate(B4, c("AZ_sec", 'C4'), '"')
-
-  observations <- observations[, !(colnames(observations) %in% c("C","C1","C2","C3","C4","VA_deg1"))]
+  # Separate direction - angle observations in separate columns
+  # [Degress, minutes, seconds]
+  observations %<>%
+    mutate(HzC = str_replace_all(`H. Circle`, "([°'])", "_")) %>%
+    mutate(HzC = str_replace_all(`HzC`, '(["])', "")) %>%
+    separate(HzC, "_", into = c("HzD", "HzM", "HzS")) %>%
+    mutate(Vc = str_replace_all(`V. Circle`, "([°'])", "_")) %>%
+    mutate(Vc = str_replace_all(`Vc`, '(["])', "")) %>%
+    separate(Vc, "_", into = c("VcD", "VcM", "VcS")) %>%
+    mutate(Ha = str_replace_all(`H. Angle`, "([°'])", "_")) %>%
+    mutate(Ha = str_replace_all(`Ha`, '(["])', "")) %>%
+    separate(Ha, "_", into = c("HaD", "HaM", "HaS")) %>%
+    separate(`V. Angle`,"Z", into = c("z", "V_Angle")) %>%
+    mutate(Va = str_replace_all(`V_Angle`, "([°'])", "_")) %>%
+    mutate(Va = str_replace_all(`Va`, '(["])', "")) %>%
+    separate(Va, "_", into = c("VaD", "VaM", "VaS")) %>%
+    mutate(Az = str_replace_all(`Semi-major Azimuth`, "([°'])", "_")) %>%
+    mutate(Az = str_replace_all(`Az`, '(["])', "")) %>%
+    separate(Az, "_", into = c("AzD", "AzM", "AzS"))
 
   # Transforming from character to numeric, without lossing informations
-  observations$HC_deg <- as.numeric(observations$HC_deg)
-  observations$HC_min <- as.numeric(observations$HC_min)
-  observations$HC_sec <- as.numeric(observations$HC_sec)
+  observations$HzD <- as.numeric(observations$HzD)
+  observations$HzM <- as.numeric(observations$HzM)
+  observations$HzS <- as.numeric(observations$HzS)
 
-  observations$VC_deg <- as.numeric(observations$VC_deg)
-  observations$VC_min <- as.numeric(observations$VC_min)
-  observations$VC_sec <- as.numeric(observations$VC_sec)
+  observations$VcD <- as.numeric(observations$VcD)
+  observations$VcM <- as.numeric(observations$VcM)
+  observations$VcS <- as.numeric(observations$VcS)
 
-  observations$HA_deg <- as.numeric(observations$HA_deg)
-  observations$HA_min <- as.numeric(observations$HA_min)
-  observations$HA_sec <- as.numeric(observations$HA_sec)
+  observations$HaD <- as.numeric(observations$HaD)
+  observations$HaM <- as.numeric(observations$HaM)
+  observations$HaS <- as.numeric(observations$HaS)
 
-  observations$VA_deg <- as.numeric(observations$VA_deg)
-  observations$VA_min <- as.numeric(observations$VA_min)
-  observations$VA_sec <- as.numeric(observations$VA_sec)
+  observations$VaD <- as.numeric(observations$VaD)
+  observations$VaM <- as.numeric(observations$VaM)
+  observations$VaS <- as.numeric(observations$VaS)
 
-  observations$AZ_deg <- as.numeric(observations$AZ_deg)
-  observations$AZ_min <- as.numeric(observations$AZ_min)
-  observations$AZ_sec <- as.numeric(observations$AZ_sec)
+  observations$AzD <- as.numeric(observations$AzD)
+  observations$AzM <- as.numeric(observations$AzM)
+  observations$AzS <- as.numeric(observations$AzS)
 
   # Creating decimal columns
-  observations$HC_dec <- observations$HC_deg + observations$HC_min/60 + observations$HC_sec/3600
-  observations$VC_dec <- observations$VC_deg + observations$VC_min/60 + observations$VC_sec/3600
-  observations$HA_dec <- observations$HA_deg + observations$HA_min/60 + observations$HA_sec/3600
-  observations$VA_dec <- observations$VA_deg + observations$VA_min/60 + observations$VA_sec/3600
-  observations$AZ_dec <- observations$AZ_deg + observations$AZ_min/60 + observations$AZ_sec/3600
+  observations$HC_dec <- observations$HzD + observations$HzM/60 + observations$HzS/3600
+  observations$VC_dec <- observations$VcD + observations$VcM/60 + observations$VcS/3600
+  observations$HA_dec <- observations$HaD + observations$HaM/60 + observations$HaS/3600
+  observations$VA_dec <- observations$VaD + observations$VaM/60 + observations$VaS/3600
+  observations$AZ_dec <- observations$AzD + observations$AzM/60 + observations$AzS/3600
 
   # Create geometry columns for points
   if (is.na(dest_crs)){
@@ -194,35 +180,34 @@ surveynet2DAdjustment_Import.xlsx <- function(points = points, observations = ob
                    direction = observations$direction,
                    standard_dir = observations$standard_dir,
                    standard_dist = observations$standard_dist,
-                   HC_deg = observations$HC_deg,
-                   HC_min = observations$HC_min,
-                   HC_sec = observations$HC_sec,
+                   HC_deg = observations$HzD,
+                   HC_min = observations$HzM,
+                   HC_sec = observations$HzS,
                    HC_dec = observations$HC_dec,
-                   VC_deg = observations$VC_deg,
-                   VC_min = observations$VC_min,
-                   VC_sec = observations$VC_sec,
+                   VC_deg = observations$VcD,
+                   VC_min = observations$VcM,
+                   VC_sec = observations$VcS,
                    VC_dec = observations$VC_dec,
-                   Dist = observations$Slope..raw,
-                   HA_deg = observations$HA_deg,
-                   HA_min = observations$HA_min,
-                   HA_sec = observations$HA_sec,
+                   Dist = observations$`Slope (raw)`,
+                   HA_deg = observations$HaD,
+                   HA_min = observations$HaM,
+                   HA_sec = observations$HaS,
                    HA_dec = observations$HA_dec,
-                   VA_deg = observations$VA_deg,
-                   VA_min = observations$VA_min,
-                   VA_sec = observations$VA_sec,
+                   VA_deg = observations$VaD,
+                   VA_min = observations$VaM,
+                   VA_sec = observations$VaS,
                    VA_dec = observations$VA_dec,
-                   AZ_deg = observations$AZ_deg,
-                   AZ_min = observations$AZ_min,
-                   AZ_sec = observations$AZ_sec,
+                   AZ_deg = observations$AzD,
+                   AZ_min = observations$AzM,
+                   AZ_sec = observations$AzS,
                    AZ_dec = observations$AZ_dec,
                    Face = observations$Face,
-                   Instrument_Height = observations$True.Instrument.Height,
-                   Target_Height = observations$True.Target.Height,
-                   Prism_constant = observations$Prism.Constant,
+                   Instrument_Height = observations$`True Instrument Height`,
+                   Target_Height = observations$`True Target Height`,
+                   Prism_constant = observations$`Prism Constant`,
                    Backsight = observations$Backsight
 
   )
-
 
   dt_1 <- dt_1 %>% sf::st_set_crs(dest_crs)
   observations <- dt_1
@@ -269,72 +254,6 @@ net_spatial_view_2DAdjustment_Import <- function(points, observations){
   return(net_view)
 
 }
-
-# Examples
-points_xlsx <- read.xlsx(file = "Merenja_Toranj_Avala/Avala_geodetic_network_observations.xlsx", sheetName = "Points")
-observations_xlsx <- read.xlsx(file = "Merenja_Toranj_Avala/Avala_geodetic_network_observations.xlsx", sheetName = "Observations")
-
-xlsx_Avala <- surveynet.xlsx(points = points_xlsx, observations = observations_xlsx, fix_x = list(), fix_y = list(), st_dir = 3, st_dist = 3, dest_crs = 3857, points_object = list())
-
-net_spatial_view(points = xlsx_Avala[[1]], observations = xlsx_Avala[[2]])
-
-
-points_xlsx
-observations_xlsx
-
-rastojanja <- data.frame( Name = points_xlsx$Name, x = points_xlsx$x , y = points_xlsx$y, DS1 = NA, DS2 = NA, DS3 = NA, DS4 = NA, DS5 = NA, DS6 = NA, DS7 = NA)
-
-rastojanja$DS1 <- sqrt((rastojanja$x - rastojanja$x[[1]])^2 + (rastojanja$y - rastojanja$y[[1]])^2)
-rastojanja$DS2 <- sqrt((rastojanja$x - rastojanja$x[[2]])^2 + (rastojanja$y - rastojanja$y[[2]])^2)
-rastojanja$DS3 <- sqrt((rastojanja$x - rastojanja$x[[3]])^2 + (rastojanja$y - rastojanja$y[[3]])^2)
-rastojanja$DS4 <- sqrt((rastojanja$x - rastojanja$x[[4]])^2 + (rastojanja$y - rastojanja$y[[4]])^2)
-rastojanja$DS5 <- sqrt((rastojanja$x - rastojanja$x[[5]])^2 + (rastojanja$y - rastojanja$y[[5]])^2)
-rastojanja$DS6 <- sqrt((rastojanja$x - rastojanja$x[[6]])^2 + (rastojanja$y - rastojanja$y[[6]])^2)
-rastojanja$DS7 <- sqrt((rastojanja$x - rastojanja$x[[7]])^2 + (rastojanja$y - rastojanja$y[[7]])^2)
-
-#################################
-points_xlsx.1 <- read.xlsx(file = "Merenja_Toranj_Avala/Avala_geodetic_network_observations - good coord.xlsx", sheetName = "Points")
-observations_xlsx.1 <- read.xlsx(file = "Merenja_Toranj_Avala/Avala_geodetic_network_observations - good coord.xlsx", sheetName = "Observations", as.data.frame=TRUE)
-
-library(readxl)
-observations_xlsx.2 <- readxl::read_xlsx( "Merenja_Toranj_Avala/Avala_geodetic_network_observations - good coord.xlsx", sheet = "Observations")
-
-observations_xlsx.2 %<>%
-  mutate(HzC = str_replace_all(`H. Circle`, "([?'])", "_")) %>%
-  mutate(HzC = str_replace_all(`HzC`, '(["])', "")) %>%
-  separate(HzC, "_", into = c("HzD", "HzM", "HzS"))
-
-
-xlsx_Avala.1 <- surveynet2DAdjustment_Import.xlsx(points = points_xlsx.1, observations = observations_xlsx.1, dest_crs = 3857)
-
-net_spatial_view_2DAdjustment_Import(points = xlsx_Avala.1[[1]], observations = xlsx_Avala.1[[2]])
-
-
-observations_xlsx.1$Slope..raw. <- as.character(observations_xlsx.1$Slope..raw.)
-
-j <- 1
-for(i in observations_xlsx.1$Slope..raw.){
-  if(i == "NA"){
-    observations_xlsx.1$Slope..raw.[j] <- NA
-  }
-  j <- j+1
-
-}
-
-observations_xlsx.1$Slope..raw. <- as.numeric(observations_xlsx.1$Slope..raw.)
-
-# Replacing NA values for distances with 0
-j <- 1
-for(i in observations_xlsx.1$Slope..raw.){
-
-  if(is.na(i)){
-    observations_xlsx.1$Slope..raw.[j] <- 0
-  }
-  j <- j+1
-
-}
-
-
 
 
 
