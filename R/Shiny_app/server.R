@@ -1,9 +1,4 @@
-source("D:/R_projects/Shiny_app/Test_6/inputFunction_shp.R")
-source("D:/R_projects/Shiny_app/Test_6/function_netSpatialView.R")
-source("D:/R_projects/Shiny_app/Test_6/inputFunction_kml.R")
-source("D:/R_projects/Shiny_app/Test_6/inputFunction_xlsx.R")
-source("D:/R_projects/Shiny_app/Test_6/function_netSpatialViewWeb.R")
-#source("D:/R_projects/Shiny_app/Test_6/inputFunction_mapEdit.R")
+source(here("R/input_functions.r"))
 
 library(shiny)
 library(shinythemes)
@@ -23,6 +18,8 @@ library(data.table)
 library(mapview)
 library(mapedit)
 library(leaflet.extras)
+library(rhandsontable)
+library(here)
 
 shinyServer(function(input, output){
 
@@ -40,7 +37,6 @@ shinyServer(function(input, output){
     map_shp_points
   })
 
-
   shp_observations <- reactive({
     req(input$fileSHP_observations)
     shpdf_1 <- input$fileSHP_observations
@@ -55,7 +51,6 @@ shinyServer(function(input, output){
     map_shp_observations
 
   })
-
 
   observeEvent(input$go, {
 
@@ -162,7 +157,7 @@ shinyServer(function(input, output){
     o_xlsx <- xlsx_observations()
     dest_crs_xlsx = as.numeric(input$epsg_xlsx)
 
-    output_xlsx <- surveynet.xlsx(points = p_xlsx, observations = o_xlsx, fix_x = list(), fix_y = list(), st_dir = 3, st_dist = 3, dest_crs = dest_crs_xlsx, points_object = list())
+    output_xlsx <- surveynet.xlsx(points = p_xlsx, observations = o_xlsx, dest_crs = dest_crs_xlsx)
 
     out_points_xlsx <- output_xlsx[[1]]
     out_observations_xlsx <- output_xlsx[[2]]
@@ -187,70 +182,169 @@ shinyServer(function(input, output){
       web_map_xlsx@map
     })
 
+  })
 
+  # mapedit
+
+  ns <- shiny::NS("map_me")
+
+  lf <- leaflet() %>%
+    addTiles() %>%
+    addProviderTiles("OpenStreetMap.Mapnik",group="OpenStreetMap") %>%
+    addProviderTiles("Esri.WorldImagery",group="Esri.WorldImagery") %>%
+    addProviderTiles("Esri.DeLorme",group="Esri.DeLorme") %>%
+    addProviderTiles("Esri.WorldTopoMap",group="Esri.WorldTopoMap") %>%
+    setView(20.4580456, 44.8195306, zoom=12) %>%
+
+    addLayersControl(baseGroups = c("OpenStreetMap","Esri.WorldImagery","Esri.DeLorme","Esri.WorldTopoMap"))
+
+  editmapx <- callModule(editMod, "map_me", lf )
+
+  observeEvent(input$go_me_draw, {
+    points_raw_me <- editmapx()$finished
+    points_me <- surveynet.mapedit_points(points = points_raw_me)
+    observations_me <- surveynet.mapedit_observations(points = points_me)
+    output$primer <- renderPrint({
+      points_me
+    })
+  })
+
+  po_me <- reactive({
+    points_raw_me <- editmapx()$finished
+    points_me <- surveynet.mapedit_points(points = points_raw_me)
+    points_me
+  })
+
+  ob_me <- reactive({
+    points_me <- po_me()
+    observations_me <- surveynet.mapedit_observations(points = points_me)
+    observations_me
+  })
+
+  ob_example <- eventReactive(input$go_me_edit_o, {
+    p_me <- po_me()
+    o_me <- ob_me()
+    obs_example <- surveynet.mapedit_observations_edit(points = p_me, st_dir = input$st_dir_me, st_dist = input$st_dist_me)
+    obs_example
+  })
+
+  output$primer1 <- DT::renderDataTable(
+    ob_example(),
+    extensions = 'Buttons',
+    options = list(dom = 'Bfrtip', buttons = I('colvis'))
+
+  )
+
+  del_r <- eventReactive(input$delete_b,{
+    observations <- ob_example()
+    d <- input$primer1_rows_selected
+    observations <- observations[-d, ]
+    observations %<>% select(id = id ,
+                             from = from,
+                             to = to,
+                             standard_dir = standard_dir,
+                             standard_dist = standard_dist
+    )
+    observations
+  })
+
+  values <- reactiveValues()
+
+  output$OldObs <- renderRHandsontable({
+    rhandsontable(as.data.frame(del_r()), width = 550, height = 550)
+  })
+
+  del_row <- eventReactive(input$run_table,{
+    values$data <-  hot_to_r(input$OldObs)
+    a <- as.data.frame(values$data)
+    a
   })
 
 
+  # helper function for making checkbox
+  shinyInput = function(FUN, len, id, ...) {
+    inputs = character(len)
+    for (i in seq_len(len)) {
+      inputs[i] = as.character(FUN(paste0(id, i), label = NULL, ...))
+    }
+    inputs
+  }
 
+  # datatable with checkbox
+  output$primer4 <- DT::renderDataTable({
+    data.frame(del_row(),
+               distance=shinyInput(checkboxInput,nrow(del_row()),"cbox_"),
+               direction=shinyInput(checkboxInput,nrow(del_row()),"cbox_1"))
+  },
+  selection = 'none',
+  escape = FALSE,
+  extensions = 'Scroller',
 
+  options = list(
+    deferRender = TRUE,
+    scrollY = 500,
+    scrollX = 300,
+    scroller = TRUE,
+    preDrawCallback = JS('function() {
+                         Shiny.unbindAll(this.api().table().node()); }'),
+    drawCallback = JS('function() {
+                      Shiny.bindAll(this.api().table().node()); } ')
+    )
+  )
 
+  # helper function for reading checkbox
+  shinyValue = function(id, len) {
+    unlist(lapply(seq_len(len), function(i) {
+      value = input[[paste0(id, i)]]
+      if (is.null(value)) NA else value
+    }))
+  }
 
-  ### MapEdit
-  #observeEvent(input$go_me_draw, {
-  #  output$map_me <- surveynet.mapedit_add()
-  #
-  #  })
-  #
-  #points_me <- surveynet.mapedit_points(points = net_points)
-  #
-  #observations_me <- surveynet.mapedit_observations(points = points_me)
-  #observeEvent(input$go_me, {
-  #  p_me <- points_me
-  #  o_me <- observations_me
-  #  dest_crs_xlsx = as.numeric(input$epsg_me)
-  #  st_dir_me = as.numeric(input$st_dir_me)
-  #  st_dist_me = as.numeric(input$st_dist_me)
-  #  dest_crs_me = as.numeric(input$epsg_me)
-  #
-  #  fix_x_me <- as.list(strsplit(as.character(input$fix_x_me), ",")[[1]])
-  #  fix_y_me <- as.list(strsplit(as.character(input$fix_y_me), ",")[[1]])
-  #  points_obj_me <- as.list(strsplit(as.character(input$points_obj_me), ",")[[1]])
-  #
-  #
-  #  output_me <- surveynet.mapedit(points = p_me, observations = o_me, fix_x = fix_x_me, fix_y = fix_y_me, st_dir = st_dir_me, st_dist = st_dist_me, dest_crs = dest_crs_me, points_object = points_obj_me)
-  #
-  #  out_points_me <- output_me[[1]]
-  #  out_observations_me <- output_me[[2]]
-  #
-  #  output_view_me <- net_spatial_view(points = out_points_me, observations = out_observations_me)
-  #
-  #  output$points_me_3 <- renderPrint({
-  #    out_points_me
-  #  })
-  #
-  #  output$observations_me_3 <- renderPrint({
-  #    out_observations_me
-  #  })
-  #
-  #  output$netSpatialView_me <- renderPlot({
-  #    output_view_me
-  #  })
-  #
-  #  web_map_me <- net_spatial_view_web(points = out_points_me, observations = out_observations_me)
-  #
-  #  output$mymap2 <- renderLeaflet({
-  #    web_map_me@map
-  #  })
-  #
-  #
-  #
-  #})
+  observations_edited <- reactive({o_e <- data.frame(id = del_row()$id,
+                                                     from = del_row()$from,
+                                                     to = del_row()$to,
+                                                     distance = shinyValue("cbox_",nrow(del_row())),
+                                                     direction = shinyValue("cbox_1",nrow(del_row())),
+                                                     standard_dir = del_row()$standard_dir,
+                                                     standard_dist = del_row()$standard_dist)
+  })
 
+  observeEvent(input$go_me, {
+    p_me <- po_me()
+    o_me <- observations_edited()
 
+    dest_crs_me = as.numeric(input$epsg_me)
 
+    fix_x_me <- as.list(strsplit(as.character(input$fix_x_me), ",")[[1]])
+    fix_y_me <- as.list(strsplit(as.character(input$fix_y_me), ",")[[1]])
+    points_obj_me <- as.list(strsplit(as.character(input$points_obj_me), ",")[[1]])
 
+    output_me <- surveynet.mapedit(points = p_me, observations = o_me, fix_x = fix_x_me, fix_y = fix_y_me, dest_crs = dest_crs_me, points_object = points_obj_me)
 
+    out_points_me <- output_me[[1]]
+    out_observations_me <- output_me[[2]]
 
+    output_view_me <- net_spatial_view(points = out_points_me, observations = out_observations_me)
+
+    output$points_me_3 <- renderPrint({
+      out_points_me
+    })
+
+    output$observations_me_3 <- renderPrint({
+      out_observations_me
+    })
+
+    output$netSpatialView_me <- renderPlot({
+      output_view_me
+    })
+
+    web_map_me <- net_spatial_view_web(points = out_points_me, observations = out_observations_me)
+
+    output$map_me_out <- renderLeaflet({
+      web_map_me@map
+    })
+
+  })
 
 })
 
