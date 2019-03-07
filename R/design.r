@@ -112,6 +112,6 @@ design.snet <- function(survey.net){
 
 
 
-design.snet(survey.net =  ib)
+design.snet(survey.net =  vb)
 
 
