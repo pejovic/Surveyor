@@ -1,4 +1,5 @@
 source(here("R/input_functions.r"))
+source(here("R/inputFunction_withObservations.R"))
 
 library(shiny)
 library(shinythemes)
@@ -14,6 +15,7 @@ library(sp)
 library(rgdal)
 library(leaflet)
 library(xlsx)
+library(readxl)
 library(data.table)
 library(mapview)
 library(mapedit)
@@ -260,7 +262,6 @@ shinyServer(function(input, output){
     a
   })
 
-
   # helper function for making checkbox
   shinyInput = function(FUN, len, id, ...) {
     inputs = character(len)
@@ -346,6 +347,66 @@ shinyServer(function(input, output){
 
   })
 
+  ##############################
+  # Input data with observations
+  ##############################
+
+  xlsx_points_wO <- reactive({
+    req(input$fileXLSX_wO)
+    map_xlsx_points_wO <- readxl::read_xlsx(path = input$fileXLSX_wO$datapath, sheet = "Points")
+    map_xlsx_points_wO
+  })
+
+  xlsx_observations_wO <- reactive({
+    req(input$fileXLSX_wO)
+    map_xlsx_observations_wO <- readxl::read_xlsx(path = input$fileXLSX_wO$datapath, sheet = "Observations")
+    map_xlsx_observations_wO
+  })
+
+  observeEvent(input$calc_obs, {
+    p_xlsx_wO <- xlsx_points_wO()
+    o_xlsx_wO <- xlsx_observations_wO()
+    dest_crs_xlsx_wO = as.numeric(input$epsg_xlsx_wO)
+
+    output_xlsx_wO <- surveynet2DAdjustment_Import.xlsx(points = p_xlsx_wO, observations = o_xlsx_wO, dest_crs = dest_crs_xlsx_wO)
+
+    out_points_xlsx_wO <- output_xlsx_wO[[1]]
+    out_observations_xlsx_wO <- output_xlsx_wO[[2]]
+
+    output_view_xlsx_wO <- net_spatial_view_2DAdjustment_Import(points = out_points_xlsx_wO, observations = out_observations_xlsx_wO)
+
+    #output$points_xlsx_wO <- renderPrint({
+    #  out_points_xlsx_wO
+    #})
+    #
+    #output$observations_xlsx_wO <- renderPrint({
+    #  out_observations_xlsx_wO
+    #})
+
+    output$netSpatialView_xlsx_wO <- renderPlot({
+      output_view_xlsx_wO
+    })
+
+    output$points_wO <- DT::renderDataTable(
+      out_points_xlsx_wO %<>%
+        st_drop_geometry() %>%
+        as.data.frame(),
+      extensions = 'Buttons',
+      options = list(dom = 'Bfrtip', buttons = I('colvis'))
+    )
+
+    output$observations_wO <- DT::renderDataTable(
+      out_observations_xlsx_wO %<>%
+        st_drop_geometry() %>%
+        as.data.frame(),
+      extensions = list('Buttons', 'Scroller'),
+      options = list(dom = 'Bfrtip', buttons = I('colvis'),
+                     deferRender = TRUE,
+                     scrollY = 500,
+                     scrollX = 300,
+                     scroller = TRUE)
+    )
+  })
 })
 
 
