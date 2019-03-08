@@ -22,6 +22,7 @@ library(mapview)
 library(shinycssloaders)
 library(here)
 
+
 shinyUI(
   tagList(
     tags$script(HTML(

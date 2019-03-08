@@ -23,6 +23,7 @@ library(leaflet.extras)
 library(rhandsontable)
 library(here)
 
+
 shinyServer(function(input, output){
 
   shp_points <- reactive({
