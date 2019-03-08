@@ -86,7 +86,6 @@ ncg2 = (ncg - cntrd) * rot(27*pi/180) + cntrd
 plot(ncg2, add = TRUE)
 plot(cntrd, col = 'red', add = TRUE, cex = .5)
 
-ee <- nngeo::st_ellipse(ib[[1]][1,], ey = 1.919176, ex = 1.808260) #%>% st_rota
-plot(ee)
+
 
 

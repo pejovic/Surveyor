@@ -2,22 +2,6 @@
 # Description: Package of Land and Engineering Surveying utilities
 # Authors: Milutin Pejovic, Milan Kilibarda, Branislav Bajat, Aleksandar Sekulic and Petar Bursac
 
-# Treba napraviti funkcije surveynet.shp, surveynet.kml i surveynet.xls koje ce imati ulazne parametre:
-#    1. points - putanja do shp, kml fajla koji sadrzi tacke i opciono informaciju o fixaciji tacke.
-#    2. observations - putanja do shp ili kml fajla koji sadrzi linije merenja koja su po defaultu i pravac i duzina i u sebi opciono sadrze informaciju
-#                      tome da li je neko merenje samo pravac na primer i informaciju o standardu koja se u kml-u upisuje u description
-#                      (npr "dir 3" ako je predvidjen samo pravac sa standardom 3")
-#    3. fix_x i fix_y - Ako nisu definisani u okviru points, onda mogu opciono da se definisu i ovde. Ali treba voditi racuna, da ako je definisano u points
-#                       ne sme se dva puta definisati, odnosno treba izbaciti error zbog dva definisanja fiksnih tacaka
-#    4. st_dir i st_dist - Moze se definisati u okviru observation kml-fajla i ako je tamo definisano ovde ne treba nista i treba izbaciti error ako se dva puta definise.
-#                        A ako nema u kml-u, onda se ovde moze zadati standard kao jedan broj za st_dir i jedan broj za st_dist. A ako hoces da neko merenje ima drugi standard onda ga definisi tamo ponaosob.
-#    5. dest_crs - Za sada je samo proj4 zapis zeljenog koordinatnog sistema u projekciji ako se koristi kml.
-
-#    surveynet.xls funkcija ucitava xls fajl u kome je u jednom sheet-u upisane tacke koje imaju sve ove atribute,a u drugom sheet-u merenja koja imaju sve ove atribute.
-
-# surveynet - Function for defining surveynet based on input parameters
-
-
 ################
 # surveynet.xlsx
 ################
@@ -169,12 +153,18 @@ surveynet.shp <- function(points, observations, fix_x = list(), fix_y = list(), 
     points <- points %>% st_transform(dest_crs)
     observations <- observations %>% st_transform(dest_crs)
   }
+  if (dest_crs == 3857){
+    dest_crs <- 3857
+    points <- points %>% st_transform(dest_crs)
+    observations <- observations %>% st_transform(dest_crs)
+  }
   if (st_crs(points)$epsg == "4326"){
     points <- points %>% st_transform(dest_crs)
   }
   if (st_crs(observations)$epsg == "4326"){
     observations <- observations %>% st_transform(dest_crs)
   }
+
 
   if(is.na(observations$id[[1]])){
     observations$id <- (1:length(observations$geometry))
@@ -229,7 +219,6 @@ surveynet.shp <- function(points, observations, fix_x = list(), fix_y = list(), 
 
   return(survey_net)
 }
-
 
 ###############
 # surveynet.kml
@@ -287,10 +276,11 @@ surveynet.kml <- function(points, observations, fix_x = list(), fix_y = list(), 
     }
   }
 
-
   # Transformation to the destination CRS
   if (is.na(dest_crs)){
     dest_crs <- 3857
+    points <- points %>% st_transform(dest_crs)
+    observations <- observations %>% st_transform(dest_crs)
   }
   if (st_crs(points)$epsg == "4326"){
     points <- points %>% st_transform(dest_crs)
@@ -304,11 +294,6 @@ surveynet.kml <- function(points, observations, fix_x = list(), fix_y = list(), 
   }
 
   # Handling with some columns
-
-  #if(is.na(observations$id[[1]])){
-  #  observations$id <- (1:length(observations$geometry))
-  #}
-
   for(i in names(points)){
     if(i == "id"){
       break
@@ -368,7 +353,6 @@ surveynet.kml <- function(points, observations, fix_x = list(), fix_y = list(), 
   survey_net <- list(points,observations)
 
   return(survey_net)
-
 }
 
 
@@ -423,16 +407,11 @@ net_spatial_view_web <- function(points, observations){
   Points$type <- "Geodetic network"
   Points$type[Points$Point_object == TRUE] <- "Points at object"
 
-  # Example to add little different type of observations
-  Observations$distance[1:3] <- FALSE
-  Observations$direction[5:7] <- FALSE
-
   Observations$type[Observations$distance == TRUE & Observations$direction == FALSE] <- "Distance"
   Observations$type[Observations$distance == FALSE & Observations$direction == TRUE] <- "Direction"
   Observations$type[Observations$distance == TRUE & Observations$direction == TRUE] <- "Both"
 
   web_map_1 <- mapview(Points, zcol = "type", col.regions = c("red","grey")) + mapview(Observations, zcol = "type")
-  # web_map <- mapview(list(Points, Observations))
 
   return(web_map_1)
 
@@ -588,6 +567,38 @@ surveynet.mapedit_observations <- function(points = points){
   return(res)
 }
 
+# Function for creating observations from points - edit and interactivly with CRUD [Create, Read, Update and Delete] functionalites edit observations
+# Parameters:
+#    1. points -  sf object with geometry type POINT and related attributes as product from function surveynet.mapedit_points
+#    2. st_dir - "a priori" standard deviation for direction observations ["]
+#    3. st_dist - "a priori" standard deviation for distance observations [mm]
+#
+
+surveynet.mapedit_observations_edit <- function(points = points, st_dir = st_dir, st_dist = st_dist){
+  res = expand.grid(to = points$Name, from = points$Name) # combine values from two columns in all posible combinations
+  res <- as.data.frame(res[!(res$to == res$from), ]) # delete rows with same values in two columns
+  rownames(res) <- 1:nrow(res) # reorder index number of rows
+  res <- res[ ,c("from","to")] # reorder columns
+  observations <- res
+
+  points$x <- st_coordinates(points)[,1]
+  points$y <- st_coordinates(points)[,2]
+
+  observations$x_station <- points$x[match(observations$from, points$Name)]
+  observations$y_station <- points$y[match(observations$from, points$Name)]
+  observations$x_obs.point <- points$x[match(observations$to, points$Name)]
+  observations$y_obs.point <- points$y[match(observations$to, points$Name)]
+
+  observations$id <- 1:nrow(observations)
+
+  observations %<>% mutate(distance = TRUE,
+                           direction = TRUE,
+                           standard_dir = st_dir,
+                           standard_dist = st_dist
+  )
+  return(observations)
+}
+
 # create complete sf object - points and observations
 # Parameters:
 #    1. points -  sf object with geometry type POINT and related attributes as product from function surveynet.mapedit_points
@@ -599,18 +610,19 @@ surveynet.mapedit_observations <- function(points = points){
 #    6. dest_crs - destination Coordinate Reference System - set EPSG code [default: 3857 - Web Mercator projection coordinate system]
 #    7. points_object - list with names of points that represnt object of interests
 
-
-surveynet.mapedit <- function(points = points, observations = observations, fix_x = list(), fix_y = list(), st_dir, st_dist, dest_crs = NA, points_object = list()){
+surveynet.mapedit <- function(points = points, observations = observations, fix_x = list(), fix_y = list(), dest_crs = NA, points_object = list()){
 
   if (is.na(dest_crs)){
     dest_crs <- 3857
     points <- points %>% st_transform(dest_crs)
   }
-  if (st_crs(points)$epsg == "4326"){
-    points <- points %>% st_transform(dest_crs)
-    message("\nPoints data are reprojected to the destination Coordinate Reference System!\n")
-    message(st_crs(points))
-  }
+  #if (st_crs(points)$epsg == 4326){
+  #  dest_crs <- 3857
+  #  points <- points %>% st_transform(dest_crs)
+  #  message("\nPoints data are reprojected to the destination Coordinate Reference System!\n")
+  #  message(st_crs(points))
+  #}
+  points <- points %>% st_transform(dest_crs)
 
   # Defining datum for points
   points %<>% mutate(FIX_X = FALSE, FIX_Y = FALSE)
@@ -632,10 +644,10 @@ surveynet.mapedit <- function(points = points, observations = observations, fix_
 
   observations$id <- 1:nrow(observations)
 
-  observations %<>% mutate(distance = TRUE,
-                           direction = TRUE,
-                           standard_dir = st_dir,
-                           standard_dist = st_dist
+  observations %<>% mutate(distance = distance,
+                           direction = direction,
+                           standard_dir = standard_dir,
+                           standard_dist = standard_dist
   )
 
   dt <- as.data.table(observations)
@@ -662,10 +674,10 @@ surveynet.mapedit <- function(points = points, observations = observations, fix_
   observations <- dt_1
 
   # Observational plan - adding new columns
-  observations %<>% mutate(distance = TRUE,
-                           direction = TRUE,
-                           standard_dir = st_dir,
-                           standard_dist = st_dist
+  observations %<>% mutate(distance = distance,
+                           direction = direction,
+                           standard_dir = standard_dir,
+                           standard_dist = standard_dist
   )
 
   points <- subset(points, select = -c(x,y))
@@ -674,5 +686,4 @@ surveynet.mapedit <- function(points = points, observations = observations, fix_
 
   return(survey_net_mapedit)
 }
-
 
