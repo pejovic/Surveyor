@@ -1,6 +1,3 @@
-source(here("R/input_functions.r"))
-source(here("R/inputFunction_withObservations.R"))
-
 library(shiny)
 library(shinythemes)
 library(leaflet)
@@ -22,6 +19,8 @@ library(mapview)
 library(shinycssloaders)
 library(here)
 
+source(here("R/input_functions.r"))
+source(here("R/inputFunction_withObservations.R"))
 
 shinyUI(
   tagList(

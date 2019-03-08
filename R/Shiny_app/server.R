@@ -1,6 +1,3 @@
-source(here("R/input_functions.r"))
-source(here("R/inputFunction_withObservations.R"))
-
 library(shiny)
 library(shinythemes)
 library(leaflet)
@@ -23,6 +20,8 @@ library(leaflet.extras)
 library(rhandsontable)
 library(here)
 
+source(here("R/input_functions.r"))
+source(here("R/inputFunction_withObservations.R"))
 
 shinyServer(function(input, output){
 
