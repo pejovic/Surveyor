@@ -23,6 +23,7 @@ library(mapedit)
 library(leaflet.extras)
 library(here)
 library(matlib)
+library(nngeo)
 
 source(here("R/input_functions.r"))
 source(here("R/functions.r"))
@@ -40,52 +41,14 @@ ib_points <- readxl::read_xlsx(path = here::here("Data/Input/Without_observation
 ib_obs <- readxl::read_xlsx(path = here::here("Data/Input/Without_observations/xlsx/IB.xlsx"), sheet = "Observations", col_types = c("numeric", "text", "text", "logical", "logical", "numeric", "numeric"))
 ib <- surveynet.xlsx(points = ib_points, observations = ib_obs, dest_crs = 3857)
 
+# vb
+vb.results <- design.snet(survey.net =  vb, result.units = "mm", ellipse.scale = 10, all = FALSE)
 
+plot(vb.results$ellipse.net$geometry)
+plot(vb.results$observations$geometry, add = TRUE)
 
-# fix.params <- function(net.points){
-#   net.points %>% st_drop_geometry() %>% t() %>% as.data.frame(stringsAsFactors = FALSE) %>%
-#     rownames_to_column() %>%
-#     `colnames<-`(.[1,]) %>%
-#     .[-1,] %>%
-#     `rownames<-`(NULL) %>%
-#     filter(Name %in% c("FIX_X", "FIX_Y")) %>%
-#     gather(key = Point, value = fix, -c(Name)) %>%
-#     .[["fix"]] != "FALSE"
-# }
+# ib
+ib.results <- design.snet(survey.net =  ib, result.units = "mm", ellipse.scale = 1, all = FALSE)
 
-
-dd <- design.snet(survey.net =  vb, result.units = "mm")
-Qx <- dd$Qx
-dd$ellipses
-
-merge(vb[[1]], dd$ellipses)
-
-nn = dim(vb[[1]])[1] # TODO: ovde treba isto uzeti used.points samo. Odnosno biti siguran koliko ima tacaka za koje se racuna elipsa
-fix = vb[[1]] %>% st_drop_geometry() %>% dplyr::select(FIX_X, FIX_Y) == FALSE
-fix <- fix*1
-
-Qxy(Qx, n = nn, fixd = fix*1)
-
-lapply(dd$Qxy.list, function(x) error.ellipse(x))
-
-
-error.ellipse(dd$Qxy.list[[1]], prob = 0.95)
-
-
-Amat(survey.net = vb, units = "mm")
-
-
-st_coordinates(ib[[1]]) %>% sf::st_as_sf(coords = c("x","y"))
-
-rot = function(a) matrix(c(cos(a), sin(a), -sin(a), cos(a)), 2, 2)
-ee <- nngeo::st_ellipse(dd$net.points[1,], ey = dd$net.points[1,]$A, ex = dd$net.points[1,]$B) #%>% st_rota
-ncg = st_geometry(ee)
-plot(ncg, border = 'grey')
-cntrd = st_centroid(ncg)
-ncg2 = (ncg - cntrd) * rot(27*pi/180) + cntrd
-plot(ncg2, add = TRUE)
-plot(cntrd, col = 'red', add = TRUE, cex = .5)
-
-
-
-
+plot(ib.results$ellipse.net$geometry)
+plot(ib.results$observations$geometry, add = TRUE)
