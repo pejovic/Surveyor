@@ -1,6 +1,6 @@
 # Project: Surveyer
-# Description: Package of Land and Engineering Surveying utilities
-# Authors: Milutin Pejovic, Milan Kilibarda, Branislav Bajat, Aleksandar Sekulic and Petar Bursac
+# Description: Land and Engineering Surveying utilities
+# Authors: Milutin Pejovic, Petar Bursac, Milan Kilibarda, Branislav Bajat, Aleksandar Sekulic
 # Date:
 
 
@@ -104,6 +104,55 @@ coef_p <- function (pt1, pt2, pts, units, axes = c("Easting", "Northing")) {
 }
 
 
+fix.params <- function(net.points, axes = c("Easting", "Northing")){
+  if(("Easting" == axes)[1]) {
+    as.logical(c(apply(cbind(net.points$FIX_X, net.points$FIX_Y), 1, as.numeric)))
+  }else{
+    as.logical(c(apply(cbind(net.points$FIX_Y, net.points$FIX_X), 1, as.numeric)))
+  }
+}
+
+
+Amat <- function(survey.net, units, axes = c("Easting", "Northing")){
+
+  A_dir <- survey.net[[2]] %>% filter(direction) %>% st_coordinates() %>% as.data.frame() %>% mutate_at(vars(L1), funs(factor)) %>%
+    split(., .$L1) %>%
+    lapply(., function(x) coef_p(pt1 = x[1, 1:2], pt2 = x[2, 1:2], pts = st_coordinates(survey.net[[1]][, 1:2]), units = units, axes = axes)) %>%
+    do.call(rbind, .)
+
+  A_dist <- survey.net[[2]] %>% filter(distance) %>% st_coordinates() %>% as.data.frame() %>% mutate_at(vars(L1), funs(factor)) %>%
+    split(., .$L1) %>%
+    lapply(., function(x) coef_d(pt1 = x[1, 1:2], pt2 = x[2, 1:2], pts = st_coordinates(survey.net[[1]][, 1:2]), units = units, axes = axes)) %>%
+    do.call(rbind, .)
+
+  Z_mat <- survey.net[[2]] %>% filter(direction) %>%
+    spread(key = from, value = direction, fill = FALSE) %>%
+    dplyr::select(survey.net[[1]]$Name[!survey.net[[1]]$Point_object]) %>%
+    st_drop_geometry() %>%
+    as.matrix()*1
+
+  fix <- fix.params(net.points = survey.net[[1]], axes = axes)
+
+  rest_mat <- matrix(0, nrow = dim(A_dist)[1], ncol = dim(Z_mat)[2])
+
+  A <- cbind(rbind(A_dir, A_dist)[, !fix], rbind(Z_mat, rest_mat))
+
+  if(("Easting" == axes)[1]) {sufix <- c("dE", "dN")} else {sufix <- c("dN", "dE")}
+  colnames(A) <- c(paste(rep(survey.net[[1]]$Name, each = 2), rep(sufix, length(survey.net[[1]]$Name)), sep = "_")[!fix], paste(colnames(Z_mat), "z", sep = "_"))
+  return(A)
+}
+
+
+# Weights matrix
+Wmat <- function(survey.net, apriori = 1){
+  #TODO: Omoguciti zadavanje i drugih kovariacionih formi izmedju merenja.
+  obs.data <- survey.net[[2]] %>% st_drop_geometry() %>%
+    gather(key = type, value = standard, -c(id, from, to, distance, direction)) %>%
+    dplyr::select(from, to, standard)
+  return(diag(apriori^2/obs.data$standard^2))
+}
+
+
 # Funkcija koja izdvaja elemente Qx matrice u listu za elipsu svake tacke
 Qxy <- function(Qx, n, fixd = fix){
   k = 0
@@ -120,23 +169,115 @@ Qxy <- function(Qx, n, fixd = fix){
       Qxxx[[i]] <- diag(fixd[i, c(1, 2)])
     }
   }
-  names(Qxxx) <- colnames(Qx)
   return(Qxxx)
 }
 #
 
-error.ellipse <- function(Qxyt) {
-  k <- sqrt((Qxyt[1, 1]-Qxyt[2, 2])^2 + 4*Qxyt[1, 2]^2)
-  lambda1 <- 0.5*(Qxyt[1, 1] + Qxyt[2, 2]+k)
-  lambda2 <- 0.5*(Qxyt[1, 1] + Qxyt[2, 2]-k)
-  A <- sqrt(lambda1)
-  B <- sqrt(lambda2)
-  teta <- ifelse((Qxyt[1, 1] - Qxyt[2, 2]) == 0, 0, 0.5*atan(2*Qxyt[1, 2]/(Qxyt[1, 1] - Qxyt[2, 2])))
-  teta <- ifelse(teta >= 0, teta, teta + 2*pi)
-  ellipse <- c(A, B, teta*180/pi)
-  return(elip)
+error.ellipse <- function(Qxy, prob = NA, apriori = 1, axes = c("Easting", "Northing"), teta.unit = list("deg", "rad")) {
+  if(("Easting" == axes)[1]){
+    Qee <- Qxy[1, 1]
+    Qnn <- Qxy[2, 2]
+    Qen <- Qxy[1, 2]
+  }else{
+    Qee <- Qxy[2, 2]
+    Qnn <- Qxy[1, 1]
+    Qen <- Qxy[1, 2]
+  }
+  if(any(c(Qee, Qnn) == 0)){
+    A <- 0
+    B <- 0
+    teta <- 0
+    ellipse <- c(A, B, teta)
+  }else{
+    k <- sqrt((Qnn - Qee)^2 + 4*Qen^2)
+    lambda1 <- 0.5*(Qee + Qnn + k)
+    lambda2 <- 0.5*(Qee + Qnn - k)
+    if(is.na(prob)){
+      A <- apriori*sqrt(lambda1)
+      B <- apriori*sqrt(lambda2)
+    }else{
+      A <- apriori*sqrt(lambda1*qchisq(prob, df = 2))
+      B <- apriori*sqrt(lambda2*qchisq(prob, df = 2))
+    }
+    teta <- ifelse((Qnn - Qee) == 0, 0, 0.5*atan(2*Qen/(Qnn - Qee)))
+    teta <- ifelse(teta >= 0, teta, teta + 2*pi)
+    if(teta.unit[[1]] == "deg"){
+      ellipse <- c(A, B, teta*180/pi)
+    }else{
+      ellipse <- c(A, B, teta)
+    }
+  }
+  return(ellipse)
 }
 #
+
+rot = function(a) matrix(c(cos(a), sin(a), -sin(a), cos(a)), 2, 2)
+
+sf.ellipse <- function(ellipse.param, scale = 10){
+  ellipse <- nngeo::st_ellipse(ellipse.param, ey = ellipse.param$A*scale, ex = ellipse.param$B*scale)
+  geom.ellipse = st_geometry(ellipse)
+  ellipse.cntrd = st_centroid(geom.ellipse)
+  ellipse.rot <- (geom.ellipse - ellipse.cntrd) * rot(ellipse.param$teta*pi/180) + ellipse.cntrd
+  ellipse.sf <- st_sf(Name = ellipse.param$Name, A = ellipse.param$A, B = ellipse.param$B, teta = ellipse.param$teta, Geometry = ellipse.rot)
+  return(ellipse.sf)
+}
+
+sigma.xy <- function(Qxy.mat, apriori){
+  sigma <- diag(diag(apriori, 2, 2)%*%diag(sqrt(diag(Qxy.mat)), 2, 2))
+}
+
+design.snet <- function(survey.net, apriori = 1, prob = NA, result.units = list("mm", "cm", "m"), ellipse.scale = 1, axes = c("Easting", "Northing"), teta.unit = list("deg", "rad"), all = FALSE){
+  # TODO: Set warning if there are different or not used points in two elements of survey.net list.
+  # Check which points are used for measurements, if not
+  used.points <- unique(do.call(c, survey.net[[2]][, c("from", "to")] %>% st_drop_geometry()))
+  used.points.ind <- which(survey.net[[1]]$Name %in% used.points)
+  used.points <- survey.net[[1]]$Name[used.points.ind]
+  survey.net[[1]] <- survey.net[[1]][used.points.ind, ]
+  observations <- gather(survey.net[[2]] %>% select(from, to, direction, distance, geometry), key = type, value = used, -c(from, to, geometry)) %>% filter(used == TRUE) %>% mutate(from_to = str_c(.$from, .$to, sep = "_"))
+  # =======
+  units <- result.units[[1]]
+  A <- Amat(survey.net, units = units, axes = axes)
+  rownames(A) <- observations$from_to
+  W <- Wmat(survey.net)
+  colnames(W) <- observations$from_to
+  rownames(W) <- observations$from_to
+  N <- crossprod(A, W) %*% A
+  Qx <- tryCatch(
+    {
+      x = Qx = solve(N)
+    },
+    error = function(e) {
+      x = Qx = MASS::ginv(N)
+    })
+  colnames(Qx) <- colnames(N)
+  rownames(Qx) <- rownames(N)
+  Ql <- A %*% tcrossprod(Qx, A)
+  Qv <- solve(W) - Ql
+  r <- Qv%*%W
+  fix <- if(("Easting" == axes)[1]){
+    survey.net[[1]] %>% st_drop_geometry() %>%  dplyr::select(FIX_X, FIX_Y) == FALSE
+  }else{
+    survey.net[[1]] %>% st_drop_geometry() %>%  dplyr::select(FIX_Y, FIX_X) == FALSE
+  }
+  Qxy.list <- Qxy(Qx, n = lenght(used.points), fixd = fix*1)
+  ellipses <- lapply(Qxy.list, function(x) error.ellipse(x, prob = 0.95, apriori = apriori, axes = axes, teta.unit = teta.unit[[1]]))
+  ellipses <- do.call(rbind, ellipses) %>% as.data.frame() %>% dplyr::select(A = V1, B = V2, teta = V3) %>% mutate(Name = used.points)
+  sigmas <- lapply(Qxy.list, function(x) sigma.xy(x, apriori = apriori)) %>% do.call(rbind,.) %>% as.data.frame() %>% dplyr::select(sx = V1, sy = V2) %>% mutate(sp = sqrt(sx^2 + sy^2), Name = used.points)
+  survey.net[[1]] <- merge(survey.net[[1]], ellipses, by = "Name") %>% merge(., sigmas)
+  observations <- observations %>% mutate(Ql = diag(Ql), Qv = diag(Qv), rii = diag(r))
+  ellipse.net <- do.call(rbind, lapply(split(survey.net[[1]], survey.net[[1]]$Name), function(x) sf.ellipse(x, scale = ellipse.scale)))
+  ellipse.net <- merge(ellipse.net, sigmas)
+  design <- list(design.matrices = list(A = A, W = W, Qx = Qx, Ql = Ql, Qv = Qv), ellipse.net = ellipse.net, net.points = survey.net[[1]], observations = observations)
+  if(all){
+    return(design)
+  }else{
+    return(design[-1])
+  }
+}
+
+
+
+
 
 
 
