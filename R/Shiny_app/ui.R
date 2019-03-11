@@ -19,8 +19,8 @@ library(mapview)
 library(shinycssloaders)
 library(here)
 
-source(here("R/input_functions.r"))
-source(here("R/inputFunction_withObservations.R"))
+source(here("R/input_functions.R"))
+#source(here("R/inputFunction_withObservations.R"))
 
 shinyUI(
   tagList(
