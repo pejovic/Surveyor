@@ -1,3 +1,6 @@
+source(here("R/input_functions.R"))
+source(here("R/inputFunction_withObservations.R"))
+
 library(shiny)
 library(shinythemes)
 library(leaflet)
@@ -12,16 +15,13 @@ library(sp)
 library(rgdal)
 library(leaflet)
 library(xlsx)
-library(readxl)
 library(data.table)
 library(mapview)
 library(mapedit)
 library(leaflet.extras)
 library(rhandsontable)
+library(readxl)
 library(here)
-
-source(here("R/input_functions.R"))
-#source(here("R/inputFunction_withObservations.R"))
 
 shinyServer(function(input, output){
 
@@ -184,6 +184,7 @@ shinyServer(function(input, output){
       web_map_xlsx@map
     })
 
+
   })
 
   # mapedit
@@ -262,6 +263,7 @@ shinyServer(function(input, output){
     a
   })
 
+
   # helper function for making checkbox
   shinyInput = function(FUN, len, id, ...) {
     inputs = character(len)
@@ -291,7 +293,7 @@ shinyServer(function(input, output){
     drawCallback = JS('function() {
                       Shiny.bindAll(this.api().table().node()); } ')
     )
-  )
+    )
 
   # helper function for reading checkbox
   shinyValue = function(id, len) {
@@ -337,7 +339,9 @@ shinyServer(function(input, output){
 
     output$netSpatialView_me <- renderPlot({
       output_view_me
-    })
+    },
+    width = 600,
+    height = 600)
 
     web_map_me <- net_spatial_view_web(points = out_points_me, observations = out_observations_me)
 
@@ -363,53 +367,61 @@ shinyServer(function(input, output){
     map_xlsx_observations_wO
   })
 
-  observeEvent(input$calc_obs, {
+  surveynet.wO <- eventReactive(input$calc_obs, {
     p_xlsx_wO <- xlsx_points_wO()
     o_xlsx_wO <- xlsx_observations_wO()
     dest_crs_xlsx_wO = as.numeric(input$epsg_xlsx_wO)
-
     output_xlsx_wO <- surveynet2DAdjustment_Import.xlsx(points = p_xlsx_wO, observations = o_xlsx_wO, dest_crs = dest_crs_xlsx_wO)
-
-    out_points_xlsx_wO <- output_xlsx_wO[[1]]
-    out_observations_xlsx_wO <- output_xlsx_wO[[2]]
-
-    output_view_xlsx_wO <- net_spatial_view_2DAdjustment_Import(points = out_points_xlsx_wO, observations = out_observations_xlsx_wO)
-
-    #output$points_xlsx_wO <- renderPrint({
-    #  out_points_xlsx_wO
-    #})
-    #
-    #output$observations_xlsx_wO <- renderPrint({
-    #  out_observations_xlsx_wO
-    #})
-
-    output$netSpatialView_xlsx_wO <- renderPlot({
-      output_view_xlsx_wO
-    })
-
-    output$points_wO <- DT::renderDataTable(
-      out_points_xlsx_wO %<>%
-        st_drop_geometry() %>%
-        as.data.frame(),
-      extensions = 'Buttons',
-      options = list(dom = 'Bfrtip', buttons = I('colvis'))
-    )
-
-    output$observations_wO <- DT::renderDataTable(
-      out_observations_xlsx_wO %<>%
-        st_drop_geometry() %>%
-        as.data.frame(),
-      extensions = list('Buttons', 'Scroller'),
-      options = list(dom = 'Bfrtip', buttons = I('colvis'),
-                     deferRender = TRUE,
-                     scrollY = 500,
-                     scrollX = 300,
-                     scroller = TRUE)
-    )
+    output_xlsx_wO
   })
-})
 
+  output$points_wO <- DT::renderDataTable({
+    out_points_xlsx_wO <- surveynet.wO()[[1]]
+    out_points_xlsx_wO %<>%
+      st_drop_geometry() %>%
+      as.data.frame()},
+    extensions = 'Buttons',
+    options = list(dom = 'Bfrtip', buttons = I('colvis'))
+  )
 
+  values_wO <- reactiveValues()
 
+  output$OldObs_wO <- renderRHandsontable(rhandsontable({
+    out_observations_xlsx_wO <- surveynet.wO()[[2]]
+    out_observations_xlsx_wO %<>%
+      st_drop_geometry() %>%
+      as.data.frame()
+    out_observations_xlsx_wO %<>% mutate( use = TRUE)
+  },
+  width = 800,
+  height = 800
+  ))
 
+  edited_wO <- eventReactive(input$edit_wO,{
+    values_wO$data <-  hot_to_r(input$OldObs_wO)
+    wO <- as.data.frame(values_wO$data)
+    wO <- subset(wO, use == TRUE)
+    wO
+  })
 
+  output$observations_wO <- DT::renderDataTable(
+    edited_wO(),
+    extensions = list('Buttons', 'Scroller'),
+    options = list(dom = 'Bfrtip', buttons = I('colvis'),
+                   deferRender = TRUE,
+                   scrollY = 500,
+                   scrollX = 300,
+                   scroller = TRUE)
+  )
+
+  output$netSpatialView_xlsx_wO <- renderPlot({
+    out_points_xlsx_wO <- surveynet.wO()[[1]]
+    out_observations_xlsx_wO <- surveynet.wO()[[2]]
+    edited_observations_xlsx_wO <- edited_wO()
+    edited_observations_xlsx_wO$geometry <- out_observations_xlsx_wO$geometry[match(edited_observations_xlsx_wO$id, out_observations_xlsx_wO$id )]
+    edited_observations_xlsx_wO <- st_as_sf(edited_observations_xlsx_wO)
+    output_view_xlsx_wO <- net_spatial_view_2DAdjustment_Import(points = out_points_xlsx_wO, observations = edited_observations_xlsx_wO)
+    output_view_xlsx_wO
+  }, width = 650, height = 600)
+
+    })

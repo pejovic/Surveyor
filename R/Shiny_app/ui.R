@@ -1,3 +1,6 @@
+source(here("R/input_functions.R"))
+source(here("R/inputFunction_withObservations.R"))
+
 library(shiny)
 library(shinythemes)
 library(leaflet)
@@ -19,11 +22,9 @@ library(mapview)
 library(shinycssloaders)
 library(here)
 
-source(here("R/input_functions.R"))
-#source(here("R/inputFunction_withObservations.R"))
-
 shinyUI(
   tagList(
+    #shinythemes::themeSelector(),
     tags$script(HTML(
       "document.body.style.backgroundColor = 'sapphire';"
     )),
@@ -34,7 +35,6 @@ shinyUI(
       "Surveyer|R",
       theme = shinytheme("cerulean"),
       tabPanel("InputData_surveynet",
-
                mainPanel(
                  tabsetPanel(
                    tabPanel("InputData_xlsx",
@@ -141,6 +141,9 @@ shinyUI(
                                 tabPanel("Points",
                                          DT::dataTableOutput("points_wO") %>% withSpinner(color="#0dc5c1")),
                                 tabPanel("Observations",
+                                         p("Edit observations"),
+                                         rHandsontableOutput('OldObs_wO'),
+                                         actionButton(inputId ='edit_wO', label='Edit observations', class = "btn-danger btn-block"),
                                          DT::dataTableOutput("observations_wO") %>% withSpinner(color="#0dc5c1")),
                                 tabPanel("netSpatialView", plotOutput("netSpatialView_xlsx_wO")%>% withSpinner(color="#0dc5c1"))
                               )
