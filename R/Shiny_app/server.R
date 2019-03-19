@@ -1,5 +1,6 @@
-source(here("R/input_functions.R"))
+source(here("R/input_functions.r"))
 #source(here("R/inputFunction_withObservations.R"))
+source(here("R/functions.r"))
 
 library(shiny)
 library(shinythemes)
@@ -414,6 +415,48 @@ shinyServer(function(input, output){
     output_view_xlsx_wO <- net_spatial_view_2DAdjustment_Import(points = out_points_xlsx_wO, observations = edited_observations_xlsx_wO)
     output_view_xlsx_wO
   }, width = 650, height = 600)
+
+  data_listt <- eventReactive(input$data_list_get,{
+    shp_list = shp_list()
+    kml_list = kml_list()
+    xlsx_list = xlsx_list()
+    mapEdit_list = mapEdit_list()
+
+   if(is.null(shp_list) == FALSE){
+     data_list = shp_list
+   } else if(is.null(kml_list) == FALSE){
+     data_list = kml_list
+   } else if(is.null(xlsx_list) == FALSE){
+     data_list = xlsx_list
+   } else if(is.null(mapEdit_list) == FALSE){
+     data_list = mapEdit_list
+   } else {
+     data_list <- NULL
+     message("There are no input data for 2D adjustment - optimization!")
+   }
+
+    #if(shp_list != NA){
+    #  data_list = shp_list
+    #} else if(kml_list != NA){
+    #  data_list = kml_list
+    #} else if(xlsx_list != NA){
+    #  data_list = xlsx_list
+    #} else if(mapEdit_list != NA){
+    #  data_list = mapEdit_list
+    #} else {
+    #  data_list <- NULL
+    #  print("There are no input data for 2D adjustment - optimization!")
+    #}
+    #data_list
+  })
+
+  output$data_list_in <- renderPrint({
+    data_in <- data_listt()
+    data_in
+  })
+
+
+
 
 })
 

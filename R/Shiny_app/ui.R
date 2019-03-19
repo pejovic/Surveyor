@@ -1,5 +1,6 @@
-source(here("R/input_functions.R"))
+source(here("R/input_functions.r"))
 #source(here("R/inputFunction_withObservations.R"))
+source(here("R/functions.r"))
 
 library(shiny)
 library(shinythemes)
@@ -155,7 +156,44 @@ shinyUI(
       ),
       tabPanel("1D Adjustment", "Blank"
       ),
-      tabPanel("2D Optimization", "Blank"
+      tabPanel("2D Optimization", "Blank",
+               mainPanel(
+                 tabsetPanel(
+                   tabPanel("InputData",
+                            sidebarPanel(
+                              actionButton(inputId ="data_list_get", label='Get data', class = "btn-primary btn-block")
+                            ),
+                            mainPanel(
+                              verbatimTextOutput(outputId = "data_list_in") %>% withSpinner(color="#0dc5c1")
+                            )
+                   ),
+                   tabPanel("Results",
+                            sidebarPanel(
+
+                            ),
+                            mainPanel(
+
+                            )
+                   ),
+                   tabPanel("Visualization",
+                            sidebarPanel(
+
+                            ),
+                            mainPanel(
+
+                            )
+                   ),
+                   tabPanel("Compare 2D net adjustments",
+                            sidebarPanel(
+
+                            ),
+                            mainPanel(
+
+                            )
+                   )
+                 )
+                 , width = 12 )
+
       ),
       tabPanel("2D Adjustment", "Blank"
       ),
