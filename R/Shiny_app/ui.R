@@ -1,5 +1,5 @@
 source(here("R/input_functions.R"))
-source(here("R/inputFunction_withObservations.R"))
+#source(here("R/inputFunction_withObservations.R"))
 
 library(shiny)
 library(shinythemes)
@@ -24,7 +24,6 @@ library(here)
 
 shinyUI(
   tagList(
-    #shinythemes::themeSelector(),
     tags$script(HTML(
       "document.body.style.backgroundColor = 'sapphire';"
     )),
@@ -167,6 +166,7 @@ shinyUI(
     )
   )
 )
+
 
 
 
