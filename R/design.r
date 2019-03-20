@@ -42,7 +42,10 @@ ib_obs <- readxl::read_xlsx(path = here::here("Data/Input/Without_observations/x
 ib <- surveynet.xlsx(points = ib_points, observations = ib_obs, dest_crs = 3857)
 
 # vb
-vb.results <- design.snet(survey.net =  vb, result.units = "mm", ellipse.scale = 10, all = FALSE)
+# TODO: Proveriti da li dobro radi za razlicite jedinice. Mislim da ne, posto W ne uzima u obzir jedinice. Takodje, treba dodati opciju
+vb.results <- design.snet(survey.net =  vb, result.units = "mm", ellipse.scale = 10, all = TRUE)
+
+vb.results$design.matrices$Qx
 
 plot(vb.results$ellipse.net$geometry)
 plot(vb.results$observations$geometry, add = TRUE)

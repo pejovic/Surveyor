@@ -115,18 +115,18 @@ fix.params <- function(net.points, axes = c("Easting", "Northing")){
 
 Amat <- function(survey.net, units, axes = c("Easting", "Northing")){
 
-  A_dir <- survey.net[[2]] %>% filter(direction) %>% st_coordinates() %>% as.data.frame() %>% mutate_at(vars(L1), funs(factor)) %>%
+  A_dir <- survey.net[[2]] %>% filter(direction) %>% st_coordinates() %>% as.data.frame() %>% mutate_at(vars(L1), list(name = ~factor)) %>%
     split(., .$L1) %>%
     lapply(., function(x) coef_p(pt1 = x[1, 1:2], pt2 = x[2, 1:2], pts = st_coordinates(survey.net[[1]][, 1:2]), units = units, axes = axes)) %>%
     do.call(rbind, .)
 
-  A_dist <- survey.net[[2]] %>% filter(distance) %>% st_coordinates() %>% as.data.frame() %>% mutate_at(vars(L1), funs(factor)) %>%
+  A_dist <- survey.net[[2]] %>% filter(distance) %>% st_coordinates() %>% as.data.frame() %>% mutate_at(vars(L1), list(name = ~factor)) %>%
     split(., .$L1) %>%
     lapply(., function(x) coef_d(pt1 = x[1, 1:2], pt2 = x[2, 1:2], pts = st_coordinates(survey.net[[1]][, 1:2]), units = units, axes = axes)) %>%
     do.call(rbind, .)
 
   Z_mat <- survey.net[[2]] %>% filter(direction) %>%
-    spread(key = from, value = direction, fill = FALSE) %>%
+    tidyr::spread(key = from, value = direction, fill = FALSE) %>%
     dplyr::select(survey.net[[1]]$Name[!survey.net[[1]]$Point_object]) %>%
     st_drop_geometry() %>%
     as.matrix()*1
@@ -147,7 +147,7 @@ Amat <- function(survey.net, units, axes = c("Easting", "Northing")){
 Wmat <- function(survey.net, apriori = 1){
   #TODO: Omoguciti zadavanje i drugih kovariacionih formi izmedju merenja.
   obs.data <- survey.net[[2]] %>% st_drop_geometry() %>%
-    gather(key = type, value = standard, -c(id, from, to, distance, direction)) %>%
+    tidyr::gather(key = type, value = standard, -c(id, from, to, distance, direction)) %>%
     dplyr::select(from, to, standard)
   return(diag(apriori^2/obs.data$standard^2))
 }
@@ -233,7 +233,10 @@ design.snet <- function(survey.net, apriori = 1, prob = NA, result.units = list(
   used.points.ind <- which(survey.net[[1]]$Name %in% used.points)
   used.points <- survey.net[[1]]$Name[used.points.ind]
   survey.net[[1]] <- survey.net[[1]][used.points.ind, ]
-  observations <- gather(survey.net[[2]] %>% select(from, to, direction, distance, geometry), key = type, value = used, -c(from, to, geometry)) %>% filter(used == TRUE) %>% mutate(from_to = str_c(.$from, .$to, sep = "_"))
+  observations <- gather(survey.net[[2]] %>%
+    dplyr::select(from, to, direction, distance, geometry), key = type, value = used, -c(from, to, geometry)) %>%
+    dplyr::filter(used == TRUE) %>%
+    dplyr::mutate(from_to = str_c(.$from, .$to, sep = "_"))
   # =======
   units <- result.units[[1]]
   A <- Amat(survey.net, units = units, axes = axes)
@@ -261,10 +264,17 @@ design.snet <- function(survey.net, apriori = 1, prob = NA, result.units = list(
   }
   Qxy.list <- Qxy(Qx, n = lenght(used.points), fixd = fix*1)
   ellipses <- lapply(Qxy.list, function(x) error.ellipse(x, prob = 0.95, apriori = apriori, axes = axes, teta.unit = teta.unit[[1]]))
-  ellipses <- do.call(rbind, ellipses) %>% as.data.frame() %>% dplyr::select(A = V1, B = V2, teta = V3) %>% mutate(Name = used.points)
-  sigmas <- lapply(Qxy.list, function(x) sigma.xy(x, apriori = apriori)) %>% do.call(rbind,.) %>% as.data.frame() %>% dplyr::select(sx = V1, sy = V2) %>% mutate(sp = sqrt(sx^2 + sy^2), Name = used.points)
+  ellipses <- do.call(rbind, ellipses) %>%
+    as.data.frame() %>%
+    dplyr::select(A = V1, B = V2, teta = V3) %>%
+    mutate(Name = used.points)
+  sigmas <- lapply(Qxy.list, function(x) sigma.xy(x, apriori = apriori)) %>%
+    do.call(rbind,.) %>%
+    as.data.frame() %>%
+    dplyr::select(sx = V1, sy = V2) %>% #TODO: proveriti da li ovde treba voditi racuna o redosledu sx i sy.
+    dplyr::mutate(sp = sqrt(sx^2 + sy^2), Name = used.points)
   survey.net[[1]] <- merge(survey.net[[1]], ellipses, by = "Name") %>% merge(., sigmas)
-  observations <- observations %>% mutate(Ql = diag(Ql), Qv = diag(Qv), rii = diag(r))
+  observations <- observations %>% dplyr::mutate(Ql = diag(Ql), Qv = diag(Qv), rii = diag(r))
   ellipse.net <- do.call(rbind, lapply(split(survey.net[[1]], survey.net[[1]]$Name), function(x) sf.ellipse(x, scale = ellipse.scale)))
   ellipse.net <- merge(ellipse.net, sigmas)
   design <- list(design.matrices = list(A = A, W = W, Qx = Qx, Ql = Ql, Qv = Qv), ellipse.net = ellipse.net, net.points = survey.net[[1]], observations = observations)
