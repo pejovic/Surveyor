@@ -174,7 +174,8 @@ surveynet2DAdjustment_Import.xlsx <- function(points = points, observations = ob
     , by = id
     ]
   dt_1 <- sf::st_as_sf(dt_1)
-  dt_1 %<>% mutate(from = observations$from,
+  dt_1 %<>% mutate(id = observations$id,
+                   from = observations$from,
                    to = observations$to,
                    distance = observations$distance,
                    direction = observations$direction,
@@ -206,7 +207,6 @@ surveynet2DAdjustment_Import.xlsx <- function(points = points, observations = ob
                    Target_Height = observations$`True Target Height`,
                    Prism_constant = observations$`Prism Constant`,
                    Backsight = observations$Backsight
-
   )
 
   dt_1 <- dt_1 %>% sf::st_set_crs(dest_crs)

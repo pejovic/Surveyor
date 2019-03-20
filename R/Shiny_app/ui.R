@@ -1,4 +1,6 @@
 source(here("R/input_functions.r"))
+#source(here("R/inputFunction_withObservations.R"))
+source(here("R/functions.r"))
 
 library(shiny)
 library(shinythemes)
@@ -14,8 +16,7 @@ library(sp)
 library(rgdal)
 library(leaflet)
 library(xlsx)
-# readxl
-# writexl
+library(readxl)
 library(data.table)
 library(plotly)
 library(mapview)
@@ -34,7 +35,6 @@ shinyUI(
       "Surveyer|R",
       theme = shinytheme("cerulean"),
       tabPanel("InputData_surveynet",
-
                mainPanel(
                  tabsetPanel(
                    tabPanel("InputData_xlsx",
@@ -128,6 +128,26 @@ shinyUI(
                                 tabPanel("netSpatialView", plotOutput("netSpatialView_me") %>% withSpinner(color="#0dc5c1"))
                               )
                             )
+                   ),
+                   tabPanel("InputData_withObservations",
+                            sidebarPanel(
+                              fileInput(inputId = "fileXLSX_wO", label = "Upload points and observations file. Choose Excel - xlsx file:",
+                                        multiple = TRUE, accept = c('.xlsx')),
+                              numericInput(inputId = "epsg_xlsx_wO", "Destination CRS [EPSG code]: ", value = 3857)
+                            ),
+                            mainPanel(
+                              actionButton(inputId ='calc_obs', label='Calculate', class = "btn-primary btn-block"),
+                              navlistPanel(
+                                tabPanel("Points",
+                                         DT::dataTableOutput("points_wO") %>% withSpinner(color="#0dc5c1")),
+                                tabPanel("Observations",
+                                         p("Edit observations"),
+                                         rHandsontableOutput('OldObs_wO'),
+                                         actionButton(inputId ='edit_wO', label='Edit observations', class = "btn-danger btn-block"),
+                                         DT::dataTableOutput("observations_wO") %>% withSpinner(color="#0dc5c1")),
+                                tabPanel("netSpatialView", plotOutput("netSpatialView_xlsx_wO")%>% withSpinner(color="#0dc5c1"))
+                              )
+                            )
                    )
                  )
                  , width = 12 )
@@ -136,7 +156,44 @@ shinyUI(
       ),
       tabPanel("1D Adjustment", "Blank"
       ),
-      tabPanel("2D Optimization", "Blank"
+      tabPanel("2D Optimization", "Blank",
+               mainPanel(
+                 tabsetPanel(
+                   tabPanel("InputData",
+                            sidebarPanel(
+                              actionButton(inputId ="data_list_get", label='Get data', class = "btn-primary btn-block")
+                            ),
+                            mainPanel(
+                              verbatimTextOutput(outputId = "data_list_in") %>% withSpinner(color="#0dc5c1")
+                            )
+                   ),
+                   tabPanel("Results",
+                            sidebarPanel(
+
+                            ),
+                            mainPanel(
+
+                            )
+                   ),
+                   tabPanel("Visualization",
+                            sidebarPanel(
+
+                            ),
+                            mainPanel(
+
+                            )
+                   ),
+                   tabPanel("Compare 2D net adjustments",
+                            sidebarPanel(
+
+                            ),
+                            mainPanel(
+
+                            )
+                   )
+                 )
+                 , width = 12 )
+
       ),
       tabPanel("2D Adjustment", "Blank"
       ),
@@ -147,6 +204,7 @@ shinyUI(
     )
   )
 )
+
 
 
 

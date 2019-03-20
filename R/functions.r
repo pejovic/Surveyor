@@ -277,6 +277,7 @@ design.snet <- function(survey.net, apriori = 1, prob = NA, result.units = list(
   observations <- observations %>% dplyr::mutate(Ql = diag(Ql), Qv = diag(Qv), rii = diag(r))
   ellipse.net <- do.call(rbind, lapply(split(survey.net[[1]], survey.net[[1]]$Name), function(x) sf.ellipse(x, scale = ellipse.scale)))
   ellipse.net <- merge(ellipse.net, sigmas)
+  ellipse.net %<>% sf::st_set_crs(st_crs(survey.net[[1]]))
   design <- list(design.matrices = list(A = A, W = W, Qx = Qx, Ql = Ql, Qv = Qv), ellipse.net = ellipse.net, net.points = survey.net[[1]], observations = observations)
   if(all){
     return(design)
