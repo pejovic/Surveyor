@@ -159,17 +159,21 @@ shinyUI(
       ),
       tabPanel("1D Adjustment", "Blank"
       ),
-      tabPanel("2D Optimization", "Blank",
+      tabPanel("2D Optimization",
                mainPanel(
                  tabsetPanel(
                    tabPanel("InputData",
                             sidebarPanel(
-                              radioButtons('rb', 'Input data [points and observational plan]: ',
-                                           c("Input_xlsx" = "i_xlsx",
-                                             "Input_shp" = "i_shp",
-                                             "Input_kml" = "i_kml",
-                                             "Input_mapEdit" = "i_mapEdit"
-                                             )),
+                              #radioButtons('rb', 'Input data [points and observational plan]: ',
+                              #             c("Input_xlsx" = "i_xlsx",
+                              #               "Input_shp" = "i_shp",
+                              #               "Input_kml" = "i_kml",
+                              #               "Input_mapEdit" = "i_mapEdit"
+                              #               )),
+                              prettyRadioButtons(inputId = "rb",  label = "Input data [points and observational plan]: ",
+                                                 choices = c("Input_xlsx" = "i_xlsx", "Input_shp"= "i_shp", "Input_kml"= "i_kml", "Input_mapEdit"= "i_mapEdit"),
+                                                 shape = "round", status = "danger",
+                                                 fill = TRUE),
                               actionButton(inputId ="data_list_get", label='Get data', class = "btn-primary btn-block")
                             ),
                             mainPanel(
@@ -183,9 +187,9 @@ shinyUI(
                             mainPanel(
                               #verbatimTextOutput(outputId ="ellipse_error") %>% withSpinner(color="#0dc5c1")
                               navlistPanel(
-                                tabPanel("Error ellipse", verbatimTextOutput(outputId ="ellipse_error") %>% withSpinner(color="#0dc5c1")),
-                                tabPanel("Net points", verbatimTextOutput(outputId ="net_points_adj") %>% withSpinner(color="#0dc5c1"))
-                              #  #tabPanel("Net points", DT::dataTableOutput('net_points_adj') %>% withSpinner(color="#0dc5c1")),
+                                tabPanel("Error ellipse", verbatimTextOutput(outputId ="ellipse_error") %>% withSpinner(color="#0dc5c1"))
+                              #  tabPanel("Net points", verbatimTextOutput(outputId ="net_points_adj") %>% withSpinner(color="#0dc5c1"))
+                              #  tabPanel("Net points", DT::dataTableOutput('net_points_adj') %>% withSpinner(color="#0dc5c1")),
                               #  #tabPanel("Obseravtions", DT::dataTableOutput('net_observations_adj') %>% withSpinner(color="#0dc5c1")
                               #  #tabPanel("Obseravtions", plotOutput("netSpatialView_me") %>% withSpinner(color="#0dc5c1")    )
                               )

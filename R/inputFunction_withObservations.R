@@ -2,7 +2,6 @@
 # Description: Package of Land and Engineering Surveying utilities
 # Authors: Milutin Pejovic, Milan Kilibarda, Branislav Bajat, Aleksandar Sekulic and Petar Bursac
 
-rm(list = ls())
 
 # Packages
 library(tidyverse)

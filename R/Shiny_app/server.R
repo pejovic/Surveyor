@@ -417,6 +417,9 @@ shinyServer(function(input, output){
     output_view_xlsx_wO
   }, width = 650, height = 600)
 
+
+
+
   data_listt <- eventReactive(input$data_list_get,{
     data_list <- switch(input$rb,
                       i_xlsx = xlsx_list(),
@@ -430,38 +433,39 @@ shinyServer(function(input, output){
     data_in
   })
 
-  #adjusted_net_design <- eventReactive(input$adjust_1,{
+ adjusted_net_design <- eventReactive(input$adjust_1,{
+   net_input_data <- data_listt()
+   design_net_out <- design.snet(survey.net = net_input_data, result.units = "mm", ellipse.scale = 10, all = FALSE)
+   design_net_out
+   #output$ellipse_error <- renderPrint({
+   #  a <- design_net_out$ellipse.net
+   #  a
+   #})
+   #output$net_points_adj <- renderPrint({
+   #  b <- design_net_out[[2]]
+   #  b
+   #})
+ })
+
+  #observeEvent(input$adjust_1,{
   #  net_input_data <- data_listt()
   #  design_net_out <- design.snet(survey.net = net_input_data, result.units = "mm", ellipse.scale = 10, all = FALSE)
-  #  design_net_out
-  #  #output$ellipse_error <- renderPrint({
-  #  #  a <- design_net_out$ellipse.net
-  #  #  a
-  #  #})
-  #  #output$net_points_adj <- renderPrint({
-  #  #  b <- design_net_out[[2]]
-  #  #  b
-  #  #})
+#
+#
+  #  output$ellipse_error <- renderPrint({
+  #    design_net_out$ellipse.net
+  #  })
+  #  output$net_points_adj <- renderPrint({
+  #    design_net_out[[2]]
+#
+  #  })
   #})
-
-  observeEvent(input$adjust_1,{
-    net_input_data <- data_listt()
-    design_net_out <- design.snet(survey.net = net_input_data, result.units = "mm", ellipse.scale = 10, all = FALSE)
-
-
-    output$ellipse_error <- renderPrint({
-      design_net_out$ellipse.net
-    })
-    output$net_points_adj <- renderPrint({
-      design_net_out[[2]]
-
-    })
-  })
 
   #output$ellipse_error <- DT::renderDataTable({
   #  data <- adjusted_net.design()[[1]]
-  #  data <- as.data.frame(st_drop_geometry(data))
-  #  data
+  #  data %<>%
+  #    st_drop_geometry() %>%
+  #    as.data.frame()
   #  },
   #  extensions = 'Buttons',
   #  options = list(dom = 'Bfrtip', buttons = I('colvis'))
@@ -475,10 +479,10 @@ shinyServer(function(input, output){
   #  options = list(dom = 'Bfrtip', buttons = I('colvis'))
   #)
 
-  #output$ellipse_error <- renderPrint({
-  #an <- adjusted_net_design()$ellipse.net
-  #an
-  #})
+  output$ellipse_error <- renderPrint({
+  an <- adjusted_net_design()$ellipse.net
+  an
+  })
 
 })
 
