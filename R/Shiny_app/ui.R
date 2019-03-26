@@ -7,6 +7,7 @@ library(shinythemes)
 library(leaflet)
 library(tidyverse)
 library(magrittr)
+library(dplyr)
 library(ggplot2)
 library(geomnet)
 library(ggnetwork)
@@ -22,6 +23,8 @@ library(plotly)
 library(mapview)
 library(shinycssloaders)
 library(here)
+library(matlib)
+library(nngeo)
 
 shinyUI(
   tagList(
@@ -118,7 +121,7 @@ shinyUI(
                               navlistPanel(
                                 tabPanel("Observational plan", rHandsontableOutput('OldObs')),
                                 tabPanel("Button", actionButton(inputId ='run_table', label='Update', class = "btn-danger btn-block")),
-                                tabPanel("Observational plan [Updated]", DT::dataTableOutput("primer4")%>% withSpinner(color="orange"))
+                                tabPanel("Observational plan [Updated]", DT::dataTableOutput("primer4")%>% withSpinner(color="#0dc5c1"))
                               ),
                               actionButton(inputId ='go_me', label='Calculate', class = "btn-primary btn-block"),
                               leafletOutput("map_me_out", height = 550) %>% withSpinner(color="#0dc5c1"),
@@ -161,6 +164,12 @@ shinyUI(
                  tabsetPanel(
                    tabPanel("InputData",
                             sidebarPanel(
+                              radioButtons('rb', 'Input data [points and observational plan]: ',
+                                           c("Input_xlsx" = "i_xlsx",
+                                             "Input_shp" = "i_shp",
+                                             "Input_kml" = "i_kml",
+                                             "Input_mapEdit" = "i_mapEdit"
+                                             )),
                               actionButton(inputId ="data_list_get", label='Get data', class = "btn-primary btn-block")
                             ),
                             mainPanel(
@@ -169,10 +178,17 @@ shinyUI(
                    ),
                    tabPanel("Results",
                             sidebarPanel(
-
+                              actionButton(inputId ="adjust_1", label='Adjust geodetic network', class = "btn-primary btn-block")
                             ),
                             mainPanel(
-
+                              #verbatimTextOutput(outputId ="ellipse_error") %>% withSpinner(color="#0dc5c1")
+                              navlistPanel(
+                                tabPanel("Error ellipse", verbatimTextOutput(outputId ="ellipse_error") %>% withSpinner(color="#0dc5c1")),
+                                tabPanel("Net points", verbatimTextOutput(outputId ="net_points_adj") %>% withSpinner(color="#0dc5c1"))
+                              #  #tabPanel("Net points", DT::dataTableOutput('net_points_adj') %>% withSpinner(color="#0dc5c1")),
+                              #  #tabPanel("Obseravtions", DT::dataTableOutput('net_observations_adj') %>% withSpinner(color="#0dc5c1")
+                              #  #tabPanel("Obseravtions", plotOutput("netSpatialView_me") %>% withSpinner(color="#0dc5c1")    )
+                              )
                             )
                    ),
                    tabPanel("Visualization",
@@ -192,7 +208,7 @@ shinyUI(
                             )
                    )
                  )
-                 , width = 12 )
+                 , width = 12)
 
       ),
       tabPanel("2D Adjustment", "Blank"

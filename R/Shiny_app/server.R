@@ -1,5 +1,5 @@
 source(here("R/input_functions.r"))
-#source(here("R/inputFunction_withObservations.R"))
+source(here("R/inputFunction_withObservations.R"))
 source(here("R/functions.r"))
 
 library(shiny)
@@ -7,6 +7,7 @@ library(shinythemes)
 library(leaflet)
 library(tidyverse)
 library(magrittr)
+library(dplyr)
 library(ggplot2)
 library(geomnet)
 library(ggnetwork)
@@ -16,13 +17,14 @@ library(sp)
 library(rgdal)
 library(leaflet)
 library(xlsx)
-library(data.table)
-library(mapview)
-library(mapedit)
-library(leaflet.extras)
-library(rhandsontable)
 library(readxl)
+library(data.table)
+library(plotly)
+library(mapview)
+library(shinycssloaders)
 library(here)
+library(matlib)
+library(nngeo)
 
 shinyServer(function(input, output){
 
@@ -49,7 +51,6 @@ shinyServer(function(input, output){
     map_shp_observations <- st_as_sf(map_shp_observations)
     map_shp_observations
   })
-
 
   shp_list <- eventReactive(input$go,{
     p <- shp_points()
@@ -417,37 +418,11 @@ shinyServer(function(input, output){
   }, width = 650, height = 600)
 
   data_listt <- eventReactive(input$data_list_get,{
-    shp_list = shp_list()
-    kml_list = kml_list()
-    xlsx_list = xlsx_list()
-    mapEdit_list = mapEdit_list()
-
-   if(is.null(shp_list) == FALSE){
-     data_list = shp_list
-   } else if(is.null(kml_list) == FALSE){
-     data_list = kml_list
-   } else if(is.null(xlsx_list) == FALSE){
-     data_list = xlsx_list
-   } else if(is.null(mapEdit_list) == FALSE){
-     data_list = mapEdit_list
-   } else {
-     data_list <- NULL
-     message("There are no input data for 2D adjustment - optimization!")
-   }
-
-    #if(shp_list != NA){
-    #  data_list = shp_list
-    #} else if(kml_list != NA){
-    #  data_list = kml_list
-    #} else if(xlsx_list != NA){
-    #  data_list = xlsx_list
-    #} else if(mapEdit_list != NA){
-    #  data_list = mapEdit_list
-    #} else {
-    #  data_list <- NULL
-    #  print("There are no input data for 2D adjustment - optimization!")
-    #}
-    #data_list
+    data_list <- switch(input$rb,
+                      i_xlsx = xlsx_list(),
+                      i_shp = shp_list(),
+                      i_kml = kml_list(),
+                      i_mapEdit = mapEdit_list())
   })
 
   output$data_list_in <- renderPrint({
@@ -455,8 +430,57 @@ shinyServer(function(input, output){
     data_in
   })
 
+  #adjusted_net_design <- eventReactive(input$adjust_1,{
+  #  net_input_data <- data_listt()
+  #  design_net_out <- design.snet(survey.net = net_input_data, result.units = "mm", ellipse.scale = 10, all = FALSE)
+  #  design_net_out
+  #  #output$ellipse_error <- renderPrint({
+  #  #  a <- design_net_out$ellipse.net
+  #  #  a
+  #  #})
+  #  #output$net_points_adj <- renderPrint({
+  #  #  b <- design_net_out[[2]]
+  #  #  b
+  #  #})
+  #})
+
+  observeEvent(input$adjust_1,{
+    net_input_data <- data_listt()
+    design_net_out <- design.snet(survey.net = net_input_data, result.units = "mm", ellipse.scale = 10, all = FALSE)
 
 
+    output$ellipse_error <- renderPrint({
+      design_net_out$ellipse.net
+    })
+    output$net_points_adj <- renderPrint({
+      design_net_out[[2]]
+
+    })
+  })
+
+  #output$ellipse_error <- DT::renderDataTable({
+  #  data <- adjusted_net.design()[[1]]
+  #  data <- as.data.frame(st_drop_geometry(data))
+  #  data
+  #  },
+  #  extensions = 'Buttons',
+  #  options = list(dom = 'Bfrtip', buttons = I('colvis'))
+  #)
+  #output$points_wO <- DT::renderDataTable({
+  #  out_points_xlsx_wO <- surveynet.wO()[[1]]
+  #  out_points_xlsx_wO %<>%
+  #    st_drop_geometry() %>%
+  #    as.data.frame()},
+  #  extensions = 'Buttons',
+  #  options = list(dom = 'Bfrtip', buttons = I('colvis'))
+  #)
+
+  #output$ellipse_error <- renderPrint({
+  #an <- adjusted_net_design()$ellipse.net
+  #an
+  #})
 
 })
+
+
 

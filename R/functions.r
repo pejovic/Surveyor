@@ -6,7 +6,30 @@
 
 # Functions:
 
-#
+library(shiny)
+library(shinythemes)
+library(leaflet)
+library(tidyverse)
+library(magrittr)
+library(ggplot2)
+library(geomnet)
+library(ggnetwork)
+library(sf)
+library(ggmap)
+library(sp)
+library(rgdal)
+library(leaflet)
+library(xlsx)
+library(data.table)
+library(mapview)
+library(mapedit)
+library(leaflet.extras)
+library(rhandsontable)
+library(readxl)
+library(here)
+library(matlib)
+library(nngeo)
+library(dplyr)
 
 ### coeficients for distances #####################################################
 
