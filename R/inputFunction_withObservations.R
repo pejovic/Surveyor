@@ -4,19 +4,19 @@
 
 
 # Packages
-library(tidyverse)
-library(magrittr)
-library(ggplot2)
-library(geomnet)
-library(ggnetwork)
-library(sf)
-library(ggmap)
-library(sp)
-library(rgdal)
-library(leaflet)
-library(xlsx)
-library(data.table)
-library(readxl)
+#library(tidyverse)
+#library(magrittr)
+#library(ggplot2)
+#library(geomnet)
+#library(ggnetwork)
+#library(sf)
+#library(ggmap)
+#library(sp)
+#library(rgdal)
+#library(leaflet)
+#library(xlsx)
+#library(data.table)
+#library(readxl)
 
 # Parameters:
 #    1. points -  Excel file sheet with attributes related to points - geodetic network [Example: Data/Input/With_observations]

@@ -633,6 +633,9 @@ surveynet.mapedit <- function(points = points, observations = observations, fix_
   points %<>% mutate(Point_object = FALSE)
   points$Point_object[points$Name %in% points_object] <- TRUE
 
+  points$FIX_X <- as.logical(points$FIX_X)
+  points$FIX_Y <- as.logical(points$FIX_Y)
+  points$Point_object <- as.logical(points$Point_object)
 
   points$x <- st_coordinates(points)[,1]
   points$y <- st_coordinates(points)[,2]
@@ -674,10 +677,10 @@ surveynet.mapedit <- function(points = points, observations = observations, fix_
   observations <- dt_1
 
   # Observational plan - adding new columns
-  observations %<>% mutate(distance = distance,
-                           direction = direction,
-                           standard_dir = standard_dir,
-                           standard_dist = standard_dist
+  observations %<>% mutate(distance = as.logical(distance),
+                           direction = as.logical(direction),
+                           standard_dir = as.numeric(standard_dir),
+                           standard_dist = as.numeric(standard_dist)
   )
 
   points <- subset(points, select = -c(x,y))
@@ -685,5 +688,21 @@ surveynet.mapedit <- function(points = points, observations = observations, fix_
   survey_net_mapedit <- list(points,observations)
 
   return(survey_net_mapedit)
+}
+
+##########################################
+# adj.net_spatial_view_web [package:: mapview]
+##########################################
+
+# Function for adjusted net data visualisation at web maps
+# Parameters:
+#    1. ellipses -  sf object with geometry type POLYGON and related attributes as product from design.snet function that represents error ellipses
+#    2. observations - sf object with geometry type LINESTRING and related attributes as product from design.snet function
+
+adj.net_spatial_view_web <- function(ellipses = ellipses, observations = observations){
+  Ellipses <- st_transform(ellipses, 4326)
+  Observations <- st_transform(observations, 4326)
+  web_map_2 <- mapview(Ellipses, zcol = "sp") + mapview(Observations, zcol = "rii")
+  return(web_map_2)
 }
 

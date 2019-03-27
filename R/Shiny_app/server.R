@@ -7,7 +7,6 @@ library(shinythemes)
 library(leaflet)
 library(tidyverse)
 library(magrittr)
-library(dplyr)
 library(ggplot2)
 library(geomnet)
 library(ggnetwork)
@@ -25,6 +24,7 @@ library(shinycssloaders)
 library(here)
 library(matlib)
 library(nngeo)
+library(dplyr)
 
 shinyServer(function(input, output){
 
@@ -142,13 +142,13 @@ shinyServer(function(input, output){
 
   xlsx_points <- reactive({
     req(input$fileXLSX)
-    map_xlsx_points <- read.xlsx(input$fileXLSX$datapath, sheetName = "Points")
+    map_xlsx_points <- readxl::read_xlsx(path = input$fileXLSX$datapath, sheet = "Points", col_types = c("text", "numeric", "numeric", "logical", "logical", "logical"))
     map_xlsx_points
   })
 
   xlsx_observations <- reactive({
     req(input$fileXLSX)
-    map_xlsx_observations <- read.xlsx(input$fileXLSX$datapath, sheetName = "Observations")
+    map_xlsx_observations <- readxl::read_xlsx(path = input$fileXLSX$datapath, sheet = "Observations", col_types = c("numeric", "text", "text", "logical", "logical", "numeric", "numeric"))
     map_xlsx_observations
   })
 
@@ -425,7 +425,8 @@ shinyServer(function(input, output){
                       i_xlsx = xlsx_list(),
                       i_shp = shp_list(),
                       i_kml = kml_list(),
-                      i_mapEdit = mapEdit_list())
+                      i_mapEdit = mapEdit_list(),
+                      i_xlsx)
   })
 
   output$data_list_in <- renderPrint({
@@ -433,56 +434,70 @@ shinyServer(function(input, output){
     data_in
   })
 
- adjusted_net_design <- eventReactive(input$adjust_1,{
-   net_input_data <- data_listt()
-   design_net_out <- design.snet(survey.net = net_input_data, result.units = "mm", ellipse.scale = 10, all = FALSE)
+  adjusted_net_design <- eventReactive(input$adjust_1,{
+   ddd <- data_listt()
+   design_net_out <- design.snet(survey.net = ddd, result.units = "mm", ellipse.scale = 10, all = FALSE)
    design_net_out
-   #output$ellipse_error <- renderPrint({
-   #  a <- design_net_out$ellipse.net
-   #  a
-   #})
-   #output$net_points_adj <- renderPrint({
-   #  b <- design_net_out[[2]]
-   #  b
-   #})
- })
+  })
 
-  #observeEvent(input$adjust_1,{
-  #  net_input_data <- data_listt()
-  #  design_net_out <- design.snet(survey.net = net_input_data, result.units = "mm", ellipse.scale = 10, all = FALSE)
-#
-#
-  #  output$ellipse_error <- renderPrint({
-  #    design_net_out$ellipse.net
-  #  })
-  #  output$net_points_adj <- renderPrint({
-  #    design_net_out[[2]]
-#
-  #  })
+  #output$ellipse_error <- renderPrint({
+  #  data <- adjusted_net_design()
+  #  data
   #})
 
-  #output$ellipse_error <- DT::renderDataTable({
-  #  data <- adjusted_net.design()[[1]]
-  #  data %<>%
-  #    st_drop_geometry() %>%
-  #    as.data.frame()
-  #  },
-  #  extensions = 'Buttons',
-  #  options = list(dom = 'Bfrtip', buttons = I('colvis'))
-  #)
-  #output$points_wO <- DT::renderDataTable({
-  #  out_points_xlsx_wO <- surveynet.wO()[[1]]
-  #  out_points_xlsx_wO %<>%
-  #    st_drop_geometry() %>%
-  #    as.data.frame()},
-  #  extensions = 'Buttons',
-  #  options = list(dom = 'Bfrtip', buttons = I('colvis'))
-  #)
 
-  output$ellipse_error <- renderPrint({
-  an <- adjusted_net_design()$ellipse.net
-  an
+  output$ellipse_error <- DT::renderDataTable({
+    data <- adjusted_net_design()[[1]]
+    data %<>%
+      st_drop_geometry() %>%
+      as.data.frame()
+    },
+    extensions = list('Buttons', 'Scroller'),
+    options = list(dom = 'Bfrtip', buttons = I('colvis'),
+                   deferRender = TRUE,
+                   scrollY = 500,
+                   scrollX = 300,
+                   scroller = TRUE)
+  )
+
+  output$net_points_adj <- DT::renderDataTable({
+    data <- adjusted_net_design()[[2]]
+    data %<>%
+      st_drop_geometry() %>%
+      as.data.frame()
+  },
+  extensions = list('Buttons', 'Scroller'),
+  options = list(dom = 'Bfrtip', buttons = I('colvis'),
+                 deferRender = TRUE,
+                 scrollY = 500,
+                 scrollX = 300,
+                 scroller = TRUE)
+  )
+
+  output$net_observations_adj <- DT::renderDataTable({
+    data <- adjusted_net_design()[[3]]
+    data %<>%
+      st_drop_geometry() %>%
+      as.data.frame()
+  },
+  extensions = list('Buttons', 'Scroller'),
+  options = list(dom = 'Bfrtip', buttons = I('colvis'),
+                 deferRender = TRUE,
+                 scrollY = 500,
+                 scrollX = 300,
+                 scroller = TRUE)
+  )
+
+  output$map_ellipses_opt <- renderLeaflet({
+    ellipses <- adjusted_net_design()$ellipse.net
+    observations <- adjusted_net_design()$observations
+    adj.net_map <- adj.net_spatial_view_web(ellipses = ellipses, observations = observations)
+    adj.net_map@map
   })
+
+
+
+
 
 })
 

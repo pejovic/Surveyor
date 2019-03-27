@@ -3,33 +3,32 @@
 # Authors: Milutin Pejovic, Petar Bursac, Milan Kilibarda, Branislav Bajat, Aleksandar Sekulic
 # Date:
 
-
 # Functions:
 
-library(shiny)
-library(shinythemes)
-library(leaflet)
-library(tidyverse)
-library(magrittr)
-library(ggplot2)
-library(geomnet)
-library(ggnetwork)
-library(sf)
-library(ggmap)
-library(sp)
-library(rgdal)
-library(leaflet)
-library(xlsx)
-library(data.table)
-library(mapview)
-library(mapedit)
-library(leaflet.extras)
-library(rhandsontable)
-library(readxl)
-library(here)
-library(matlib)
-library(nngeo)
-library(dplyr)
+#library(shiny)
+#library(shinythemes)
+#library(leaflet)
+#library(tidyverse)
+#library(magrittr)
+#library(ggplot2)
+#library(geomnet)
+#library(ggnetwork)
+#library(sf)
+#library(ggmap)
+#library(sp)
+#library(rgdal)
+#library(leaflet)
+#library(xlsx)
+#library(data.table)
+#library(mapview)
+#library(mapedit)
+#library(leaflet.extras)
+#library(rhandsontable)
+#library(readxl)
+#library(here)
+#library(matlib)
+#library(nngeo)
+#library(dplyr)
 
 ### coeficients for distances #####################################################
 
@@ -138,17 +137,17 @@ fix.params <- function(net.points, axes = c("Easting", "Northing")){
 
 Amat <- function(survey.net, units, axes = c("Easting", "Northing")){
 
-  A_dir <- survey.net[[2]] %>% filter(direction) %>% st_coordinates() %>% as.data.frame() %>% mutate_at(vars(L1), list(name = ~factor)) %>%
+  A_dir <- survey.net[[2]] %>% dplyr::filter(direction) %>% st_coordinates() %>% as.data.frame() %>% mutate_at(vars(L1), list(name = ~factor)) %>%
     split(., .$L1) %>%
     lapply(., function(x) coef_p(pt1 = x[1, 1:2], pt2 = x[2, 1:2], pts = st_coordinates(survey.net[[1]][, 1:2]), units = units, axes = axes)) %>%
     do.call(rbind, .)
 
-  A_dist <- survey.net[[2]] %>% filter(distance) %>% st_coordinates() %>% as.data.frame() %>% mutate_at(vars(L1), list(name = ~factor)) %>%
+  A_dist <- survey.net[[2]] %>% dplyr::filter(distance) %>% st_coordinates() %>% as.data.frame() %>% mutate_at(vars(L1), list(name = ~factor)) %>%
     split(., .$L1) %>%
     lapply(., function(x) coef_d(pt1 = x[1, 1:2], pt2 = x[2, 1:2], pts = st_coordinates(survey.net[[1]][, 1:2]), units = units, axes = axes)) %>%
     do.call(rbind, .)
 
-  Z_mat <- survey.net[[2]] %>% filter(direction) %>%
+  Z_mat <- survey.net[[2]] %>% dplyr::filter(direction) %>%
     tidyr::spread(key = from, value = direction, fill = FALSE) %>%
     dplyr::select(survey.net[[1]]$Name[!survey.net[[1]]$Point_object]) %>%
     st_drop_geometry() %>%

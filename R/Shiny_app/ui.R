@@ -1,5 +1,5 @@
 source(here("R/input_functions.r"))
-#source(here("R/inputFunction_withObservations.R"))
+source(here("R/inputFunction_withObservations.R"))
 source(here("R/functions.r"))
 
 library(shiny)
@@ -7,7 +7,6 @@ library(shinythemes)
 library(leaflet)
 library(tidyverse)
 library(magrittr)
-library(dplyr)
 library(ggplot2)
 library(geomnet)
 library(ggnetwork)
@@ -25,6 +24,8 @@ library(shinycssloaders)
 library(here)
 library(matlib)
 library(nngeo)
+library(shinyWidgets)
+library(dplyr)
 
 shinyUI(
   tagList(
@@ -185,22 +186,21 @@ shinyUI(
                               actionButton(inputId ="adjust_1", label='Adjust geodetic network', class = "btn-primary btn-block")
                             ),
                             mainPanel(
-                              #verbatimTextOutput(outputId ="ellipse_error") %>% withSpinner(color="#0dc5c1")
                               navlistPanel(
-                                tabPanel("Error ellipse", verbatimTextOutput(outputId ="ellipse_error") %>% withSpinner(color="#0dc5c1"))
-                              #  tabPanel("Net points", verbatimTextOutput(outputId ="net_points_adj") %>% withSpinner(color="#0dc5c1"))
-                              #  tabPanel("Net points", DT::dataTableOutput('net_points_adj') %>% withSpinner(color="#0dc5c1")),
-                              #  #tabPanel("Obseravtions", DT::dataTableOutput('net_observations_adj') %>% withSpinner(color="#0dc5c1")
-                              #  #tabPanel("Obseravtions", plotOutput("netSpatialView_me") %>% withSpinner(color="#0dc5c1")    )
+                                #tabPanel("Error ellipse", verbatimTextOutput(outputId ="ellipse_error") %>% withSpinner(color="#0dc5c1"))
+                                #tabPanel("Net points", verbatimTextOutput(outputId ="net_points_adj") %>% withSpinner(color="#0dc5c1")),
+                                tabPanel("Error ellipse", DT::dataTableOutput("ellipse_error") %>% withSpinner(color="#0dc5c1")),
+                                tabPanel("Net points", DT::dataTableOutput('net_points_adj') %>% withSpinner(color="#0dc5c1")),
+                                tabPanel("Obseravtions", DT::dataTableOutput('net_observations_adj') %>% withSpinner(color="#0dc5c1"))
+                                #tabPanel("Obseravtions", plotOutput("netSpatialView_me") %>% withSpinner(color="#0dc5c1")    )
                               )
                             )
                    ),
                    tabPanel("Visualization",
                             sidebarPanel(
-
                             ),
                             mainPanel(
-
+                              leafletOutput("map_ellipses_opt", height = 550) %>% withSpinner(color="#0dc5c1")
                             )
                    ),
                    tabPanel("Compare 2D net adjustments",
