@@ -706,3 +706,55 @@ adj.net_spatial_view_web <- function(ellipses = ellipses, observations = observa
   return(web_map_2)
 }
 
+
+######################
+# adj.net_spatial_view
+######################
+
+# Function for spatial data visualisation trough package ggplot2
+# Parameters:
+#    1. ellipses -  sf object with geometry type POLYGON and related attributes as product from design.snet function that represents error ellipses
+#    2. observations - sf object with geometry type LINESTRING and related attributes as product from design.snet function
+
+#adj.net_spatial_view <- function(ellipses = ellipses, observations = observations){
+#  #observations$fill_o <- ifelse(observations$distance == TRUE & observations$direction == FALSE,"LightGoldenRodYellow", ifelse(observations$distance == FALSE & observations$direction == TRUE, "Khaki","orange"))
+#  adj.net_view <- ggplot(data=observations) +
+#    geom_sf(data = observations)+
+#    geom_sf(data=ellipses,aes(fill = sp))+
+#    geom_sf_text(data=ellipses, aes(label=Name,hjust = 2.5, vjust =2.5))+
+#    xlab("\nLongitude [deg]") +
+#    ylab("Latitude [deg]\n") +
+#    ggtitle("Adjusted observational plan - net quality")+
+#    guides(col = guide_legend())+
+#    theme_bw()
+#  return(adj.net_view)
+#
+#}
+
+adj_net_spatial_view <- function(adj.ellipses, adj.observations){
+  adj.net_view <- ggplot() +
+    geom_sf(data = adj.observations)+
+    geom_sf(data=adj.ellipses, aes(fill = sp))+
+    geom_sf_text(data=adj.ellipses, aes(label=Name,hjust = 2.5, vjust =2.5))+
+    xlab("\nLongitude [deg]") +
+    ylab("Latitude [deg]\n") +
+    ggtitle("Adjusted observational plan - net quality")+
+    #guides(col = guide_legend())+
+    theme_bw()
+  return(adj.net_view)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

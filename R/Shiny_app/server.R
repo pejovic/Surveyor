@@ -25,6 +25,11 @@ library(here)
 library(matlib)
 library(nngeo)
 library(dplyr)
+library(mapedit)
+library(DT)
+library(leaflet.extras)
+library(rhandsontable)
+
 
 shinyServer(function(input, output){
 
@@ -236,6 +241,14 @@ shinyServer(function(input, output){
   )
 
   del_r <- eventReactive(input$delete_b,{
+    if(length(input$primer1_rows_selected) == 0){
+      observations <- ob_example()
+      observations %<>% select(id = id ,
+                               from = from,
+                               to = to,
+                               standard_dir = standard_dir,
+                               standard_dist = standard_dist)
+    }else{
     observations <- ob_example()
     d <- input$primer1_rows_selected
     observations <- observations[-d, ]
@@ -243,15 +256,15 @@ shinyServer(function(input, output){
                              from = from,
                              to = to,
                              standard_dir = standard_dir,
-                             standard_dist = standard_dist
-    )
+                             standard_dist = standard_dist)
+    }
     observations
   })
 
   values <- reactiveValues()
 
   output$OldObs <- renderRHandsontable({
-    rhandsontable(as.data.frame(del_r()), width = 550, height = 550)
+      rhandsontable(as.data.frame(del_r()), width = 550, height = 550)
   })
 
   del_row <- eventReactive(input$run_table,{
@@ -417,8 +430,9 @@ shinyServer(function(input, output){
     output_view_xlsx_wO
   }, width = 650, height = 600)
 
-
-
+  #################
+  # 2D OPTIMIZATION
+  #################
 
   data_listt <- eventReactive(input$data_list_get,{
     data_list <- switch(input$rb,
@@ -436,15 +450,11 @@ shinyServer(function(input, output){
 
   adjusted_net_design <- eventReactive(input$adjust_1,{
    ddd <- data_listt()
-   design_net_out <- design.snet(survey.net = ddd, result.units = "mm", ellipse.scale = 10, all = FALSE)
+   result_units <- input$adjust_1_units
+   ellipse_scale <- input$adjust_1_ell_scale
+   design_net_out <- design.snet(survey.net = ddd, result.units = result_units, ellipse.scale = ellipse_scale, all = FALSE)
    design_net_out
   })
-
-  #output$ellipse_error <- renderPrint({
-  #  data <- adjusted_net_design()
-  #  data
-  #})
-
 
   output$ellipse_error <- DT::renderDataTable({
     data <- adjusted_net_design()[[1]]
@@ -459,6 +469,13 @@ shinyServer(function(input, output){
                    scrollX = 300,
                    scroller = TRUE)
   )
+
+  output$netSpatialView_ell <- renderPlot({
+    ellipses_1 <- adjusted_net_design()[[1]]
+    observations_1 <- adjusted_net_design()[[3]]
+    adj_output_view <- adj_net_spatial_view(ellipses_1, observations_1)
+    adj_output_view
+  })
 
   output$net_points_adj <- DT::renderDataTable({
     data <- adjusted_net_design()[[2]]
@@ -494,10 +511,6 @@ shinyServer(function(input, output){
     adj.net_map <- adj.net_spatial_view_web(ellipses = ellipses, observations = observations)
     adj.net_map@map
   })
-
-
-
-
 
 })
 

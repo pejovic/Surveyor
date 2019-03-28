@@ -45,7 +45,7 @@ ib <- surveynet.xlsx(points = ib_points, observations = ib_obs, dest_crs = 3857)
 vb.results <- design.snet(survey.net =  vb, result.units = "mm", ellipse.scale = 10, all = TRUE)
 
 vb.results$design.matrices$Qx
-
+vb.results$observations
 plot(vb.results$ellipse.net$geometry)
 plot(vb.results$observations$geometry, add = TRUE)
 
@@ -56,3 +56,23 @@ plot(ib.results$ellipse.net$geometry)
 plot(ib.results$observations$geometry, add = TRUE)
 mapview(vb.results$ellipse.net, zcol = 'sp') + mapview(vb.results$observations, zcol = 'rii')
 
+adj.net_spatial_view <- function(ellipses = ellipses, observations = observations){
+
+  #points$fill_p <- "red"
+  #points$fill_p[points$Point_object == TRUE] <- "DeepSkyBlue"
+  #observations$fill_o <- ifelse(observations$distance == TRUE & observations$direction == FALSE,"LightGoldenRodYellow", ifelse(observations$distance == FALSE & observations$direction == TRUE, "Khaki","orange"))
+
+  adj.net_view <- ggplot(data=observations) +
+    #geom_sf(size=1,stroke=1, color = observations$rii)+
+    geom_sf(data = observations)+
+    geom_sf(data=ellipses,aes(fill = sp))+ #fill = sf.colors(length(ellipses$sp)),breaks = "sp") +
+    geom_sf_text(data=ellipses, aes(label=Name,hjust = 2.5, vjust =2.5))+
+    xlab("\nLongitude [deg]") +
+    ylab("Latitude [deg]\n") +
+    ggtitle("Adjusted observational plan - net quality")+
+    guides(col = guide_legend())+
+    theme_bw()
+  return(adj.net_view)
+}
+
+adj.net_spatial_view(vb.results$ellipse.net,vb.results$observations)

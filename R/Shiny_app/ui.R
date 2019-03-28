@@ -20,12 +20,16 @@ library(readxl)
 library(data.table)
 library(plotly)
 library(mapview)
+library(mapedit)
 library(shinycssloaders)
 library(here)
 library(matlib)
 library(nngeo)
 library(shinyWidgets)
 library(dplyr)
+library(DT)
+library(leaflet.extras)
+library(rhandsontable)
 
 shinyUI(
   tagList(
@@ -165,12 +169,6 @@ shinyUI(
                  tabsetPanel(
                    tabPanel("InputData",
                             sidebarPanel(
-                              #radioButtons('rb', 'Input data [points and observational plan]: ',
-                              #             c("Input_xlsx" = "i_xlsx",
-                              #               "Input_shp" = "i_shp",
-                              #               "Input_kml" = "i_kml",
-                              #               "Input_mapEdit" = "i_mapEdit"
-                              #               )),
                               prettyRadioButtons(inputId = "rb",  label = "Input data [points and observational plan]: ",
                                                  choices = c("Input_xlsx" = "i_xlsx", "Input_shp"= "i_shp", "Input_kml"= "i_kml", "Input_mapEdit"= "i_mapEdit"),
                                                  shape = "round", status = "danger",
@@ -183,16 +181,16 @@ shinyUI(
                    ),
                    tabPanel("Results",
                             sidebarPanel(
-                              actionButton(inputId ="adjust_1", label='Adjust geodetic network', class = "btn-primary btn-block")
-                            ),
+                              actionButton(inputId ="adjust_1", label='Adjust geodetic network', class = "btn-primary btn-block"),
+                              textInput(inputId = "adjust_1_units", "Result units: " , value = "mm"),
+                              numericInput(inputId = "adjust_1_ell_scale", "Ellipse scale: ", value = 10)
+                              ),
                             mainPanel(
                               navlistPanel(
-                                #tabPanel("Error ellipse", verbatimTextOutput(outputId ="ellipse_error") %>% withSpinner(color="#0dc5c1"))
-                                #tabPanel("Net points", verbatimTextOutput(outputId ="net_points_adj") %>% withSpinner(color="#0dc5c1")),
                                 tabPanel("Error ellipse", DT::dataTableOutput("ellipse_error") %>% withSpinner(color="#0dc5c1")),
                                 tabPanel("Net points", DT::dataTableOutput('net_points_adj') %>% withSpinner(color="#0dc5c1")),
-                                tabPanel("Obseravtions", DT::dataTableOutput('net_observations_adj') %>% withSpinner(color="#0dc5c1"))
-                                #tabPanel("Obseravtions", plotOutput("netSpatialView_me") %>% withSpinner(color="#0dc5c1")    )
+                                tabPanel("Obseravtions", DT::dataTableOutput('net_observations_adj') %>% withSpinner(color="#0dc5c1")),
+                                tabPanel("Plot error ellipses", plotOutput("netSpatialView_ell") %>% withSpinner(color="#0dc5c1"))
                               )
                             )
                    ),
@@ -205,10 +203,8 @@ shinyUI(
                    ),
                    tabPanel("Compare 2D net adjustments",
                             sidebarPanel(
-
                             ),
                             mainPanel(
-
                             )
                    )
                  )
