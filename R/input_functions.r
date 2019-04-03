@@ -214,6 +214,17 @@ surveynet.shp <- function(points, observations, fix_x = list(), fix_y = list(), 
   observations$from <- observations_1$station[match(observations$id, observations_1$id)]
   observations$to <- observations_1$obs.point[match(observations$id, observations_1$id)]
 
+  observations %<>% mutate(
+    id = as.numeric(id),
+    standard_dir = as.numeric(standard_dir),
+    standard_dist = as.numeric(standard_dist),
+    from = as.character(from),
+    to = as.character(to)
+  )
+
+  points %<>% mutate(
+    Name = as.character(Name)
+  )
   # Creating list
   survey_net <- list(points,observations)
 
@@ -348,6 +359,14 @@ surveynet.kml <- function(points, observations, fix_x = list(), fix_y = list(), 
 
   observations$from <- observations_1$station[match(observations$id, observations_1$id)]
   observations$to <- observations_1$obs.point[match(observations$id, observations_1$id)]
+
+  observations %<>% mutate(
+    id = as.numeric(id),
+    standard_dir = as.numeric(standard_dir),
+    standard_dist = as.numeric(standard_dist),
+    from = as.character(from),
+    to = as.character(to)
+  )
 
   # Creating list
   survey_net <- list(points,observations)
@@ -645,7 +664,7 @@ surveynet.mapedit <- function(points = points, observations = observations, fix_
   observations$x_obs.point <- points$x[match(observations$to, points$Name)]
   observations$y_obs.point <- points$y[match(observations$to, points$Name)]
 
-  observations$id <- 1:nrow(observations)
+  observations$id <- as.numeric(1:nrow(observations))
 
   observations %<>% mutate(distance = distance,
                            direction = direction,
@@ -665,8 +684,8 @@ surveynet.mapedit <- function(points = points, observations = observations, fix_
 
   dt_1 <- sf::st_as_sf(dt_1)
 
-  dt_1 %<>% mutate(from = observations$from,
-                   to = observations$to,
+  dt_1 %<>% mutate(from = as.character(observations$from),
+                   to = as.character(observations$to),
                    distance = observations$distance,
                    direction = observations$direction,
                    standard_dir = observations$standard_dir,
@@ -677,8 +696,8 @@ surveynet.mapedit <- function(points = points, observations = observations, fix_
   observations <- dt_1
 
   # Observational plan - adding new columns
-  observations %<>% mutate(distance = as.logical(distance),
-                           direction = as.logical(direction),
+  observations %<>% mutate(distance = distance,
+                           direction = direction,
                            standard_dir = as.numeric(standard_dir),
                            standard_dist = as.numeric(standard_dist)
   )

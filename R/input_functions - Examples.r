@@ -96,8 +96,8 @@ u2 <- surveynet.shp(points = points4, observations = observations4, fix_x = list
 #    7. points_object - list with names of points that represnt object of interests
 
 # Examples
-points_kml1 <- st_read(dsn='Primer_1_ulazni_podaci_Ikea_Beograd/KML/Tacke_mreza_objekat.kml','Tacke_mreza_objekat')
-observations_kml1 <- st_read(dsn='Primer_1_ulazni_podaci_Ikea_Beograd/KML/Plan_opazanja.kml','Plan_opazanja')
+points_kml1 <- st_read(dsn='Data/Input/Without_observations/kml/Example_1_Ikea_Beograd/Points.kml')
+observations_kml1 <- st_read(dsn='Data/Input/Without_observations/kml/Example_1_Ikea_Beograd/Observations.kml')
 
 k1 <- surveynet.kml(points = points_kml1, observations = observations_kml1, fix_x = list("A","B"), fix_y = list("A","B"), st_dir = 3, st_dist = 3, dest_crs = 3857, points_object = list("T1","T2","T3","T4") )
 

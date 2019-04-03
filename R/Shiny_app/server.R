@@ -514,5 +514,16 @@ shinyServer(function(input, output){
 
 })
 
+#
+# Points on object must be points on object
+# dimnames - error related to type of columns
+# It is not working with differnt types of observations
+
+
+# promeni za shp
+
+
+
+
 
 
