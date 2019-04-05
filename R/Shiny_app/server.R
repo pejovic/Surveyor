@@ -460,7 +460,15 @@ shinyServer(function(input, output){
     data <- adjusted_net_design()[[1]]
     data %<>%
       st_drop_geometry() %>%
-      as.data.frame()
+      as.data.frame() %>%
+      mutate(
+        A = round(A, 4),
+        B = round(B, 4),
+        teta = round(teta, 4),
+        sx = round(sx, 4),
+        sy = round(sy, 4),
+        sp = round(sp, 4)
+      )
     },
     extensions = list('Buttons', 'Scroller'),
     options = list(dom = 'Bfrtip', buttons = I('colvis'),
@@ -481,7 +489,15 @@ shinyServer(function(input, output){
     data <- adjusted_net_design()[[2]]
     data %<>%
       st_drop_geometry() %>%
-      as.data.frame()
+      as.data.frame() %>%
+      mutate(
+        A = round(A, 4),
+        B = round(B, 4),
+        teta = round(teta, 4),
+        sx = round(sx, 4),
+        sy = round(sy, 4),
+        sp = round(sp, 4)
+      )
   },
   extensions = list('Buttons', 'Scroller'),
   options = list(dom = 'Bfrtip', buttons = I('colvis'),
@@ -495,7 +511,12 @@ shinyServer(function(input, output){
     data <- adjusted_net_design()[[3]]
     data %<>%
       st_drop_geometry() %>%
-      as.data.frame()
+      as.data.frame() %>%
+      mutate(
+        Ql = round(Ql, 4),
+        Qv = round(Qv, 4),
+        rii = round(rii, 4)
+      )
   },
   extensions = list('Buttons', 'Scroller'),
   options = list(dom = 'Bfrtip', buttons = I('colvis'),
