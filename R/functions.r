@@ -166,6 +166,21 @@ Amat <- function(survey.net, units, axes = c("Easting", "Northing")){
 
 
 # Weights matrix
+#Wmat <- function(survey.net, apriori = 1){
+#  #TODO: Omoguciti zadavanje i drugih kovariacionih formi izmedju merenja.
+#  obs.data <- survey.net[[2]] %>% st_drop_geometry()
+#  obs.data_1 <- data.frame(id = rep(obs.data$id,2),
+#                     from = rep(obs.data$from,2),
+#                     to = rep(obs.data$to,2),
+#                     type = c(obs.data$direction, obs.data$distance),
+#                     standard = c(obs.data$standard_dir, obs.data$standard_dist)) %>%
+#    dplyr::filter(type == TRUE) %>%
+#    dplyr::select(from, to, standard)
+#  return(diag(apriori^2/obs.data_1$standard^2))
+#}
+
+
+# Weights matrix
 Wmat <- function(survey.net, apriori = 1){
   #TODO: Omoguciti zadavanje i drugih kovariacionih formi izmedju merenja.
   obs.data <- rbind(survey.net[[2]] %>% st_drop_geometry() %>%
@@ -179,6 +194,7 @@ Wmat <- function(survey.net, apriori = 1){
   )
   return(diag(apriori^2/obs.data$standard^2))
 }
+
 
 
 # Funkcija koja izdvaja elemente Qx matrice u listu za elipsu svake tacke
