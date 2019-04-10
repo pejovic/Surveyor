@@ -1,4 +1,4 @@
-source(here("R/Shiny_app/old_design/input_functions.r"))
+source(here("R/input_functions.r"))
 source(here("R/inputFunction_withObservations.R"))
 source(here("R/functions.r"))
 
@@ -41,23 +41,23 @@ shinyUI(
     )),
     navbarPage(
       "Surveyer|R",
-      theme = shinytheme("cerulean"),
+      theme = shinytheme("flatly"),
       tabPanel("InputData_surveynet",
                mainPanel(
                  tabsetPanel(
                    tabPanel("InputData_xlsx",
-                            sidebarPanel(
-                              fileInput(inputId = "fileXLSX", label = "Upload points and observations file. Choose Excel - xlsx file:",
-                                        multiple = TRUE, accept = c('.xlsx')),
-                              numericInput(inputId = "epsg_xlsx", "Destination CRS [EPSG code]: ", value = 3857)
-                            ),
+                            #sidebarPanel(
+                            #  fileInput(inputId = "fileXLSX", label = "Upload points and observations file. Choose Excel - xlsx file:",
+                            #            multiple = TRUE, accept = c('.xlsx')),
+                            #  numericInput(inputId = "epsg_xlsx", "Destination CRS [EPSG code]: ", value = 3857)
+                            #),
                             mainPanel(
-                              leafletOutput("mymap2", height = 550) %>% withSpinner(color="#0dc5c1"),
-                              actionButton(inputId ='go2', label='Calculate', class = "btn-primary btn-block"),
+                              #leafletOutput("mymap2", height = 550) %>% withSpinner(color="#0dc5c1"),
+                              #actionButton(inputId ='go2', label='Calculate', class = "btn-primary btn-block"),
                               navlistPanel(
-                                tabPanel("Points", verbatimTextOutput(outputId = "points_xlsx_3")%>% withSpinner(color="#0dc5c1")),
-                                tabPanel("Observations", verbatimTextOutput(outputId = "observations_xlsx_3")%>% withSpinner(color="#0dc5c1")),
-                                tabPanel("netSpatialView", plotOutput("netSpatialView_xlsx")%>% withSpinner(color="#0dc5c1"))
+                                #tabPanel("Points", verbatimTextOutput(outputId = "points_xlsx_3")%>% withSpinner(color="#0dc5c1")),
+                                #tabPanel("Observations", verbatimTextOutput(outputId = "observations_xlsx_3")%>% withSpinner(color="#0dc5c1"))
+                                #tabPanel("netSpatialView", plotOutput("netSpatialView_xlsx")%>% withSpinner(color="#0dc5c1"))
                               )
                             )
                    ),
@@ -118,8 +118,8 @@ shinyUI(
                             ),
                             mainPanel(
                               editModUI("map_me", height=550),
-                              actionButton(inputId ='go_me_draw', label='Get data [Points]', class = "btn-primary btn-block"),
-                              verbatimTextOutput(outputId = "primer") %>% withSpinner(color="#0dc5c1"),
+                              #actionButton(inputId ='go_me_draw', label='Get data [Points]', class = "btn-primary btn-block"),
+                              #verbatimTextOutput(outputId = "primer") %>% withSpinner(color="#0dc5c1"),
                               actionButton(inputId ='go_me_edit_o', label='Edit data [Observations]', class = "btn-primary btn-block"),
                               DT::dataTableOutput("primer1") %>% withSpinner(color="#0dc5c1"),
                               actionButton(inputId ='delete_b', label='Delete rows', class = "btn-danger btn-block"),
@@ -131,8 +131,8 @@ shinyUI(
                               actionButton(inputId ='go_me', label='Calculate', class = "btn-primary btn-block"),
                               leafletOutput("map_me_out", height = 550) %>% withSpinner(color="#0dc5c1"),
                               navlistPanel(
-                                tabPanel("Points", verbatimTextOutput(outputId = "points_me_3") %>% withSpinner(color="#0dc5c1")),
-                                tabPanel("Observations", verbatimTextOutput(outputId = "observations_me_3") %>% withSpinner(color="#0dc5c1")),
+                                #tabPanel("Points", verbatimTextOutput(outputId = "points_me_3") %>% withSpinner(color="#0dc5c1")),
+                                #tabPanel("Observations", verbatimTextOutput(outputId = "observations_me_3") %>% withSpinner(color="#0dc5c1")),
                                 tabPanel("netSpatialView", plotOutput("netSpatialView_me") %>% withSpinner(color="#0dc5c1"))
                               )
                             )
@@ -160,9 +160,113 @@ shinyUI(
                  )
                  , width = 12 )
       ),
-      tabPanel("1D Optimization", "Blank"
+      tabPanel("DESIGN",
+               mainPanel(
+                 tabsetPanel(type="pills",
+                   tabPanel("1D NET DESIGN",
+                            mainPanel(
+                              tabsetPanel(
+                                tabPanel("XLSX - INPUT DATA"
+                                ),
+                                tabPanel("MAP - INPUT DATA"
+
+                                )
+                              )
+                            )
+                          ),
+                   tabPanel("2D NET DESIGN",
+                            mainPanel(
+                              tabsetPanel(type="pills",
+                                tabPanel("XLSX - INPUT DATA",
+                                         sidebarPanel(
+                                           fileInput(inputId = "fileXLSX", label = "Upload points and observations file. Choose Excel - xlsx file:",
+                                                     multiple = TRUE, accept = c('.xlsx')),
+                                           numericInput(inputId = "epsg_xlsx", "Destination CRS [EPSG code]: ", value = 3857),
+                                           actionButton(inputId ='go2', label='Calculate', class = "btn-primary btn-block")
+                                         ),
+
+                                         mainPanel(
+
+                                         mainPanel(width = 6,
+                                           tabsetPanel(type="pills",
+                                             tabPanel("POINTS",
+                                                      rHandsontableOutput('p_des_xlsx') %>% withSpinner(color="#0dc5c1")
+                                             ),
+                                             tabPanel("OBSERVATIONS",
+                                                      rHandsontableOutput('o_des_xlsx') %>% withSpinner(color="#0dc5c1")
+                                             ),
+                                             tabPanel("MAP",
+                                                      leafletOutput("mymap2", height = 550) %>% withSpinner(color="#0dc5c1"),
+                                                      plotOutput("netSpatialView_xlsx")%>% withSpinner(color="#0dc5c1")
+                                             )
+                                           ),
+                                           actionButton(inputId ='update_design_2d_xlsx', label='Update', class = "btn-primary"),
+                                           actionButton(inputId ='design_adjust', label='Calculate', class = "btn-danger btn-block")
+                                         ),
+                                         mainPanel(width = 6,
+                                           sidebarPanel(
+                                                        tabsetPanel(type="pills",
+
+                                                          tabPanel("MAP VISUALIZATION"
+
+                                                          ),
+                                                          tabPanel("TAB VISUALIZATION"
+
+                                                          )
+                                                        )
+                                         )
+                                ))),
+                                tabPanel("MAP - INPUT DATA",
+                                         sidebarPanel(
+                                           tabsetPanel(
+                                             tabPanel("POINTS"
+                                             ),
+                                             tabPanel("OBSERVATIONS"
+
+                                             )
+                                           ),
+                                           actionButton(inputId ='design_adjust', label='Calculate', class = "btn-danger btn-block")
+                                         ),
+                                         mainPanel(
+
+                                         )
+
+                                )
+                              )
+                            )
+                          )
+                 )
+                )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
       ),
-      tabPanel("1D Adjustment", "Blank"
+      tabPanel("ADJUSTMENT", "Blank"
       ),
       tabPanel("2D Optimization",
                mainPanel(
@@ -211,11 +315,9 @@ shinyUI(
                  , width = 12)
 
       ),
-      tabPanel("2D Adjustment", "Blank"
+      tabPanel("DEFORMATION ANALYSIS", "Blank"
       ),
-      tabPanel("Deformation Analysis", "Blank"
-      ),
-      tabPanel("Coordinate Transformation", "Blank"
+      tabPanel("COORDINATE TRANSFORMATION", "Blank"
       )
     )
   )

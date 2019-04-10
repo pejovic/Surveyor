@@ -704,12 +704,6 @@ surveynet.mapedit <- function(points_raw = points_raw, points = points, observat
     points_raw %<>% st_transform(dest_crs)
   }
 
-  points_raw$x <- st_coordinates(points_raw)[,1]
-  points_raw$y <- st_coordinates(points_raw)[,2]
-
-  points$x <- points_raw$x[match(points$Name, points_raw$Name)]
-  points$y <- points_raw$y[match(points$Name, points_raw$Name)]
-
   #if (st_crs(points)$epsg == 4326){
   #  dest_crs <- 3857
   #  points <- points %>% st_transform(dest_crs)
@@ -717,15 +711,14 @@ surveynet.mapedit <- function(points_raw = points_raw, points = points, observat
   #  message(st_crs(points))
   #}
 
+  #Defining datum for points
+  points %<>% mutate(FIX_X = FALSE, FIX_Y = FALSE)
 
-  # Defining datum for points
-  #points %<>% mutate(FIX_X = FALSE, FIX_Y = FALSE)
+  points$FIX_X[points$Name %in% fix_x] <- TRUE
+  points$FIX_Y[points$Name %in% fix_y] <- TRUE
 
-  #points$FIX_X[points$Name %in% fix_x] <- TRUE
-  #points$FIX_Y[points$Name %in% fix_y] <- TRUE
-
-  #points %<>% mutate(Point_object = FALSE)
-  #points$Point_object[points$Name %in% points_object] <- TRUE
+  points %<>% mutate(Point_object = FALSE)
+  points$Point_object[points$Name %in% points_object] <- TRUE
 
   points$FIX_X <- as.logical(points$FIX_X)
   points$FIX_Y <- as.logical(points$FIX_Y)
@@ -773,8 +766,9 @@ surveynet.mapedit <- function(points_raw = points_raw, points = points, observat
                            standard_dir = as.numeric(standard_dir),
                            standard_dist = as.numeric(standard_dist)
   )
-  points <- points %>% as.data.frame() %>% sf::st_as_sf(coords = c("x","y")) %>% sf::st_set_crs(dest_crs)
-  #points <- subset(points, select = -c(x,y))
+
+
+  points <- subset(points, select = -c(x,y))
   # Creating list
   survey_net_mapedit <- list(points,observations)
 

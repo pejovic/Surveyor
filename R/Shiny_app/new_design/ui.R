@@ -31,6 +31,7 @@ library(DT)
 library(leaflet.extras)
 library(rhandsontable)
 
+
 shinyUI(
   tagList(
     tags$script(HTML(
@@ -39,200 +40,184 @@ shinyUI(
     tags$script(HTML(
       "document.body.style.fontFamily = 'Verdana';"
     )),
-    navbarPage(
-      "Surveyer|R",
-      theme = shinytheme("cerulean"),
-      tabPanel("InputData_surveynet",
-               mainPanel(
-                 tabsetPanel(
-                   tabPanel("InputData_xlsx",
-                            sidebarPanel(
-                              fileInput(inputId = "fileXLSX", label = "Upload points and observations file. Choose Excel - xlsx file:",
-                                        multiple = TRUE, accept = c('.xlsx')),
-                              numericInput(inputId = "epsg_xlsx", "Destination CRS [EPSG code]: ", value = 3857)
-                            ),
-                            mainPanel(
-                              leafletOutput("mymap2", height = 550) %>% withSpinner(color="#0dc5c1"),
-                              actionButton(inputId ='go2', label='Calculate', class = "btn-primary btn-block"),
-                              navlistPanel(
-                                tabPanel("Points", verbatimTextOutput(outputId = "points_xlsx_3")%>% withSpinner(color="#0dc5c1")),
-                                tabPanel("Observations", verbatimTextOutput(outputId = "observations_xlsx_3")%>% withSpinner(color="#0dc5c1")),
-                                tabPanel("netSpatialView", plotOutput("netSpatialView_xlsx")%>% withSpinner(color="#0dc5c1"))
-                              )
-                            )
-                   ),
-                   tabPanel("InputData_kml",
-                            sidebarPanel(
-                              fileInput(inputId = "fileKML_points", label = "Upload points vector file. Choose kml file:",
-                                        multiple = TRUE, accept = c('.kml')),
-                              fileInput(inputId = "fileKML_observations", label = "Upload observations vector file. Choose kml file:",
-                                        multiple = TRUE, accept = c('.kml')),
-                              numericInput(inputId = "st_dir_kml", "StDev direction: ", value = 3),
-                              numericInput(inputId = "st_dist_kml", "StDev distance: ", value = 3),
-                              numericInput(inputId = "epsg_kml", "Destination CRS [EPSG code]: ", value = 3857),
-                              textInput(inputId = "fix_x_kml", "Datum [fix X for Points] (e.g. A,B)"),
-                              textInput(inputId = "fix_y_kml", "Datum [fix Y for Points] (e.g. A,B)"),
-                              textInput(inputId = "points_obj_kml", "Geodetic network points at object (e.g. A,B)")
-                            ),
-                            mainPanel(
-                              leafletOutput("mymap1", height = 550) %>% withSpinner(color="#0dc5c1"),
-                              actionButton(inputId ='go1', label='Calculate', class = "btn-primary btn-block"),
-                              navlistPanel(
-                                tabPanel("Points", verbatimTextOutput(outputId = "points_kml_3") %>% withSpinner(color="#0dc5c1")),
-                                tabPanel("Observations", verbatimTextOutput(outputId = "observations_kml_3") %>% withSpinner(color="#0dc5c1")),
-                                tabPanel("netSpatialView", plotOutput("netSpatialView_kml") %>% withSpinner(color="#0dc5c1"))
-                              )
-                            )
-                   ),
-                   tabPanel("InputData_shp",
-                            sidebarPanel(
-                              fileInput(inputId = "fileSHP_points", label = "Upload points vector file. Choose shapefile:",
-                                        multiple = TRUE, accept = c('.shp','.dbf','.sbn','.sbx','.shx','.prj')),
-                              fileInput(inputId = "fileSHP_observations", label = "Upload observations vector file. Choose shapefile:",
-                                        multiple = TRUE, accept = c('.shp','.dbf','.sbn','.sbx','.shx','.prj')),
-                              numericInput(inputId = "st_dir_shp", "StDev direction: ", value = 3),
-                              numericInput(inputId = "st_dist_shp", "StDev distance: ", value = 3),
-                              numericInput(inputId = "epsg_shp", "Destination CRS [EPSG code]: ", value = 3857),
-                              textInput(inputId = "fix_x_shp", "Datum [fix X for Points] (e.g. A,B)"),
-                              textInput(inputId = "fix_y_shp", "Datum [fix Y for Points] (e.g. A,B)"),
-                              textInput(inputId = "points_obj_shp", "Geodetic network points at object (e.g. A,B)")
-                            ),
-                            mainPanel(
-                              leafletOutput("mymap", height = 550) %>% withSpinner(color="#0dc5c1"),
-                              actionButton(inputId ='go', label='Calculate', class = "btn-primary btn-block"),
-                              navlistPanel(
-                                tabPanel("Points", verbatimTextOutput(outputId = "points_shp_3") %>% withSpinner(color="#0dc5c1")),
-                                tabPanel("Observations", verbatimTextOutput(outputId = "observations_shp_3") %>% withSpinner(color="#0dc5c1")),
-                                tabPanel("netSpatialView",plotOutput("netSpatialView_shp") %>% withSpinner(color="#0dc5c1"))
-                              )
-                            )
-                   ),
-                   tabPanel("InputData_mapEdit",
-                            sidebarPanel(
-                              numericInput(inputId = "st_dir_me", "StDev direction: ", value = 3),
-                              numericInput(inputId = "st_dist_me", "StDev distance: ", value = 3),
-                              numericInput(inputId = "epsg_me", "Destination CRS [EPSG code]: ", value = 3857),
-                              textInput(inputId = "fix_x_me", "Datum [fix X for Points] (e.g. A,B)"),
-                              textInput(inputId = "fix_y_me", "Datum [fix Y for Points] (e.g. A,B)"),
-                              textInput(inputId = "points_obj_me", "Geodetic network points at object (e.g. A,B)")
-                            ),
-                            mainPanel(
-                              editModUI("map_me", height=550),
-                              actionButton(inputId ='go_me_draw', label='Get data [Points]', class = "btn-primary btn-block"),
-                              verbatimTextOutput(outputId = "primer") %>% withSpinner(color="#0dc5c1"),
-                              actionButton(inputId ='go_me_edit_o', label='Edit data [Observations]', class = "btn-primary btn-block"),
-                              DT::dataTableOutput("primer1") %>% withSpinner(color="#0dc5c1"),
-                              actionButton(inputId ='delete_b', label='Delete rows', class = "btn-danger btn-block"),
-                              navlistPanel(
-                                tabPanel("Observational plan", rHandsontableOutput('OldObs')),
-                                tabPanel("Button", actionButton(inputId ='run_table', label='Update', class = "btn-danger btn-block")),
-                                tabPanel("Observational plan [Updated]", DT::dataTableOutput("primer4")%>% withSpinner(color="#0dc5c1"))
-                              ),
-                              actionButton(inputId ='go_me', label='Calculate', class = "btn-primary btn-block"),
-                              leafletOutput("map_me_out", height = 550) %>% withSpinner(color="#0dc5c1"),
-                              navlistPanel(
-                                tabPanel("Points", verbatimTextOutput(outputId = "points_me_3") %>% withSpinner(color="#0dc5c1")),
-                                tabPanel("Observations", verbatimTextOutput(outputId = "observations_me_3") %>% withSpinner(color="#0dc5c1")),
-                                tabPanel("netSpatialView", plotOutput("netSpatialView_me") %>% withSpinner(color="#0dc5c1"))
-                              )
-                            )
-                   ),
-                   tabPanel("InputData_withObservations",
-                            sidebarPanel(
-                              fileInput(inputId = "fileXLSX_wO", label = "Upload points and observations file. Choose Excel - xlsx file:",
-                                        multiple = TRUE, accept = c('.xlsx')),
-                              numericInput(inputId = "epsg_xlsx_wO", "Destination CRS [EPSG code]: ", value = 3857)
-                            ),
-                            mainPanel(
-                              actionButton(inputId ='calc_obs', label='Calculate', class = "btn-primary btn-block"),
-                              navlistPanel(
-                                tabPanel("Points",
-                                         DT::dataTableOutput("points_wO") %>% withSpinner(color="#0dc5c1")),
-                                tabPanel("Observations",
-                                         p("Edit observations"),
-                                         rHandsontableOutput('OldObs_wO'),
-                                         actionButton(inputId ='edit_wO', label='Edit observations', class = "btn-danger btn-block"),
-                                         DT::dataTableOutput("observations_wO") %>% withSpinner(color="#0dc5c1")),
-                                tabPanel("netSpatialView", plotOutput("netSpatialView_xlsx_wO")%>% withSpinner(color="#0dc5c1"))
-                              )
-                            )
-                   )
-                 )
-                 , width = 12 )
-      ),
-      tabPanel("1D Optimization", "Blank"
-      ),
-      tabPanel("1D Adjustment", "Blank"
-      ),
-      tabPanel("2D Optimization",
-               mainPanel(
-                 tabsetPanel(
-                   tabPanel("InputData",
-                            sidebarPanel(
-                              prettyRadioButtons(inputId = "rb",  label = "Input data [points and observational plan]: ",
-                                                 choices = c("Input_xlsx" = "i_xlsx", "Input_shp"= "i_shp", "Input_kml"= "i_kml", "Input_mapEdit"= "i_mapEdit"),
-                                                 shape = "round", status = "danger",
-                                                 fill = TRUE),
-                              actionButton(inputId ="data_list_get", label='Get data', class = "btn-primary btn-block")
-                            ),
-                            mainPanel(
-                              verbatimTextOutput(outputId = "data_list_in") %>% withSpinner(color="#0dc5c1")
-                            )
-                   ),
-                   tabPanel("Results",
-                            sidebarPanel(
-                              actionButton(inputId ="adjust_1", label='Adjust geodetic network', class = "btn-primary btn-block"),
-                              textInput(inputId = "adjust_1_units", "Result units: " , value = "mm"),
-                              numericInput(inputId = "adjust_1_ell_scale", "Ellipse scale: ", value = 10)
-                              ),
-                            mainPanel(
-                              navlistPanel(
-                                tabPanel("Error ellipse", DT::dataTableOutput("ellipse_error") %>% withSpinner(color="#0dc5c1")),
-                                tabPanel("Net points", DT::dataTableOutput('net_points_adj') %>% withSpinner(color="#0dc5c1")),
-                                tabPanel("Obseravtions", DT::dataTableOutput('net_observations_adj') %>% withSpinner(color="#0dc5c1")),
-                                tabPanel("Plot error ellipses", plotOutput("netSpatialView_ell") %>% withSpinner(color="#0dc5c1"))
-                              )
-                            )
-                   ),
-                   tabPanel("Visualization",
-                            sidebarPanel(
-                            ),
-                            mainPanel(
-                              leafletOutput("map_ellipses_opt", height = 550) %>% withSpinner(color="#0dc5c1")
-                            )
-                   ),
-                   tabPanel("Compare 2D net adjustments",
-                            sidebarPanel(
-                            ),
-                            mainPanel(
-                            )
-                   )
-                 )
-                 , width = 12)
+    navbarPage(fluid = TRUE,"Surveyer|R",
+      theme = shinytheme("flatly"),
+                           tabPanel("MAIN",
+                                 fluidRow(
+                                   column(width = 6,
+                                          div(img(src ="Grb_Gradjevinski.png", height = 370, width = 297), style="text-align: center;")
+                                            ),
+                                   column(width = 6,
+                                          h3("Project: Surveyer"),
+                                          p("Description: Package of Land and Engineering Surveying utilities"),
+                                          p("Authors: Milutin Pejovic, Petar Bursac, Milan Kilibarda, Branislav Bajat and Aleksandar Sekulic"),
+                                          p("University of Belgrade, Faculty of Civil Engeenering, Department of geodesy and geoinformatics")
+                                   )
 
-      ),
-      tabPanel("2D Adjustment", "Blank"
-      ),
-      tabPanel("Deformation Analysis", "Blank"
-      ),
-      tabPanel("Coordinate Transformation", "Blank"
+                                 )
+                           ),
+                           tabPanel("DESIGN",
+                                    tabsetPanel(type = "pills",
+                                                tabPanel("1D DESIGN",
+                                                         p(""),
+                                                           tabsetPanel(type = "pills",
+                                                             tabPanel("XLSX INPUT DATA"
+                                                                      ),
+                                                             tabPanel("MAP INPUT DATA"
+                                                                      )
+                                                           )
+
+                                                ),
+                                                tabPanel("2D DESIGN",
+                                                         p(""),
+                                                           tabsetPanel(type = "pills",
+                                                             tabPanel("XLSX INPUT DATA",
+                                                                      p(""),
+                                                                      fluidRow(
+                                                                        column(width = 6, "DATA PREPARATION",
+                                                                               tabsetPanel(
+                                                                                 tabPanel("MAIN",
+                                                                                          fileInput(inputId = "fileXLSX", label = "Upload points and observations file. Choose Excel - xlsx file:",
+                                                                                                    multiple = TRUE, accept = c('.xlsx')),
+                                                                                          numericInput(inputId = "epsg_xlsx", "Destination CRS [EPSG code]: ", value = 3857),
+                                                                                          actionButton(inputId ='go2', label='PREPROCESS DATA', class = "btn-primary btn-block"),
+                                                                                          p(""),
+                                                                                          actionButton(inputId ='update_design_2d_xlsx', label='Update 2D net design', class = "btn-primary"),
+                                                                                          p(""),
+                                                                                          textInput(inputId = "adjust_1_units", "Result units: " , value = "mm"),
+                                                                                          numericInput(inputId = "adjust_1_ell_scale", "Ellipse scale: ", value = 10),
+                                                                                          actionButton(inputId ='design_adjust_xlsx', label='ADJUST', class = "btn-danger btn-block")
+                                                                                          ),
+                                                                                 tabPanel("POINTS",
+                                                                                          rHandsontableOutput('p_des_xlsx') %>% withSpinner(color="#0dc5c1")
+                                                                                          ),
+                                                                                 tabPanel("OBSERVATIONS",
+                                                                                          rHandsontableOutput('o_des_xlsx') %>% withSpinner(color="#0dc5c1")
+                                                                                          ),
+                                                                                 tabPanel("MAP",
+                                                                                          tabsetPanel(
+                                                                                            tabPanel("WEB MAP",
+                                                                                                     leafletOutput("web_map_xlsx", height = 550) %>% withSpinner(color="#0dc5c1"),
+                                                                                                     leafletOutput("web_map_xlsx_updated", height = 550) %>% withSpinner(color="#0dc5c1")
+                                                                                                     ),
+                                                                                            tabPanel("PLOT",
+                                                                                                     plotOutput("netSpatialView_xlsx")%>% withSpinner(color="#0dc5c1"),
+                                                                                                     plotOutput("netSpatialView_xlsx_updated")%>% withSpinner(color="#0dc5c1")
+                                                                                                     )
+                                                                                          )
+                                                                                          )
+                                                                               )
+                                                                               ),
+                                                                        column(width = 6, "DESIGN NET RESULTS",
+                                                                               tabsetPanel(
+                                                                                 tabPanel("MAP RESULTS",
+                                                                                          leafletOutput("map_ellipses_opt", height = 550) %>% withSpinner(color="#0dc5c1")
+                                                                                          ),
+                                                                                 tabPanel("TAB RESULTS",
+                                                                                          navlistPanel(
+                                                                                            tabPanel("Error ellipse", DT::dataTableOutput("ellipse_error") %>% withSpinner(color="#0dc5c1")),
+                                                                                            tabPanel("Net points", DT::dataTableOutput('net_points_adj') %>% withSpinner(color="#0dc5c1")),
+                                                                                            tabPanel("Obseravtions", DT::dataTableOutput('net_observations_adj') %>% withSpinner(color="#0dc5c1")),
+                                                                                            tabPanel("Plot error ellipses", plotOutput("netSpatialView_ell") %>% withSpinner(color="#0dc5c1"))
+                                                                                          )
+
+                                                                                          ),
+                                                                                 tabPanel("EXPORT RESULTS"
+
+                                                                                          )
+                                                                               )
+
+                                                                               )
+                                                                      )
+                                                                      ),
+                                                             tabPanel("MAP INPUT DATA",
+                                                                      p(""),
+                                                                      fluidRow(
+                                                                        column(width = 6, "DATA PREPARATION",
+                                                                               tabsetPanel(
+                                                                                 tabPanel("MAIN",
+                                                                                          numericInput(inputId = "st_dir_me", "StDev direction: ", value = 3),
+                                                                                          numericInput(inputId = "st_dist_me", "StDev distance: ", value = 3),
+                                                                                          numericInput(inputId = "epsg_me", "Destination CRS [EPSG code]: ", value = 3857),
+                                                                                          p(""),
+                                                                                          actionButton(inputId ='map_edit_result', label='PREPROCESS DATA', class = "btn-primary btn-block"),
+                                                                                          p(""),
+                                                                                          actionButton(inputId ='update_design_2d_map', label='Update 2D net design', class = "btn-primary"),
+                                                                                          p(""),
+                                                                                          textInput(inputId = "adjust_1_units_me", "Result units: " , value = "mm"),
+                                                                                          numericInput(inputId = "adjust_1_ell_scale_me", "Ellipse scale: ", value = 10),
+                                                                                          actionButton(inputId ='design_adjust_map', label='ADJUST', class = "btn-danger btn-block")
+                                                                                          ),
+                                                                                 tabPanel("EDIT MAP",
+                                                                                          h4("Interactive web carthography maps."),
+                                                                                          editModUI("map_me", height=550)
+                                                                                 ),
+                                                                                 tabPanel("POINTS",
+                                                                                          rHandsontableOutput('p_des_map') %>% withSpinner(color="#0dc5c1")
+                                                                                 ),
+                                                                                 tabPanel("OBSERVATIONS",
+                                                                                          rHandsontableOutput('o_des_map') %>% withSpinner(color="#0dc5c1")
+                                                                                 ),
+                                                                                 tabPanel("MAP",
+                                                                                          tabsetPanel(
+                                                                                            tabPanel("WEB MAP",
+                                                                                                     leafletOutput("map_me_out", height = 550) %>% withSpinner(color="#0dc5c1")
+                                                                                                     ),
+                                                                                            tabPanel("PLOT",
+                                                                                                     plotOutput("netSpatialView_me") %>% withSpinner(color="#0dc5c1")
+                                                                                                     )
+                                                                                          )
+                                                                                          )
+                                                                              )
+
+                                                                        ),
+                                                                        column(width = 6, "DESIGN NET RESULTS",
+                                                                               tabsetPanel(
+                                                                                 tabPanel("MAP RESULTS",
+                                                                                          leafletOutput("map_ellipses_opt_me", height = 550) %>% withSpinner(color="#0dc5c1")
+                                                                                 ),
+                                                                                 tabPanel("TAB RESULTS",
+                                                                                          navlistPanel(
+                                                                                            tabPanel("Error ellipse", DT::dataTableOutput("ellipse_error_me") %>% withSpinner(color="#0dc5c1")),
+                                                                                            tabPanel("Net points", DT::dataTableOutput('net_points_adj_me') %>% withSpinner(color="#0dc5c1")),
+                                                                                            tabPanel("Obseravtions", DT::dataTableOutput('net_observations_adj_me') %>% withSpinner(color="#0dc5c1")),
+                                                                                            tabPanel("Plot error ellipses", plotOutput("netSpatialView_ell_me") %>% withSpinner(color="#0dc5c1"))
+                                                                                          )
+                                                                                 ),
+                                                                                 tabPanel("EXPORT RESULTS"
+
+                                                                                 )
+                                                                               )
+
+                                                                        )
+                                                                      )
+                                                                      )
+
+
+                                                           )
+
+                                                )
+                                    )
+
+
+
+                           ),
+                           tabPanel("ADJUSTMENT"
+
+
+                           ),
+                           tabPanel("DEFORMATION ANALYSIS"
+
+
+                           ),
+                           tabPanel("COORDINATE TRANSFORMATION"
+
+
+                           )
+
+
+
       )
     )
-  )
 )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
