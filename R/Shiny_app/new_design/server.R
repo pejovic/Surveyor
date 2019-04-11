@@ -75,24 +75,23 @@ shinyServer(function(input, output){
     o_df <- as.data.frame(values_o$data)
     dest_crs_xlsx = as.numeric(input$epsg_xlsx)
     p_xlsx <- xlsx_points()
-    o_xlsx <- xlsx_observations()
     output_xlsx <- surveynet.xlsx_updated(points = p_df, observations = o_df, dest_crs = dest_crs_xlsx, raw_points = p_xlsx)
     output_xlsx
   })
 
-  output$netSpatialView_xlsx <- renderPlot({
-    out_points_xlsx <- xlsx_list()[[1]]
-    out_observations_xlsx <- xlsx_list()[[2]]
-    output_view_xlsx <- net_spatial_view(points = out_points_xlsx, observations = out_observations_xlsx)
-    output_view_xlsx
-  })
+  #output$netSpatialView_xlsx <- renderPlot({
+  #  out_points_xlsx <- xlsx_list()[[1]]
+  #  out_observations_xlsx <- xlsx_list()[[2]]
+  #  output_view_xlsx <- net_spatial_view(points = out_points_xlsx, observations = out_observations_xlsx)
+  #  output_view_xlsx
+  #})
 
-  output$web_map_xlsx <- renderLeaflet({
-    out_points_xlsx <- xlsx_list()[[1]]
-    out_observations_xlsx <- xlsx_list()[[2]]
-    web_map_xlsx <- net_spatial_view_web(points = out_points_xlsx, observations = out_observations_xlsx)
-    web_map_xlsx@map
-  })
+  #output$web_map_xlsx <- renderLeaflet({
+  #  out_points_xlsx <- xlsx_list()[[1]]
+  #  out_observations_xlsx <- xlsx_list()[[2]]
+  #  web_map_xlsx <- net_spatial_view_web(points = out_points_xlsx, observations = out_observations_xlsx)
+  #  web_map_xlsx@map
+  #})
 
   output$netSpatialView_xlsx_updated <- renderPlot({
     out_points_xlsx <- updated_xlsx_list()[[1]]
@@ -318,6 +317,23 @@ shinyServer(function(input, output){
     adj_output_view
   })
 
+  plotInput <- function(){
+    adj_net_spatial_view(adjusted_net_design()[[1]], adjusted_net_design()[[3]])
+  }
+
+  output$netSpatialView_ell11 <- renderPlot({
+    ellipses_1 <- adjusted_net_design()[[1]]
+    observations_1 <- adjusted_net_design()[[3]]
+    adj_output_view <- adj_net_spatial_view(ellipses_1, observations_1)
+    adj_output_view
+  })
+
+  output$downloadPlot <- downloadHandler(
+    filename = "plot.png",
+    content = function(file) {
+      ggsave(file, plotInput())
+    })
+
   output$net_points_adj <- DT::renderDataTable({
     data <- adjusted_net_design()[[2]]
     data %<>%
@@ -362,7 +378,8 @@ shinyServer(function(input, output){
   output$map_ellipses_opt <- renderLeaflet({
     ellipses <- adjusted_net_design()$ellipse.net
     observations <- adjusted_net_design()$observations
-    adj.net_map <- adj.net_spatial_view_web(ellipses = ellipses, observations = observations)
+    points <- updated_xlsx_list()[[1]]
+    adj.net_map <- adj.net_spatial_view_web(ellipses = ellipses, observations = observations, points = points)
     adj.net_map@map
   })
 
@@ -406,6 +423,23 @@ shinyServer(function(input, output){
     adj_output_view <- adj_net_spatial_view(ellipses_1, observations_1)
     adj_output_view
   })
+
+  plotInput_me <- function(){
+    adj_net_spatial_view(adjusted_net_design_me()[[1]],adjusted_net_design_me()[[3]])
+  }
+
+  output$netSpatialView_ell_me11 <- renderPlot({
+    ellipses_1 <- adjusted_net_design_me()[[1]]
+    observations_1 <- adjusted_net_design_me()[[3]]
+    adj_output_view <- adj_net_spatial_view(ellipses_1, observations_1)
+    adj_output_view
+  })
+
+  output$downloadPlot1 <- downloadHandler(
+    filename = "plot.png",
+    content = function(file) {
+      ggsave(file, plotInput_me())
+    })
 
   output$net_points_adj_me <- DT::renderDataTable({
     data <- adjusted_net_design_me()[[2]]
@@ -451,7 +485,8 @@ shinyServer(function(input, output){
   output$map_ellipses_opt_me <- renderLeaflet({
     ellipses <- adjusted_net_design_me()$ellipse.net
     observations <- adjusted_net_design_me()$observations
-    adj.net_map <- adj.net_spatial_view_web(ellipses = ellipses, observations = observations)
+    points <- mapEdit_list()[[1]]
+    adj.net_map <- adj.net_spatial_view_web(ellipses = ellipses, observations = observations, points = points)
     adj.net_map@map
   })
 

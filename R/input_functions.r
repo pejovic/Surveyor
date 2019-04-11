@@ -666,13 +666,13 @@ surveynet.mapedit_observations_edit <- function(points = points, st_dir = st_dir
   res <- res[ ,c("from","to")] # reorder columns
   observations <- res
 
-  points$x <- st_coordinates(points)[,1]
-  points$y <- st_coordinates(points)[,2]
+  #points$x <- st_coordinates(points)[,1]
+  #points$y <- st_coordinates(points)[,2]
 
-  observations$x_station <- points$x[match(observations$from, points$Name)]
-  observations$y_station <- points$y[match(observations$from, points$Name)]
-  observations$x_obs.point <- points$x[match(observations$to, points$Name)]
-  observations$y_obs.point <- points$y[match(observations$to, points$Name)]
+  #observations$x_station <- points$x[match(observations$from, points$Name)]
+  #observations$y_station <- points$y[match(observations$from, points$Name)]
+  #observations$x_obs.point <- points$x[match(observations$to, points$Name)]
+  #observations$y_obs.point <- points$y[match(observations$to, points$Name)]
 
   observations$id <- 1:nrow(observations)
 
@@ -790,10 +790,15 @@ surveynet.mapedit <- function(points_raw = points_raw, points = points, observat
 #    1. ellipses -  sf object with geometry type POLYGON and related attributes as product from design.snet function that represents error ellipses
 #    2. observations - sf object with geometry type LINESTRING and related attributes as product from design.snet function
 
-adj.net_spatial_view_web <- function(ellipses = ellipses, observations = observations){
+adj.net_spatial_view_web <- function(ellipses = ellipses, observations = observations, points = points){
   Ellipses <- st_transform(ellipses, 4326)
   Observations <- st_transform(observations, 4326)
-  web_map_2 <- mapview(Ellipses, zcol = "sp") + mapview(Observations, zcol = "rii")
+
+  Points <- st_transform(points, 4326)
+  Points$type <- "Geodetic network"
+  Points$type[Points$Point_object == TRUE] <- "Points at object"
+
+   web_map_2 <- mapview(Points, zcol = "type", col.regions = c("red","grey")) + mapview(Ellipses, zcol = "sp") + mapview(Observations, zcol = "rii")
   return(web_map_2)
 }
 
