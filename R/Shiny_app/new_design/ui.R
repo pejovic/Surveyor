@@ -95,7 +95,36 @@ shinyUI(
                                                                                                      textInput(inputId = "adjust_1_units", "Result units: " , value = "mm"),
                                                                                                      numericInput(inputId = "adjust_1_ell_scale", "Ellipse scale: ", value = 10)
                                                                                                      ),
-                                                                                            tabPanel("CRITERIA"
+                                                                                            tabPanel("CRITERIA",
+                                                                                                     p("POINT ACCURACY", style="text-align: center; font-weight: bold;"),
+                                                                                                     fluidRow(
+                                                                                                       column(width = 4, numericInput("sx_xlsx", "Sx: ", value = 1.5)),
+                                                                                                       column(width = 4, numericInput("sy_xlsx", "Sy: ", value = 1.5)),
+                                                                                                       column(width = 4, numericInput("sp_xlsx", "Sp: ", value = 2))
+                                                                                                     ),
+                                                                                                     fluidRow(
+                                                                                                       column(width = 12, numericInput("ab_xlsx", "A/B: ", value = 0))
+                                                                                                     ),
+                                                                                                     fluidRow(
+                                                                                                       column(width = 4, numericInput("dp_xlsx", "dP: ", value = 0)),
+                                                                                                       column(width = 4, numericInput("dpteta_xlsx", "dPθ: ", value = 0)),
+                                                                                                       column(width = 4, numericInput("teta_xlsx", "θ: ", value = 0))
+                                                                                                     ),
+                                                                                                     #rHandsontableOutput('p_acc_design_xlsx'),
+                                                                                                     p(""),
+                                                                                                     p("MEASURMENT ACCURACY", style="text-align: center; font-weight: bold;"),
+                                                                                                     fluidRow(
+                                                                                                       column(width = 6, numericInput("sdir_xlsx", "Sdir: ", value = 0)),
+                                                                                                       column(width = 6, numericInput("sdist_xlsx", "Sdist: ", value = 0))
+                                                                                                     ),
+                                                                                                     #rHandsontableOutput('mes_acc_design_xlsx'),
+                                                                                                     p(""),
+                                                                                                     p("MEASURMENT RELIABILITY", style="text-align: center; font-weight: bold;"),
+                                                                                                     fluidRow(
+                                                                                                       column(width = 6, numericInput("rii_xlsx", "rii: ", value = 0.7)),
+                                                                                                       column(width = 6, numericInput("gii_xlsx", "Gii: ", value = 0))
+                                                                                                     )
+                                                                                                     #rHandsontableOutput('mes_rel_design_xlsx'),
                                                                                                      )
                                                                                           ),
                                                                                           p(""),
@@ -170,7 +199,36 @@ shinyUI(
                                                                                                      textInput(inputId = "adjust_1_units_me", "Result units: " , value = "mm"),
                                                                                                      numericInput(inputId = "adjust_1_ell_scale_me", "Ellipse scale: ", value = 10)
                                                                                             ),
-                                                                                            tabPanel("CRITERIA"
+                                                                                            tabPanel("CRITERIA",
+                                                                                                     p("POINT ACCURACY", style="text-align: center; font-weight: bold;"),
+                                                                                                     fluidRow(
+                                                                                                       column(width = 4, numericInput("sx_map", "Sx: ", value = 1.5)),
+                                                                                                       column(width = 4, numericInput("sy_map", "Sy: ", value = 1.5)),
+                                                                                                       column(width = 4, numericInput("sp_map", "Sp: ", value = 2))
+                                                                                                     ),
+                                                                                                     fluidRow(
+                                                                                                       column(width = 12, numericInput("ab_map", "A/B: ", value = 0))
+                                                                                                     ),
+                                                                                                     fluidRow(
+                                                                                                       column(width = 4, numericInput("dp_map", "dP: ", value = 0)),
+                                                                                                       column(width = 4, numericInput("dpteta_map", "dPθ: ", value = 0)),
+                                                                                                       column(width = 4, numericInput("teta_map", "θ: ", value = 0))
+                                                                                                     ),
+                                                                                                     #rHandsontableOutput('p_acc_design_map'),
+                                                                                                     p(""),
+                                                                                                     p("MEASURMENT ACCURACY", style="text-align: center; font-weight: bold;"),
+                                                                                                     fluidRow(
+                                                                                                       column(width = 6, numericInput("sdir_map", "Sdir: ", value = 0)),
+                                                                                                       column(width = 6, numericInput("sdist_map", "Sdist: ", value = 0))
+                                                                                                     ),
+                                                                                                     #rHandsontableOutput('mes_acc_design_map'),
+                                                                                                     p(""),
+                                                                                                     p("MEASURMENT RELIABILITY", style="text-align: center; font-weight: bold;"),
+                                                                                                     fluidRow(
+                                                                                                       column(width = 6, numericInput("rii_map", "rii: ", value = 0.7)),
+                                                                                                       column(width = 6, numericInput("gii_map", "Gii: ", value = 0))
+                                                                                                     )
+                                                                                                     #rHandsontableOutput('mes_rel_design_map')
                                                                                             )
                                                                                           ),
                                                                                           p(""),

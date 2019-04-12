@@ -107,6 +107,19 @@ shinyServer(function(input, output){
     web_map_xlsx@map
   })
 
+
+  #output$p_acc_design_xlsx <- renderRHandsontable({
+  #  rhandsontable(data.frame(Sx = 0, Sy = 0, Sp = 0, A_B = 0, dP = 0, dPTeta = 0, Teta = 0))
+  #})
+
+  #output$mes_acc_design_xlsx <- renderRHandsontable({
+  #  rhandsontable(data.frame(Sdir = 0, Sdist = 0))
+  #})
+
+  #output$mes_rel_design_xlsx <- renderRHandsontable({
+  #  rhandsontable(data.frame(rii = 0, Gii = 0))
+  #})
+
   # MAPEDIT INPUT DATA
   ns <- shiny::NS("map_me")
   lf <- leaflet() %>%
@@ -193,6 +206,18 @@ shinyServer(function(input, output){
    web_map_me <- net_spatial_view_web(points = out_points_me, observations = out_observations_me)
    web_map_me@map
  })
+
+ #output$p_acc_design_map <- renderRHandsontable({
+ #  rhandsontable(data.frame(Sx = 0, Sy = 0, Sp = 0, A_B = 0, dP = 0, dPTeta = 0, Teta = 0))
+ #})
+
+ #output$mes_acc_design_map <- renderRHandsontable({
+ #  rhandsontable(data.frame(Sdir = 0, Sdist = 0))
+ #})
+
+ #output$mes_rel_design_map <- renderRHandsontable({
+ #  rhandsontable(data.frame(rii = 0, Gii = 0))
+ #})
 
   ##############################
   # Input data with observations
@@ -289,26 +314,51 @@ shinyServer(function(input, output){
   })
 
   output$ellipse_error <- DT::renderDataTable({
-    data <- adjusted_net_design()[[1]]
-    data %<>%
-      st_drop_geometry() %>%
-      as.data.frame() %>%
-      mutate(
-        A = round(A, 4),
-        B = round(B, 4),
-        teta = round(teta, 4),
-        sx = round(sx, 4),
-        sy = round(sy, 4),
-        sp = round(sp, 4)
+    #data <- adjusted_net_design()[[1]]
+    #data %<>%
+    #  st_drop_geometry() %>%
+    #  as.data.frame() %>%
+    #  mutate(
+    #    A = round(A, 4),
+    #    B = round(B, 4),
+    #    teta = round(teta, 4),
+    #    sx = round(sx, 4),
+    #    sy = round(sy, 4),
+    #    sp = round(sp, 4)
+    #  )
+    DT::datatable(adjusted_net_design()[[1]] %>%
+                    st_drop_geometry() %>%
+                    as.data.frame() %>%
+                    mutate(
+                      A = round(A, 4),
+                      B = round(B, 4),
+                      teta = round(teta, 4),
+                      sx = round(sx, 4),
+                      sy = round(sy, 4),
+                      sp = round(sp, 4)
+                    ),escape=F,
+                  extensions = list('Buttons', 'Scroller'),
+                  options = list(dom = 'Bfrtip', buttons = I('colvis'),
+                                 deferRender = TRUE,
+                                 scrollY = 500,
+                                 scrollX = 300,
+                                 scroller = TRUE)) %>%
+      formatStyle(
+        'sx',
+        color = styleInterval(c(input$sx_xlsx), c('black', 'white')),
+        backgroundColor = styleInterval(input$sx_xlsx, c('lightGray', 'tomato'))
+      ) %>%
+      formatStyle(
+        'sy',
+        color = styleInterval(c(input$sy_xlsx), c('black', 'white')),
+        backgroundColor = styleInterval(input$sy_xlsx, c('lightGray', 'tomato'))
+      ) %>%
+      formatStyle(
+        'sp',
+        color = styleInterval(c(input$sp_xlsx), c('black', 'white')),
+        backgroundColor = styleInterval(input$sp_xlsx, c('lightGray', 'tomato'))
       )
-    },
-    extensions = list('Buttons', 'Scroller'),
-    options = list(dom = 'Bfrtip', buttons = I('colvis'),
-                   deferRender = TRUE,
-                   scrollY = 500,
-                   scrollX = 300,
-                   scroller = TRUE)
-  )
+  })
 
   output$netSpatialView_ell <- renderPlot({
     ellipses_1 <- adjusted_net_design()[[1]]
@@ -335,45 +385,68 @@ shinyServer(function(input, output){
     })
 
   output$net_points_adj <- DT::renderDataTable({
-    data <- adjusted_net_design()[[2]]
-    data %<>%
-      st_drop_geometry() %>%
-      as.data.frame() %>%
-      mutate(
-        A = round(A, 4),
-        B = round(B, 4),
-        teta = round(teta, 4),
-        sx = round(sx, 4),
-        sy = round(sy, 4),
-        sp = round(sp, 4)
+    DT::datatable(
+        adjusted_net_design()[[2]] %>%
+        st_drop_geometry() %>%
+        as.data.frame() %>%
+        mutate(
+          A = round(A, 4),
+          B = round(B, 4),
+          teta = round(teta, 4),
+          sx = round(sx, 4),
+          sy = round(sy, 4),
+          sp = round(sp, 4)
+        ),escape=F,
+        extensions = list('Buttons', 'Scroller'),
+        options = list(dom = 'Bfrtip', buttons = I('colvis'),
+                       deferRender = TRUE,
+                       scrollY = 500,
+                       scrollX = 300,
+                       scroller = TRUE)
+      ) %>%
+      formatStyle(
+        'sx',
+        color = styleInterval(c(input$sx_xlsx), c('black', 'white')),
+        backgroundColor = styleInterval(input$sx_xlsx, c('lightGray', 'tomato'))
+      ) %>%
+      formatStyle(
+        'sy',
+        color = styleInterval(c(input$sy_xlsx), c('black', 'white')),
+        backgroundColor = styleInterval(input$sy_xlsx, c('lightGray', 'tomato'))
+      ) %>%
+      formatStyle(
+        'sp',
+        color = styleInterval(c(input$sp_xlsx), c('black', 'white')),
+        backgroundColor = styleInterval(input$sp_xlsx, c('lightGray', 'tomato'))
       )
-  },
-  extensions = list('Buttons', 'Scroller'),
-  options = list(dom = 'Bfrtip', buttons = I('colvis'),
-                 deferRender = TRUE,
-                 scrollY = 500,
-                 scrollX = 300,
-                 scroller = TRUE)
-  )
+  })
 
   output$net_observations_adj <- DT::renderDataTable({
-    data <- adjusted_net_design()[[3]]
-    data %<>%
-      st_drop_geometry() %>%
-      as.data.frame() %>%
-      mutate(
-        Ql = round(Ql, 4),
-        Qv = round(Qv, 4),
-        rii = round(rii, 4)
+    DT::datatable(
+      adjusted_net_design()[[3]] %>%
+        st_drop_geometry() %>%
+        as.data.frame() %>%
+        mutate(
+          Ql = round(Ql, 4),
+          Qv = round(Qv, 4),
+          rii = round(rii, 4)
+        ),escape=F,
+      extensions = list('Buttons', 'Scroller'),
+      options = list(dom = 'Bfrtip', buttons = I('colvis'),
+                     deferRender = TRUE,
+                     scrollY = 500,
+                     scrollX = 300,
+                     scroller = TRUE)
+    )%>%
+      formatStyle(
+        'rii',
+        color = styleInterval(c(input$rii_xlsx), c('black', 'red')),
+        background = styleColorBar(adjusted_net_design()[[3]]$rii, 'steelblue'),
+        backgroundSize = '100% 90%',
+        backgroundRepeat = 'no-repeat',
+        backgroundPosition = 'center'
       )
-  },
-  extensions = list('Buttons', 'Scroller'),
-  options = list(dom = 'Bfrtip', buttons = I('colvis'),
-                 deferRender = TRUE,
-                 scrollY = 500,
-                 scrollX = 300,
-                 scroller = TRUE)
-  )
+  })
 
   output$map_ellipses_opt <- renderLeaflet({
     ellipses <- adjusted_net_design()$ellipse.net
@@ -382,8 +455,6 @@ shinyServer(function(input, output){
     adj.net_map <- adj.net_spatial_view_web(ellipses = ellipses, observations = observations, points = points)
     adj.net_map@map
   })
-
-
 
  # 2D net design - map_edit input data
 
@@ -396,26 +467,40 @@ shinyServer(function(input, output){
   })
 
   output$ellipse_error_me <- DT::renderDataTable({
-    data <- adjusted_net_design_me()[[1]]
-    data %<>%
-      st_drop_geometry() %>%
-      as.data.frame() %>%
-      mutate(
-        A = round(A, 4),
-        B = round(B, 4),
-        teta = round(teta, 4),
-        sx = round(sx, 4),
-        sy = round(sy, 4),
-        sp = round(sp, 4)
+    DT::datatable(
+        adjusted_net_design_me()[[1]] %>%
+        st_drop_geometry() %>%
+        as.data.frame() %>%
+        mutate(
+          A = round(A, 4),
+          B = round(B, 4),
+          teta = round(teta, 4),
+          sx = round(sx, 4),
+          sy = round(sy, 4),
+          sp = round(sp, 4)
+        ), escape = FALSE,
+        extensions = list('Buttons', 'Scroller'),
+        options = list(dom = 'Bfrtip', buttons = I('colvis'),
+                       deferRender = TRUE,
+                       scrollY = 500,
+                       scrollX = 300,
+                       scroller = TRUE)) %>%
+      formatStyle(
+        'sx',
+        color = styleInterval(c(input$sx_map), c('black', 'white')),
+        backgroundColor = styleInterval(input$sx_map, c('lightGray', 'tomato'))
+      ) %>%
+      formatStyle(
+        'sy',
+        color = styleInterval(c(input$sy_map), c('black', 'white')),
+        backgroundColor = styleInterval(input$sy_map, c('lightGray', 'tomato'))
+      ) %>%
+      formatStyle(
+        'sp',
+        color = styleInterval(c(input$sp_map), c('black', 'white')),
+        backgroundColor = styleInterval(input$sp_map, c('lightGray', 'tomato'))
       )
-  },
-  extensions = list('Buttons', 'Scroller'),
-  options = list(dom = 'Bfrtip', buttons = I('colvis'),
-                 deferRender = TRUE,
-                 scrollY = 500,
-                 scrollX = 300,
-                 scroller = TRUE)
-  )
+  })
 
   output$netSpatialView_ell_me <- renderPlot({
     ellipses_1 <- adjusted_net_design_me()[[1]]
@@ -442,45 +527,66 @@ shinyServer(function(input, output){
     })
 
   output$net_points_adj_me <- DT::renderDataTable({
-    data <- adjusted_net_design_me()[[2]]
-    data %<>%
-      st_drop_geometry() %>%
-      as.data.frame() %>%
-      mutate(
-        A = round(A, 4),
-        B = round(B, 4),
-        teta = round(teta, 4),
-        sx = round(sx, 4),
-        sy = round(sy, 4),
-        sp = round(sp, 4)
+    DT::datatable(
+        adjusted_net_design_me()[[2]] %>%
+        st_drop_geometry() %>%
+        as.data.frame() %>%
+        mutate(
+          A = round(A, 4),
+          B = round(B, 4),
+          teta = round(teta, 4),
+          sx = round(sx, 4),
+          sy = round(sy, 4),
+          sp = round(sp, 4)
+        ), escape = FALSE,
+        extensions = list('Buttons', 'Scroller'),
+        options = list(dom = 'Bfrtip', buttons = I('colvis'),
+                       deferRender = TRUE,
+                       scrollY = 500,
+                       scrollX = 300,
+                       scroller = TRUE))%>%
+      formatStyle(
+        'sx',
+        color = styleInterval(c(input$sx_map), c('black', 'white')),
+        backgroundColor = styleInterval(input$sx_map, c('lightGray', 'tomato'))
+      ) %>%
+      formatStyle(
+        'sy',
+        color = styleInterval(c(input$sy_map), c('black', 'white')),
+        backgroundColor = styleInterval(input$sy_map, c('lightGray', 'tomato'))
+      ) %>%
+      formatStyle(
+        'sp',
+        color = styleInterval(c(input$sp_map), c('black', 'white')),
+        backgroundColor = styleInterval(input$sp_map, c('lightGray', 'tomato'))
       )
-  },
-  extensions = list('Buttons', 'Scroller'),
-  options = list(dom = 'Bfrtip', buttons = I('colvis'),
-                 deferRender = TRUE,
-                 scrollY = 500,
-                 scrollX = 300,
-                 scroller = TRUE)
-  )
+  })
 
   output$net_observations_adj_me <- DT::renderDataTable({
-    data <- adjusted_net_design_me()[[3]]
-    data %<>%
-      st_drop_geometry() %>%
-      as.data.frame() %>%
-      mutate(
-        Ql = round(Ql, 4),
-        Qv = round(Qv, 4),
-        rii = round(rii, 4)
+    DT::datatable(
+        adjusted_net_design_me()[[3]] %>%
+        st_drop_geometry() %>%
+        as.data.frame() %>%
+        mutate(
+          Ql = round(Ql, 4),
+          Qv = round(Qv, 4),
+          rii = round(rii, 4)
+        ), escape = FALSE,
+        extensions = list('Buttons', 'Scroller'),
+        options = list(dom = 'Bfrtip', buttons = I('colvis'),
+                       deferRender = TRUE,
+                       scrollY = 500,
+                       scrollX = 300,
+                       scroller = TRUE))%>%
+      formatStyle(
+        'rii',
+        color = styleInterval(c(input$rii_map), c('black', 'red')),
+        background = styleColorBar(adjusted_net_design_me()[[3]]$rii, 'steelblue'),
+        backgroundSize = '100% 90%',
+        backgroundRepeat = 'no-repeat',
+        backgroundPosition = 'center'
       )
-  },
-  extensions = list('Buttons', 'Scroller'),
-  options = list(dom = 'Bfrtip', buttons = I('colvis'),
-                 deferRender = TRUE,
-                 scrollY = 500,
-                 scrollX = 300,
-                 scroller = TRUE)
-  )
+  })
 
   output$map_ellipses_opt_me <- renderLeaflet({
     ellipses <- adjusted_net_design_me()$ellipse.net
