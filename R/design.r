@@ -75,4 +75,4 @@ adj.net_spatial_view <- function(ellipses = ellipses, observations = observation
   return(adj.net_view)
 }
 
-adj.net_spatial_view(vb.results$ellipse.net,vb.results$observations)
+adj_net_spatial_view(vb.results$ellipse.net,vb.results$observations)
