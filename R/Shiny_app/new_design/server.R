@@ -215,21 +215,21 @@ shinyServer(function(input, output){
 
   xlsx_points_wO <- reactive({
     req(input$fileXLSX_adj)
-    map_xlsx_points_wO <- readxl::read_xlsx(path = input$fileXLSX_adj$datapath, sheet = "Points")
+    map_xlsx_points_wO <- readxl::read_xlsx(path = input$fileXLSX_adj$datapath, sheet = "Points", col_types = c("numeric", "text", "numeric", "numeric", "logical", "logical", "logical"))
     map_xlsx_points_wO
   })
 
   xlsx_observations_wO <- reactive({
     req(input$fileXLSX_adj)
-    map_xlsx_observations_wO <- readxl::read_xlsx(path = input$fileXLSX_adj$datapath, sheet = "Observations")
+    map_xlsx_observations_wO <- readxl::read_xlsx(path = input$fileXLSX_adj$datapath, sheet = "Observations", col_types = c("text", "text", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric"))
     map_xlsx_observations_wO
   })
 
-  surveynet.wO <- eventReactive(input$preprocess_2d_adj, {
+  surveynet.wO <- reactive({#(input$preprocess_2d_adj, {
     p_xlsx_wO <- xlsx_points_wO()
     o_xlsx_wO <- xlsx_observations_wO()
     dest_crs_xlsx_wO = as.numeric(input$epsg_xlsx_adj)
-    output_xlsx_wO <- surveynet2DAdjustment_Import.xlsx(points = p_xlsx_wO, observations = o_xlsx_wO, dest_crs = dest_crs_xlsx_wO)
+    output_xlsx_wO <- surveynet2DAdjustment_Import_fun.xlsx(points = p_xlsx_wO, observations = o_xlsx_wO, dest_crs = dest_crs_xlsx_wO)
     output_xlsx_wO
   })
 
@@ -253,11 +253,11 @@ shinyServer(function(input, output){
       as.data.frame() %>%
       mutate(use = TRUE)
       },
-      width = 800,
-      height = 800
+      width = 700,
+      height = 700
   ))
 
-  edited_wO <- eventReactive(input$update_adj_2d_xlsx,{
+  edited_wO <- reactive({#(input$update_adj_2d_xlsx,{
     values_p_2d_adj$data <- hot_to_r(input$p_adj_xlsx)
     values_m_2d_adj$data <- hot_to_r(input$o_adj_xlsx)
 
@@ -270,7 +270,6 @@ shinyServer(function(input, output){
     return_data
   })
 
-
   output$netSpatialView_xlsx_2d_adj <- renderPlot({
     out_points_xlsx_wO <- surveynet.wO()[[1]]
     out_observations_xlsx_wO <- surveynet.wO()[[2]]
@@ -279,7 +278,7 @@ shinyServer(function(input, output){
     edited_observations_xlsx_wO <- st_as_sf(edited_observations_xlsx_wO)
     output_view_xlsx_wO <- net_spatial_view_2DAdjustment_Import(points = out_points_xlsx_wO, observations = edited_observations_xlsx_wO)
     output_view_xlsx_wO
-  }#, width = 600, height = 600
+  }, width = 600, height = 600
   )
 
   #######################
