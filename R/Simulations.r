@@ -1,6 +1,10 @@
 
 library(tidyverse)
 library(magrittr)
+library(readxl)
+library(here)
+library(ggplot2)
+library(purrr)
 
 
 A <- c(393.979,	419.038)
@@ -375,7 +379,45 @@ write.table(sim_d, "sim_d.txt", sep = " ")
 getwd()
 
 
-################### PROJEKTOVANJE #######################################################
+################### 1D simulacija #######################################################
 
 
 
+points <- read_xlsx(here("data/1D_simulation.xlsx"))
+
+observations <- read_xlsx(here("data/1D_simulation.xlsx"), sheet = 2, col_types = c("text", "text", "numeric", "numeric"))
+
+observations$H_from <- points$H[match(observations$from, points$Name)]
+observations$H_to <- points$H[match(observations$to, points$Name)]
+
+observations <- observations %>% mutate(dH = H_to - H_from, obs = paste(from, to, sep = "_"), a = runif(stations))
+  split(., f= as.factor(.$obs))
+
+
+
+lapply(obs.list, function(x), )
+
+options(digits = 4)
+
+n = 5
+m = 2
+a = runif(n)
+out = (a/sum(a)*m)
+
+
+observations %>% dplyr::mutate(rand = purrr::pmap(., function(stations, ...){runif(stations)})) %>%
+                 dplyr::mutate(dh_obs = purrr::pmap(., function(rand, dh0, ...){rand/sum(rand)*dh0})) %>%
+                 tidyr::unnest()
+
+
+dhh <- 0.192
+
+ll <- function(dh, )
+
+
+ll <- runif(2, min = 1.5, max = 2)
+
+l1 <- ll[1] + 0.192/2
+l2 <- ll[2] - 0.192/2
+
+l2 - l1
