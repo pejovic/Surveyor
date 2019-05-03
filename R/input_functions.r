@@ -804,7 +804,7 @@ adj.net_spatial_view_web <- function(ellipses = ellipses, observations = observa
   Observations$fill <- paste("<",rii_bound)
   Observations$fill[Observations$rii > rii_bound] <- paste(">",rii_bound)
 
-  web_map_2 <- mapview(Points, zcol = "type", col.regions = c("red","grey"), layer.name = "Points type") + mapview(Ellipses, zcol = "fill", col.regions = c("yellow", "red"), layer.name = "StDev Postion [mm]") + mapview(Observations, zcol = "fill", color = c("orange", "red"), layer.name = "Reliability measure rii [/]")
+  web_map_2 <- mapview(Points, zcol = "type", col.regions = c("red","grey"), layer.name = "Points type") + mapview(Ellipses, zcol = "fill", col.regions = c("yellow", "red"), layer.name = "StDev Position [mm]") + mapview(Observations, zcol = "fill", color = c("orange", "red"), layer.name = "Reliability measure rii [/]")
 
   return(web_map_2)
 }
