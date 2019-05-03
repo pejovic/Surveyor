@@ -3,34 +3,32 @@ source(here("R/inputFunction_withObservations.R"))
 source(here("R/functions.r"))
 
 library(shiny)
-library(shinythemes)
+library(shinythemes) #
 library(leaflet)
 library(tidyverse)
 library(magrittr)
 library(ggplot2)
-library(geomnet)
-library(ggnetwork)
+#library(geomnet) # Eliminisati ako moze
+#library(ggnetwork) # Eliminasti ako moze
 library(sf)
 library(ggmap)
-library(sp)
-library(rgdal)
-library(leaflet)
-library(xlsx)
+library(sp) # Eliminasti ako ne treba
+library(rgdal) # Eliminasti ako ne treba
+#library(xlsx) # Eliminasati
 library(readxl)
 library(data.table)
 library(plotly)
 library(mapview)
 library(mapedit)
-library(shinycssloaders)
+library(shinycssloaders) #
 library(here)
 library(matlib)
 library(nngeo)
-library(shinyWidgets)
-library(dplyr)
-library(DT)
+library(shinyWidgets) #
+library(DT) #
 library(leaflet.extras)
-library(rhandsontable)
-library(shinyBS)
+library(rhandsontable) #
+library(shinyBS) #
 
 
 shinyUI(

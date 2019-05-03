@@ -20,7 +20,7 @@ names(coords.dks) <- c("Name", "Easting", "Northing")
 #write_xlsx(coords.dks, path = "Rovni_tacke.xlsx")
 
 
-obs_plan <- data.frame(station = rep(c("T1", "T1", "T1", "T1", "T3", "T3", "T3", "T3", "T4", "T4", "T4", "T4", "T5", "T5", "T5", "T5", "T6", "T6", "T6", "T6"), 2), obs.point = rep(c("T3", "T4", "T5", "T6", "T1", "T4", "T5","T6", "T1", "T3", "T5", "T6", "T1", "T3", "T4", "T6", "T1", "T3", "T4", "T5"), 2), type = c(rep("p", 20), rep("d", 20)) )
+obs_plan <- data.frame(from = rep(c("T1", "T1", "T1", "T1", "T3", "T3", "T3", "T3", "T4", "T4", "T4", "T4", "T5", "T5", "T5", "T5", "T6", "T6", "T6", "T6"), 2), to = rep(c("T3", "T4", "T5", "T6", "T1", "T4", "T5","T6", "T1", "T3", "T5", "T6", "T1", "T3", "T4", "T6", "T1", "T3", "T4", "T5"), 2), type = c(rep("direction", 20), rep("distance", 20)) )
 
 tacke.sp <- SpatialPointsDataFrame(coords = coords.dks[, 2:3], data = data.frame(Name = coords.dks$Name))
 coef_d(pt1 = as.numeric(tacke.dks@coords[1, 1:2]), pt2 = as.numeric(tacke.dks@coords[2, 1:2]), units = "mm", pts = coords.dks)
@@ -31,9 +31,9 @@ A <- function(obs.plan, tacke, coef_funs = list(coef_p, coef_d)){
   Amat <- matrix(NA, ncol = dim(tacke)[1]*2, nrow = dim(obs.plan)[1])
   tacke.sp <- SpatialPointsDataFrame(coords = tacke[, 2:3], data = data.frame(Name = tacke$Name))
   for(i in 1:dim(obs.plan)[1]){
-    st_coords <- dplyr::filter(tacke, Name == obs.plan$station[i])[, -1] %>% as.numeric()
-    viz_coords <- dplyr::filter(tacke, Name == obs.plan$obs.point[i])[, -1] %>% as.numeric()
-    Amat[i, ] <- if(obs.plan$type[i] == "p"){
+    st_coords <- dplyr::filter(tacke, Name == obs.plan$from[i])[, -1] %>% as.numeric()
+    viz_coords <- dplyr::filter(tacke, Name == obs.plan$to[i])[, -1] %>% as.numeric()
+    Amat[i, ] <- if(obs.plan$type[i] == "direction"){
       coef_p(pt1 = st_coords, pt2 = viz_coords, units = "mm", pts = tacke)
     }else{
       coef_d(pt1 = st_coords, pt2 = viz_coords, units = "mm", pts = tacke)
@@ -43,4 +43,12 @@ A <- function(obs.plan, tacke, coef_funs = list(coef_p, coef_d)){
 }
 
 A(obs.plan = obs_plan, tacke = coords.dks)
+
+
+obs_plan %>% dplyr::filter(type == "direction") %>%
+  tidyr::spread(key = from, value = type)
+
+hz(st_coords, target_coords, hz_orient = NULL, hz0 = 0, scent = 2, standard_hz = 5, c =  10, sc = 5, scent_target = NULL, sfocus = NULL, seed = NULL, faces = list("mean", "both" ,"face1", "face2"), type = list("dms", "dec", "rad"), axises = c("North", "East")){
+
+
 
