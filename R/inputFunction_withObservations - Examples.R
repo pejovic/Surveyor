@@ -74,8 +74,14 @@ xlsx_Avala.1 <- surveynet2DAdjustment_Import.xlsx(points = points_xlsx.1, observ
 net_spatial_view_2DAdjustment_Import(points = xlsx_Avala.1[[1]], observations = xlsx_Avala.1[[2]])
 
 
+# ===========================================================================================================
+# NEW DESIGN
 
+avala_points <- readxl::read_xlsx(path = here::here("Data/Input/With_observations/Avala/Avala_observations.xlsx"), sheet = "Points", col_types = c("numeric", "text", "numeric", "numeric", "logical", "logical", "logical"))
+avala_obs <- readxl::read_xlsx(path = here::here("Data/Input/With_observations/Avala/Avala_observations.xlsx"), sheet = "Observations", col_types = c("text", "text", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric"))
+avala <- surveynet2DAdjustment_Import_fun.xlsx(points = avala_points, observations = avala_obs, dest_crs = 3857)
 
+net_spatial_view_2DAdjustment_Import(points = avala[[1]], observations = avala[[2]])
 
 
 

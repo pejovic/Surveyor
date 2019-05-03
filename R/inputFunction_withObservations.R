@@ -229,35 +229,115 @@ surveynet2DAdjustment_Import.xlsx <- function(points = points, observations = ob
 #    1. points -  sf object with geometry type POINT and related attributes as product from surveynet2DAdjustment_Import.___ function
 #    2. observations - sf object with geometry type LINESTRING and related attributes as product from ssurveynet2DAdjustment_Import.___ function
 
-net_spatial_view_2DAdjustment_Import <- function(points, observations){
+net_spatial_view_2DAdjustment_Import <- function(points = points, observations = observations){
 
   points$fill_p <- "red"
   points$fill_p[points$Point_object == TRUE] <- "DeepSkyBlue"
 
-  # Example to add little different type of observations
-  # observations$distance[1:3] <- FALSE
-  # observations$direction[5:7] <- FALSE
-  # observations$fill_o <- "LightGoldenRodYellow"
-
-  observations$fill_o <- ifelse(observations$distance == TRUE & observations$direction == FALSE,"LightGoldenRodYellow", ifelse(observations$distance == FALSE & observations$direction == TRUE, "Khaki","orange"))
-
-  net_view <- ggplot(data=observations) +
-    geom_sf(size=1,stroke=1, color = observations$fill_o)+
-    geom_sf(data=points, shape = 24, fill = points$fill_p, size=2.5, stroke=2) +
-    geom_sf_text(data=points, aes(label=Name,hjust = 1.5, vjust =1.5))+
-    xlab("\nLongitude [deg]") +
-    ylab("Latitude [deg]\n") +
-    ggtitle("Observational plan and points [geodetic network and object points]")+
-    guides(col = guide_legend())+
-    theme_bw()
+  #if(any(is.na(st_coordinates(observations$geometry)[,1]) == FALSE) == TRUE){
+  #  net_view <- ggplot(data=points) +
+  #    geom_sf(data=points, shape = 24, fill = points$fill_p, size=2.5, stroke=2) +
+  #    geom_sf_text(data=points, aes(label=Name,hjust = 1.5, vjust =1.5))+
+  #    xlab("\nLongitude [deg]") +
+  #    ylab("Latitude [deg]\n") +
+  #    ggtitle("Points [geodetic network and object points]")+
+  #    guides(col = guide_legend())+
+  #    theme_bw()
+  #} else{
+    net_view <- ggplot(data=observations) +
+      geom_sf(size=1,stroke=1)+
+      geom_sf(data=points, shape = 24, fill = points$fill_p, size=2.5, stroke=2) +
+      geom_sf_text(data=points, aes(label=Name,hjust = 1.5, vjust =1.5))+
+      xlab("\nLongitude [deg]") +
+      ylab("Latitude [deg]\n") +
+      ggtitle("Observational plan and points [geodetic network and object points]")+
+      guides(col = guide_legend())+
+      theme_bw()
+  #}
   return(net_view)
-
 }
 
 
+# Parameters:
+#    1. points -  Excel file sheet with attributes related to points - geodetic network [Example: Data/Input/With_observations]
+#    2. observations - Excel file sheet with attributes related to observations [Example: Data/Input/With_observations]
+#    3. dest_crs - destination Coordinate Reference System - set EPSG code [default: 3857 - Web Mercator projection coordinate system]
+
+surveynet2DAdjustment_Import_fun.xlsx <- function(points = points, observations = observations, dest_crs = NA){
+
+  # Check function for point names, that can not be just numbers -> must contain letter
+  points$Name <- as.character(points$Name)
+  vec <- c(1:99999)
+  j = 1
+  for(i in points$Name){
+    if(i %in% vec){
+      points$Name[j] <- paste("T",i, sep = "")
+      j = j +1
+
+    }
+  }
+
+  vec <- c(1:99999)
+  j = 1
+  for(i in observations$From){
+    if(i %in% vec){
+      observations$From[j] <- paste("T",i, sep = "")
+      j = j +1
+    }
+  }
+
+  vec <- c(1:99999)
+  j = 1
+  for(i in observations$To){
+    if(i %in% vec){
+      observations$To[j] <- paste("T",i, sep = "")
+      j = j +1
+    }
+  }
 
 
+  # Create geometry columns for points
+  if (is.na(dest_crs)){
+    dest_crs <- 3857
+  }
 
+  observations$x_station <- points$x[match(observations$From, points$Name)]
+  observations$y_station <- points$y[match(observations$From, points$Name)]
+  observations$x_obs.point <- points$x[match(observations$To, points$Name)]
+  observations$y_obs.point <- points$y[match(observations$To, points$Name)]
+
+  points <- points %>% as.data.frame() %>% sf::st_as_sf(coords = c("x","y")) %>% sf::st_set_crs(dest_crs)
+
+  dt <- as.data.table(observations)
+  dt$id <- c(1:length(dt$From))
+  dt_1 <- dt[
+    , {
+      geometry <- sf::st_linestring(x = matrix(c(x_station, x_obs.point, y_station, y_obs.point), ncol = 2))
+      geometry <- sf::st_sfc(geometry)
+      geometry <- sf::st_sf(geometry = geometry)
+    }
+    , by = id
+    ]
+  dt_1 <- sf::st_as_sf(dt_1)
+  dt_1 %<>% mutate(From = observations$From,
+                   To = observations$To,
+                   HzD = observations$HzD,
+                   HzM = observations$HzM,
+                   HzS = round(observations$HzS, 2),
+                   SD = round(observations$SD, 3),
+                   VzD = observations$VzD,
+                   VzM = observations$VzM,
+                   VzS = round(observations$VzS, 2)
+  )
+
+  dt_1 <- dt_1 %>% sf::st_set_crs(dest_crs)
+  observations <- dt_1
+
+  # Creating list
+  survey_net <- list(points,observations)
+
+  return(survey_net)
+}
 
 
 

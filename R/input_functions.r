@@ -790,7 +790,7 @@ surveynet.mapedit <- function(points_raw = points_raw, points = points, observat
 #    1. ellipses -  sf object with geometry type POLYGON and related attributes as product from design.snet function that represents error ellipses
 #    2. observations - sf object with geometry type LINESTRING and related attributes as product from design.snet function
 
-adj.net_spatial_view_web <- function(ellipses = ellipses, observations = observations, points = points){
+adj.net_spatial_view_web <- function(ellipses = ellipses, observations = observations, points = points, sp_bound = sp_bound, rii_bound = rii_bound){
   Ellipses <- st_transform(ellipses, 4326)
   Observations <- st_transform(observations, 4326)
 
@@ -798,10 +798,16 @@ adj.net_spatial_view_web <- function(ellipses = ellipses, observations = observa
   Points$type <- "Geodetic network"
   Points$type[Points$Point_object == TRUE] <- "Points at object"
 
-   web_map_2 <- mapview(Points, zcol = "type", col.regions = c("red","grey")) + mapview(Ellipses, zcol = "sp") + mapview(Observations, zcol = "rii")
+  Ellipses$fill <- paste("<",sp_bound)
+  Ellipses$fill[Ellipses$sp > sp_bound] <- paste(">",sp_bound)
+
+  Observations$fill <- paste("<",rii_bound)
+  Observations$fill[Observations$rii > rii_bound] <- paste(">",rii_bound)
+
+  web_map_2 <- mapview(Points, zcol = "type", col.regions = c("red","grey"), layer.name = "Points type") + mapview(Ellipses, zcol = "fill", col.regions = c("yellow", "red"), layer.name = "StDev Postion [mm]") + mapview(Observations, zcol = "fill", color = c("orange", "red"), layer.name = "Reliability measure rii [/]")
+
   return(web_map_2)
 }
-
 
 ######################
 # adj.net_spatial_view

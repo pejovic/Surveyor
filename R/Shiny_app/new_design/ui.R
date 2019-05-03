@@ -1,34 +1,36 @@
-source(here("R/input_functions.r"))
-source(here("R/inputFunction_withObservations.R"))
-source(here("R/functions.r"))
+source(here::here("R/input_functions.r"))
+source(here::here("R/inputFunction_withObservations.R"))
+source(here::here("R/functions.r"))
 
 library(shiny)
-library(shinythemes) #
+library(shinythemes)
 library(leaflet)
 library(tidyverse)
 library(magrittr)
 library(ggplot2)
-#library(geomnet) # Eliminisati ako moze
-#library(ggnetwork) # Eliminasti ako moze
+#library(geomnet)
+#library(ggnetwork)
 library(sf)
 library(ggmap)
-library(sp) # Eliminasti ako ne treba
-library(rgdal) # Eliminasti ako ne treba
-#library(xlsx) # Eliminasati
+library(sp)
+library(rgdal)
+library(leaflet)
+#library(xlsx)
 library(readxl)
 library(data.table)
 library(plotly)
 library(mapview)
 library(mapedit)
-library(shinycssloaders) #
+library(shinycssloaders)
 library(here)
 library(matlib)
 library(nngeo)
-library(shinyWidgets) #
-library(DT) #
+library(shinyWidgets)
+library(dplyr)
+library(DT)
 library(leaflet.extras)
-library(rhandsontable) #
-library(shinyBS) #
+library(rhandsontable)
+library(shinyBS)
 
 
 shinyUI(
@@ -82,8 +84,8 @@ shinyUI(
                                                                                           p(""),
                                                                                           navlistPanel(
                                                                                             tabPanel("OBSERVATION ACCURACY",
-                                                                                                     numericInput(inputId = "st_dir_design_xlsx", "Standard deviation direction: ", value = 3),
-                                                                                                     numericInput(inputId = "st_dist_design_xlsx", "Standard deviation distance: ", value = 3),
+                                                                                                     numericInput(inputId = "st_dir_design_xlsx", "Standard deviation for angle measurments ['']: ", value = 3),
+                                                                                                     numericInput(inputId = "st_dist_design_xlsx", "Standard deviation for distance measurments [mm]: ", value = 3),
                                                                                                      numericInput(inputId = "st_apriori_design_xlsx", "'a priori' Standard deviation: ", value = 1)
                                                                                                      ),
                                                                                             tabPanel("COORDINATE REFERENCE SYSTEM",
@@ -119,7 +121,7 @@ shinyUI(
                                                                                                      p(""),
                                                                                                      p("MEASURMENT RELIABILITY", style="text-align: center; font-weight: bold;"),
                                                                                                      fluidRow(
-                                                                                                       column(width = 6, numericInput("rii_xlsx", "rii: ", value = 0.7)),
+                                                                                                       column(width = 6, numericInput("rii_xlsx", "rii: ", value = 0.3)),
                                                                                                        column(width = 6, numericInput("gii_xlsx", "Gii: ", value = 0))
                                                                                                      )
                                                                                                      #rHandsontableOutput('mes_rel_design_xlsx'),
@@ -186,8 +188,8 @@ shinyUI(
                                                                                           p(""),
                                                                                           navlistPanel(
                                                                                             tabPanel("OBSERVATION ACCURACY",
-                                                                                                     numericInput(inputId = "st_dir_me", "Standard deviation direction: ", value = 3),
-                                                                                                     numericInput(inputId = "st_dist_me", "Standard deviation distance: ", value = 3),
+                                                                                                     numericInput(inputId = "st_dir_me", "Standard deviation for angle measurments ['']: ", value = 3),
+                                                                                                     numericInput(inputId = "st_dist_me", "Standard deviation for distance measurments [mm]: ", value = 3),
                                                                                                      numericInput(inputId = "st_apriori_design_map", "'a priori' Standard deviation: ", value = 1)
                                                                                             ),
                                                                                             tabPanel("COORDINATE REFERENCE SYSTEM",
@@ -223,7 +225,7 @@ shinyUI(
                                                                                                      p(""),
                                                                                                      p("MEASURMENT RELIABILITY", style="text-align: center; font-weight: bold;"),
                                                                                                      fluidRow(
-                                                                                                       column(width = 6, numericInput("rii_map", "rii: ", value = 0.7)),
+                                                                                                       column(width = 6, numericInput("rii_map", "rii: ", value = 0.3)),
                                                                                                        column(width = 6, numericInput("gii_map", "Gii: ", value = 0))
                                                                                                      )
                                                                                                      #rHandsontableOutput('mes_rel_design_map')
@@ -316,8 +318,8 @@ shinyUI(
                                                                                          p(""),
                                                                                          navlistPanel(
                                                                                            tabPanel("OBSERVATION ACCURACY",
-                                                                                                    numericInput(inputId = "st_dir_adj_xlsx", "Standard deviation direction: ", value = 3),
-                                                                                                    numericInput(inputId = "st_dist_adj_xlsx", "Standard deviation distance: ", value = 3),
+                                                                                                    numericInput(inputId = "st_dir_adj_xlsx", "Standard deviation for angle measurments ['']: ", value = 3),
+                                                                                                    numericInput(inputId = "st_dist_adj_xlsx", "Standard deviation for distance measurments [mm]: ", value = 3),
                                                                                                     numericInput(inputId = "st_apriori_adj_xlsx", "'a priori' Standard deviation: ", value = 1)
                                                                                            ),
                                                                                            tabPanel("COORDINATE REFERENCE SYSTEM",
@@ -351,7 +353,7 @@ shinyUI(
                                                                                                     p(""),
                                                                                                     p("MEASURMENT RELIABILITY", style="text-align: center; font-weight: bold;"),
                                                                                                     fluidRow(
-                                                                                                      column(width = 6, numericInput("rii_xlsx_adj", "rii: ", value = 0.7)),
+                                                                                                      column(width = 6, numericInput("rii_xlsx_adj", "rii: ", value = 0.3)),
                                                                                                       column(width = 6, numericInput("gii_xlsx_adj", "Gii: ", value = 0))
                                                                                                     )
                                                                                            )

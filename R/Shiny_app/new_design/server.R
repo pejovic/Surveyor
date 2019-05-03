@@ -49,7 +49,7 @@ shinyServer(function(input, output){
     map_xlsx_observations
   })
 
-  xlsx_list <- eventReactive(input$go2, {
+  xlsx_list <- reactive({#(input$go2, {
     p_xlsx <- xlsx_points()
     o_xlsx <- xlsx_observations()
     dest_crs_xlsx = as.numeric(input$epsg_xlsx)
@@ -65,10 +65,12 @@ shinyServer(function(input, output){
   })
 
   output$o_des_xlsx <- renderRHandsontable({
+    values_p$data <- hot_to_r(input$p_des_xlsx)
+    p_df <- as.data.frame(values_p$data)
     rhandsontable(as.data.frame(xlsx_list()[[2]] %>% st_drop_geometry()), width = 650, height = 650)
   })
 
-  updated_xlsx_list <- eventReactive(input$update_design_2d_xlsx,{
+  updated_xlsx_list <- reactive({#(input$update_design_2d_xlsx,{
     values_p$data <- hot_to_r(input$p_des_xlsx)
     p_df <- as.data.frame(values_p$data)
     values_o$data <- hot_to_r(input$o_des_xlsx)
@@ -140,26 +142,14 @@ shinyServer(function(input, output){
     points_me
   })
 
-  output$primer <- renderPrint({
-    points_me <- me_points_print()
-    points_me
-  })
-
   po_me <- reactive({
     points_raw_me <- editmapx()$finished
     points_me <- surveynet.mapedit_points(points = points_raw_me)
     points_me
   })
 
-  ob_me <- reactive({
-    points_me <- po_me()
-    observations_me <- surveynet.mapedit_observations(points = points_me)
-    observations_me
-  })
-
-  ob_example <- eventReactive(input$map_edit_result, {
+  ob_example <- reactive({#(input$map_edit_result, {
     p_me <- po_me()
-    o_me <- ob_me()
     obs_example <- surveynet.mapedit_observations_edit(points = p_me, st_dir = input$st_dir_me, st_dist = input$st_dist_me)
     obs_example
   })
@@ -180,7 +170,7 @@ shinyServer(function(input, output){
     rhandsontable(as.data.frame(ob_example()), width = 650, height = 650)
   })
 
-  mapEdit_list <- eventReactive(input$update_design_2d_map, {
+  mapEdit_list <- reactive({#(input$update_design_2d_map, {
     points_raw <- po_me()
     values_p_map$data <- hot_to_r(input$p_des_map)
     p_df <- as.data.frame(values_p_map$data)
@@ -225,21 +215,21 @@ shinyServer(function(input, output){
 
   xlsx_points_wO <- reactive({
     req(input$fileXLSX_adj)
-    map_xlsx_points_wO <- readxl::read_xlsx(path = input$fileXLSX_adj$datapath, sheet = "Points")
+    map_xlsx_points_wO <- readxl::read_xlsx(path = input$fileXLSX_adj$datapath, sheet = "Points", col_types = c("numeric", "text", "numeric", "numeric", "logical", "logical", "logical"))
     map_xlsx_points_wO
   })
 
   xlsx_observations_wO <- reactive({
     req(input$fileXLSX_adj)
-    map_xlsx_observations_wO <- readxl::read_xlsx(path = input$fileXLSX_adj$datapath, sheet = "Observations")
+    map_xlsx_observations_wO <- readxl::read_xlsx(path = input$fileXLSX_adj$datapath, sheet = "Observations", col_types = c("text", "text", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric"))
     map_xlsx_observations_wO
   })
 
-  surveynet.wO <- eventReactive(input$preprocess_2d_adj, {
+  surveynet.wO <- reactive({#(input$preprocess_2d_adj, {
     p_xlsx_wO <- xlsx_points_wO()
     o_xlsx_wO <- xlsx_observations_wO()
     dest_crs_xlsx_wO = as.numeric(input$epsg_xlsx_adj)
-    output_xlsx_wO <- surveynet2DAdjustment_Import.xlsx(points = p_xlsx_wO, observations = o_xlsx_wO, dest_crs = dest_crs_xlsx_wO)
+    output_xlsx_wO <- surveynet2DAdjustment_Import_fun.xlsx(points = p_xlsx_wO, observations = o_xlsx_wO, dest_crs = dest_crs_xlsx_wO)
     output_xlsx_wO
   })
 
@@ -247,23 +237,27 @@ shinyServer(function(input, output){
   values_m_2d_adj <- reactiveValues()
 
   output$p_adj_xlsx <- renderRHandsontable({
-    rhandsontable(as.data.frame(surveynet.wO()[[1]] %>%
-                                  st_drop_geometry()),
-                  width = 650,
-                  height = 650)
+    rhandsontable({
+      surveynet.wO()[[1]] %>%
+      st_drop_geometry() %>%
+      as.data.frame()
+      },
+      width = 650,
+      height = 650)
   })
 
-  output$o_adj_xlsx <- renderRHandsontable(rhandsontable({
+  output$o_adj_xlsx <- renderRHandsontable(
+    rhandsontable({
       surveynet.wO()[[2]] %>%
       st_drop_geometry() %>%
       as.data.frame() %>%
       mutate(use = TRUE)
-  },
-  width = 800,
-  height = 800
+      },
+      width = 700,
+      height = 700
   ))
 
-  edited_wO <- eventReactive(input$update_adj_2d_xlsx,{
+  edited_wO <- reactive({#(input$update_adj_2d_xlsx,{
     values_p_2d_adj$data <- hot_to_r(input$p_adj_xlsx)
     values_m_2d_adj$data <- hot_to_r(input$o_adj_xlsx)
 
@@ -276,7 +270,6 @@ shinyServer(function(input, output){
     return_data
   })
 
-
   output$netSpatialView_xlsx_2d_adj <- renderPlot({
     out_points_xlsx_wO <- surveynet.wO()[[1]]
     out_observations_xlsx_wO <- surveynet.wO()[[2]]
@@ -285,7 +278,7 @@ shinyServer(function(input, output){
     edited_observations_xlsx_wO <- st_as_sf(edited_observations_xlsx_wO)
     output_view_xlsx_wO <- net_spatial_view_2DAdjustment_Import(points = out_points_xlsx_wO, observations = edited_observations_xlsx_wO)
     output_view_xlsx_wO
-  }#, width = 600, height = 600
+  }, width = 600, height = 600
   )
 
   #######################
@@ -341,18 +334,18 @@ shinyServer(function(input, output){
                                  scroller = TRUE)) %>%
       formatStyle(
         'sx',
-        color = styleInterval(c(input$sx_xlsx), c('black', 'white')),
-        backgroundColor = styleInterval(input$sx_xlsx, c('lightGray', 'tomato'))
+        color = styleInterval(c(input$sx_xlsx), c('black', 'red'))#,
+        #backgroundColor = styleInterval(input$sx_xlsx, c('lightGray', 'tomato'))
       ) %>%
       formatStyle(
         'sy',
-        color = styleInterval(c(input$sy_xlsx), c('black', 'white')),
-        backgroundColor = styleInterval(input$sy_xlsx, c('lightGray', 'tomato'))
+        color = styleInterval(c(input$sy_xlsx), c('black', 'red'))#,
+        #backgroundColor = styleInterval(input$sy_xlsx, c('lightGray', 'tomato'))
       ) %>%
       formatStyle(
         'sp',
-        color = styleInterval(c(input$sp_xlsx), c('black', 'white')),
-        backgroundColor = styleInterval(input$sp_xlsx, c('lightGray', 'tomato'))
+        color = styleInterval(c(input$sp_xlsx), c('black', 'red'))#,
+        #backgroundColor = styleInterval(input$sp_xlsx, c('lightGray', 'tomato'))
       )
   })
 
@@ -392,7 +385,9 @@ shinyServer(function(input, output){
           sx = round(sx, 4),
           sy = round(sy, 4),
           sp = round(sp, 4)
-        ),escape=F,
+        ) %>%
+          dplyr:: select(Name, FIX_X, FIX_Y, Point_object, sx, sy, sp),
+        escape=F,
         extensions = list('Buttons', 'Scroller'),
         options = list(dom = 'Bfrtip', buttons = I('colvis'),
                        deferRender = TRUE,
@@ -402,18 +397,18 @@ shinyServer(function(input, output){
       ) %>%
       formatStyle(
         'sx',
-        color = styleInterval(c(input$sx_xlsx), c('black', 'white')),
-        backgroundColor = styleInterval(input$sx_xlsx, c('lightGray', 'tomato'))
+        color = styleInterval(c(input$sx_xlsx), c('black', 'red'))#,
+        #backgroundColor = styleInterval(input$sx_xlsx, c('lightGray', 'tomato'))
       ) %>%
       formatStyle(
         'sy',
-        color = styleInterval(c(input$sy_xlsx), c('black', 'white')),
-        backgroundColor = styleInterval(input$sy_xlsx, c('lightGray', 'tomato'))
+        color = styleInterval(c(input$sy_xlsx), c('black', 'red'))#,
+        #backgroundColor = styleInterval(input$sy_xlsx, c('lightGray', 'tomato'))
       ) %>%
       formatStyle(
         'sp',
-        color = styleInterval(c(input$sp_xlsx), c('black', 'white')),
-        backgroundColor = styleInterval(input$sp_xlsx, c('lightGray', 'tomato'))
+        color = styleInterval(c(input$sp_xlsx), c('black', 'red'))#,
+        #backgroundColor = styleInterval(input$sp_xlsx, c('lightGray', 'tomato'))
       )
   })
 
@@ -426,7 +421,9 @@ shinyServer(function(input, output){
           Ql = round(Ql, 4),
           Qv = round(Qv, 4),
           rii = round(rii, 4)
-        ),escape=F,
+        ) %>%
+        dplyr::select(from, to, type, Ql, Qv, rii),
+      escape=F,
       extensions = list('Buttons', 'Scroller'),
       options = list(dom = 'Bfrtip', buttons = I('colvis'),
                      deferRender = TRUE,
@@ -436,7 +433,7 @@ shinyServer(function(input, output){
     )%>%
       formatStyle(
         'rii',
-        color = styleInterval(c(input$rii_xlsx), c('black', 'red')),
+        color = styleInterval(c(input$rii_xlsx), c('red', 'black')),
         background = styleColorBar(adjusted_net_design()[[3]]$rii, 'steelblue'),
         backgroundSize = '100% 90%',
         backgroundRepeat = 'no-repeat',
@@ -448,7 +445,7 @@ shinyServer(function(input, output){
     ellipses <- adjusted_net_design()$ellipse.net
     observations <- adjusted_net_design()$observations
     points <- updated_xlsx_list()[[1]]
-    adj.net_map <- adj.net_spatial_view_web(ellipses = ellipses, observations = observations, points = points)
+    adj.net_map <- adj.net_spatial_view_web(ellipses = ellipses, observations = observations, points = points, sp_bound = input$sp_xlsx, rii_bound = input$rii_xlsx)
     adj.net_map@map
   })
 
@@ -483,18 +480,18 @@ shinyServer(function(input, output){
                        scroller = TRUE)) %>%
       formatStyle(
         'sx',
-        color = styleInterval(c(input$sx_map), c('black', 'white')),
-        backgroundColor = styleInterval(input$sx_map, c('lightGray', 'tomato'))
+        color = styleInterval(c(input$sx_map), c('black', 'red'))#,
+        #backgroundColor = styleInterval(input$sx_map, c('lightGray', 'tomato'))
       ) %>%
       formatStyle(
         'sy',
-        color = styleInterval(c(input$sy_map), c('black', 'white')),
-        backgroundColor = styleInterval(input$sy_map, c('lightGray', 'tomato'))
+        color = styleInterval(c(input$sy_map), c('black', 'red'))#,
+        #backgroundColor = styleInterval(input$sy_map, c('lightGray', 'tomato'))
       ) %>%
       formatStyle(
         'sp',
-        color = styleInterval(c(input$sp_map), c('black', 'white')),
-        backgroundColor = styleInterval(input$sp_map, c('lightGray', 'tomato'))
+        color = styleInterval(c(input$sp_map), c('black', 'red'))#,
+        #backgroundColor = styleInterval(input$sp_map, c('lightGray', 'tomato'))
       )
   })
 
@@ -534,7 +531,9 @@ shinyServer(function(input, output){
           sx = round(sx, 4),
           sy = round(sy, 4),
           sp = round(sp, 4)
-        ), escape = FALSE,
+        ) %>%
+          dplyr:: select(Name, FIX_X, FIX_Y, Point_object, sx, sy, sp),
+        escape = FALSE,
         extensions = list('Buttons', 'Scroller'),
         options = list(dom = 'Bfrtip', buttons = I('colvis'),
                        deferRender = TRUE,
@@ -543,18 +542,18 @@ shinyServer(function(input, output){
                        scroller = TRUE))%>%
       formatStyle(
         'sx',
-        color = styleInterval(c(input$sx_map), c('black', 'white')),
-        backgroundColor = styleInterval(input$sx_map, c('lightGray', 'tomato'))
+        color = styleInterval(c(input$sx_map), c('black', 'red'))#,
+        #backgroundColor = styleInterval(input$sx_map, c('lightGray', 'tomato'))
       ) %>%
       formatStyle(
         'sy',
-        color = styleInterval(c(input$sy_map), c('black', 'white')),
-        backgroundColor = styleInterval(input$sy_map, c('lightGray', 'tomato'))
+        color = styleInterval(c(input$sy_map), c('black', 'red'))#,
+        #backgroundColor = styleInterval(input$sy_map, c('lightGray', 'tomato'))
       ) %>%
       formatStyle(
         'sp',
-        color = styleInterval(c(input$sp_map), c('black', 'white')),
-        backgroundColor = styleInterval(input$sp_map, c('lightGray', 'tomato'))
+        color = styleInterval(c(input$sp_map), c('black', 'red'))#,
+        #backgroundColor = styleInterval(input$sp_map, c('lightGray', 'tomato'))
       )
   })
 
@@ -567,7 +566,9 @@ shinyServer(function(input, output){
           Ql = round(Ql, 4),
           Qv = round(Qv, 4),
           rii = round(rii, 4)
-        ), escape = FALSE,
+        ) %>%
+          dplyr::select(from, to, type, Ql, Qv, rii),
+        escape = FALSE,
         extensions = list('Buttons', 'Scroller'),
         options = list(dom = 'Bfrtip', buttons = I('colvis'),
                        deferRender = TRUE,
@@ -576,7 +577,7 @@ shinyServer(function(input, output){
                        scroller = TRUE))%>%
       formatStyle(
         'rii',
-        color = styleInterval(c(input$rii_map), c('black', 'red')),
+        color = styleInterval(c(input$rii_map), c('red', 'black')),
         background = styleColorBar(adjusted_net_design_me()[[3]]$rii, 'steelblue'),
         backgroundSize = '100% 90%',
         backgroundRepeat = 'no-repeat',
@@ -588,7 +589,7 @@ shinyServer(function(input, output){
     ellipses <- adjusted_net_design_me()$ellipse.net
     observations <- adjusted_net_design_me()$observations
     points <- mapEdit_list()[[1]]
-    adj.net_map <- adj.net_spatial_view_web(ellipses = ellipses, observations = observations, points = points)
+    adj.net_map <- adj.net_spatial_view_web(ellipses = ellipses, observations = observations, points = points, sp_bound = input$sp_map, rii_bound = input$rii_map)
     adj.net_map@map
   })
 

@@ -1,6 +1,10 @@
 
 library(tidyverse)
 library(magrittr)
+library(readxl)
+library(here)
+library(ggplot2)
+library(purrr)
 
 
 A <- c(393.979,	419.038)
@@ -375,7 +379,65 @@ write.table(sim_d, "sim_d.txt", sep = " ")
 getwd()
 
 
-################### PROJEKTOVANJE #######################################################
+################### 1D simulacija #######################################################
+
+
+options(digits = 4)
+
+points <- read_xlsx(here("data/1D_simulation.xlsx"))
+observations <- read_xlsx(here("data/1D_simulation.xlsx"), sheet = 2, col_types = c("text", "text", "numeric", "numeric"))
+
+observations$H_from <- points$H[match(observations$from, points$Name)]
+observations$H_to <- points$H[match(observations$to, points$Name)]
+
+#observations <- observations %>% mutate(dH = H_to - H_from, obs = paste(from, to, sep = "_"), a = runif(stations))
+
+obs <- observations %>% dplyr::mutate(dH = H_to - H_from,
+                                      rand = purrr::pmap(., function(stations, ...){runif(stations, max = 0.2)})) %>%
+                 dplyr::mutate(dh_obs = purrr::pmap(., function(rand, dH, ...){rand/sum(rand)*dH})) %>%
+                 dplyr::select(from, to, dh_obs) %>%
+                 tidyr::unnest() %>%
+                 dplyr::mutate(l11 = runif(n(), min = 0.8, max = 1.6),
+                               l21 = l11 - dh_obs,
+                               l12 = l11 + runif(n(), min = 0.1, max = 0.3),
+                               l22 = l12 - dh_obs,
+                               d1 = runif(n(), min = 5, max = 20),
+                               d2 = d1 + runif(n(), min = 1, max = 5)) %>%
+                 dplyr::mutate_at(.vars = c("l11","l12", "l21", "l22"), .funs = function(x) {x + rnorm(1, mean = 0, sd = 0.0002/sqrt(2))}) %>%
+                 dplyr::mutate_at(.vars = c("l11","l12", "l21", "l22"), .funs = function(x) {round(x, 4)}) %>%
+                 dplyr::group_by(from, to) %>% dplyr::mutate(n = 1:n()) %>% dplyr::ungroup() %>%
+                 dplyr::select(from, to , n, l11, l12, l21, l22)
+
+
+write_xlsx(obs, "obs3.xlsx")
 
 
 
+
+
+
+
+
+                 lapply(obs.list, function(x), )
+
+                 options(digits = 6)
+
+                 n = 5
+                 DH = 2
+                 a = runif(n, max = 0.1)
+                 out = (a/sum(a)*DH)
+                 sum(out)
+
+
+
+dhh <- 0.192
+
+ll <- function(dh, )
+
+
+ll <- runif(2, min = 1.5, max = 2)
+
+l1 <- ll[1] + 0.192/2
+l2 <- ll[2] - 0.192/2
+
+l2 - l1
