@@ -35,19 +35,26 @@ library(here)
 #    3. dest_crs - destination Coordinate Reference System - set EPSG code [default: 3857 - Web Mercator projection coordinate system]
 
 # Examples
-points_xlsx <- readxl::read_xlsx(path = here::here("Data/Input/Without_observations/xlsx/Ikea_Beograd.xlsx"), sheet = "Points")
-observations_xlsx <- readxl::read_xlsx(path = here::here("Data/Input/Without_observations/xlsx/Ikea_Beograd.xlsx"), sheet = "Observations")
+points_xlsx <- readxl::read_xlsx(path = here::here("Data/Input/Without_observations/xlsx/IB.xlsx"), sheet = "Points")
+observations_xlsx <- readxl::read_xlsx(path = here::here("Data/Input/Without_observations/xlsx/IB.xlsx"), sheet = "Observations")
 
 xlsx1 <- surveynet.xlsx(points = points_xlsx, observations = observations_xlsx, dest_crs = 3857)
 
-points_xlsx_1 <- read.xlsx(file = "Visnjicka_banja.xlsx", sheetName = "Points")
-observations_xlsx_1 <- read.xlsx(file = "Visnjicka_banja.xlsx", sheetName = "Observations")
+points_xlsx_1 <- readxl::read_xlsx(path = here::here("Data/Input/Without_observations/xlsx/VB.xlsx"), sheet = "Points")
+observations_xlsx_1 <- readxl::read_xlsx(path = here::here("Data/Input/Without_observations/xlsx/VB.xlsx"), sheet = "Observations")
 
 xlsx2 <- surveynet.xlsx(points = points_xlsx_1, observations = observations_xlsx_1, dest_crs = 3857)
 
 # Examples
 net_spatial_view(points = xlsx1[[1]], observations = xlsx1[[2]])
 net_spatial_view(points = xlsx2[[1]], observations = xlsx2[[2]])
+
+# Examples with
+xlsx3 <- surveynet.xlsx_1(points = points_xlsx, observations = observations_xlsx, dest_crs = 3857, obs = FALSE)
+net_spatial_view(points = xlsx3[[1]], observations = xlsx3[[2]])
+
+xlsx4 <- surveynet.xlsx_1(points = points_xlsx_1, observations = observations_xlsx_1, dest_crs = 3857, obs = FALSE)
+net_spatial_view(points = xlsx4[[1]], observations = xlsx3[[2]])
 
 ###############
 # surveynet.shp

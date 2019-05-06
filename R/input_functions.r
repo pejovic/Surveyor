@@ -847,7 +847,127 @@ adj_net_spatial_view <- function(adj.ellipses, adj.observations){
 }
 
 
+########################
+# surveynet.xlsx
+########################
 
+# Final function version, that include both cases, design and adjustment and prepare data as input for thoose scenarios.
+################
+# surveynet.xlsx
+################
+
+# Parameters:
+#    1. points -  Excel file sheet with attributes related to points - geodetic network [Example: Data/Input/xlsx]
+#    2. observations - Excel file sheet with attributes related to observations [Example: Data/Input/xlsx]
+#    3. dest_crs - destination Coordinate Reference System - set EPSG code [default: 3857 - Web Mercator projection coordinate system]
+#    4. obs - parameter that indicates type of input data, related to scenario design or adjustment of 2D geodetic network.
+
+surveynet.xlsx_1 <- function(points = points, observations = observations, dest_crs = NA, obs = FALSE){
+
+  # Check function for point names, that can not be just numbers -> must contain letter
+  points$Name <- as.character(points$Name)
+  vec <- c(1:99999)
+  j = 1
+  for(i in points$Name){
+    if(i %in% vec){
+      points$Name[j] <- paste("T",i, sep = "")
+      j = j +1
+
+    }
+  }
+
+  observations$from <- as.character(observations$from)
+  vec <- c(1:99999)
+  j = 1
+  for(i in observations$from){
+    if(i %in% vec){
+      observations$from[j] <- paste("T",i, sep = "")
+      j = j +1
+
+    }
+  }
+
+  observations$to <- as.character(observations$to)
+  vec <- c(1:99999)
+  j = 1
+  for(i in observations$to){
+    if(i %in% vec){
+      observations$to[j] <- paste("T",i, sep = "")
+      j = j +1
+
+    }
+  }
+
+  # Create geometry columns for points
+  if (is.na(dest_crs)){
+    dest_crs <- 3857
+  } else{
+    dest_crs <- dest_crs
+  }
+
+  observations$x_station <- points$x[match(observations$from, points$Name)]
+  observations$y_station <- points$y[match(observations$from, points$Name)]
+  observations$x_obs.point <- points$x[match(observations$to, points$Name)]
+  observations$y_obs.point <- points$y[match(observations$to, points$Name)]
+
+  points <- points %>% as.data.frame %>% sf::st_as_sf(coords = c("x","y")) %>% sf::st_set_crs(dest_crs)
+
+  if(obs == FALSE){
+
+    dt <- as.data.table(observations)
+    dt_1 <- dt[
+      , {
+        geometry <- sf::st_linestring(x = matrix(c(x_station, x_obs.point, y_station, y_obs.point), ncol = 2))
+        geometry <- sf::st_sfc(geometry)
+        geometry <- sf::st_sf(geometry = geometry)
+      }
+      , by = id
+      ]
+    dt_1 <- sf::st_as_sf(dt_1)
+    dt_1 %<>% mutate(from = observations$from,
+                     to = observations$to,
+                     distance = observations$distance,
+                     direction = observations$direction,
+                     standard_dir = observations$standard_dir,
+                     standard_dist = observations$standard_dist
+    )
+    dt_1 <- dt_1 %>% sf::st_set_crs(dest_crs)
+    observations <- dt_1
+
+  }else if(obs == TRUE){
+
+    dt <- as.data.table(observations)
+    dt$id <- c(1:length(dt$from))
+    dt_1 <- dt[
+      , {
+        geometry <- sf::st_linestring(x = matrix(c(x_station, x_obs.point, y_station, y_obs.point), ncol = 2))
+        geometry <- sf::st_sfc(geometry)
+        geometry <- sf::st_sf(geometry = geometry)
+      }
+      , by = id
+      ]
+    dt_1 <- sf::st_as_sf(dt_1)
+    dt_1 %<>% mutate(From = observations$from,
+                     To = observations$to,
+                     HzD = observations$HzD,
+                     HzM = observations$HzM,
+                     HzS = round(observations$HzS, 2),
+                     SD = round(observations$SD, 3),
+                     VzD = observations$VzD,
+                     VzM = observations$VzM,
+                     VzS = round(observations$VzS, 2)
+    )
+    dt_1 <- dt_1 %>% sf::st_set_crs(dest_crs)
+    observations <- dt_1
+
+  } else {
+    message("Incomplete number of parameters. Take a look at parameter 'obs'.")
+  }
+  # Creating list
+  survey_net <- list(points,observations)
+
+  return(survey_net)
+}
 
 
 
