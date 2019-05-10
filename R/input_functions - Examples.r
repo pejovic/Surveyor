@@ -53,8 +53,9 @@ net_spatial_view(points = xlsx2[[1]], observations = xlsx2[[2]])
 xlsx3 <- surveynet.xlsx_1(points = points_xlsx, observations = observations_xlsx, dest_crs = 3857, obs = FALSE)
 net_spatial_view(points = xlsx3[[1]], observations = xlsx3[[2]])
 
+
 xlsx4 <- surveynet.xlsx_1(points = points_xlsx_1, observations = observations_xlsx_1, dest_crs = 3857, obs = FALSE)
-net_spatial_view(points = xlsx4[[1]], observations = xlsx3[[2]])
+net_spatial_view(points = xlsx4[[1]], observations = xlsx4[[2]])
 
 ###############
 # surveynet.shp
@@ -208,7 +209,3 @@ observations <- surveynet.mapedit_observations(points = points)
 
 # Working with at Shiny app, beacuse of some additional parameteres and reactive expressions
 # me <- surveynet.mapedit(points = points, observations = observations, fix_x = list(), fix_y = list(), dest_crs = NA, points_object = list())
-
-
-
-

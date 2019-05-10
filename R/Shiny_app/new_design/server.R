@@ -136,12 +136,6 @@ shinyServer(function(input, output){
 
   editmapx <- callModule(editMod, "map_me", lf )
 
-  me_points_print <- eventReactive(input$go_me_draw, {
-    points_raw_me <- editmapx()$finished
-    points_me <- surveynet.mapedit_points(points = points_raw_me)
-    points_me
-  })
-
   po_me <- reactive({
     points_raw_me <- editmapx()$finished
     points_me <- surveynet.mapedit_points(points = points_raw_me)
@@ -594,6 +588,46 @@ shinyServer(function(input, output){
   })
 
 
+  # ===================================================================
+  # 1D DESIGN
+  # ===================================================================
+
+  # MAPEDIT INPUT DATA
+  ns_1d <- shiny::NS("map_me_1d")
+  lf_1d <- leaflet() %>%
+    addTiles() %>%
+    addProviderTiles("Esri.WorldImagery",group="Esri.WorldImagery") %>%
+    addProviderTiles("OpenStreetMap.Mapnik",group="OpenStreetMap") %>%
+    addProviderTiles("Esri.DeLorme",group="Esri.DeLorme") %>%
+    addProviderTiles("Esri.WorldTopoMap",group="Esri.WorldTopoMap") %>%
+    setView(20.4580456, 44.8195306, zoom=12) %>%
+    addLayersControl(baseGroups = c("Esri.WorldImagery", "OpenStreetMap", "Esri.DeLorme","Esri.WorldTopoMap"))
+
+  editmapx_1d <- callModule(editMod, "map_me_1d", lf_1d )
+
+  po_me_1d <- reactive({
+    points_raw_me_1d <- editmapx_1d()$finished
+    points_me_1d <- surveynet.mapedit_points_1d(points = points_raw_me_1d)
+    points_me_1d
+  })
+
+  #ob_example_1d <- reactive({#(input$map_edit_result, {
+  #  p_me_1d <- po_me_1d()
+  #  obs_example_1d <- surveynet.mapedit_observations_edit_1d(points = p_me_1d)
+  #  obs_example_1d
+  #})
+
+  values_p_map_1d <- reactiveValues()
+  #values_o_map_1d <- reactiveValues()
+
+  output$p_des_map <- renderRHandsontable({
+    rhandsontable(as.data.frame(po_me() %>% st_drop_geometry() %>%
+                                  mutate(
+                                    FIX_X = FALSE,
+                                    FIX_Y = FALSE,
+                                    Point_object = FALSE
+                                  )), width = 650, height = 650)
+  })
 })
 
 

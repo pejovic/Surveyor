@@ -969,8 +969,51 @@ surveynet.xlsx_1 <- function(points = points, observations = observations, dest_
   return(survey_net)
 }
 
+# ============================================================================
+# 1D design functions
+# ============================================================================
 
+# Function for preparing points - sf attribute table check
+# Parameters:
+#    1. points -  sf object with geometry type POINT and related attributes as product from function surveynet.mapedit_add
 
+surveynet.mapedit_points <- function(points = points){
+  j=1
+  for(i in names(points)){
+    if (i == "_leaflet_id"){
+      points <- subset(points, select = -c(j))
+    }
+    j=j+1
+  }
+  j=1
+  for(i in names(points)){
+    if (i == "feature_type"){
+      points <- subset(points, select = -c(j))
+    }
+    j=j+1
+  }
+
+  for(i in names(points)){
+    if(i == "id"){
+      break
+    } else {
+      points$id <- (1:length(points$geometry))
+    }
+  }
+  points <- points %>% rename("Name" = "id")
+
+  points$Name <- as.character(points$Name)
+  vec <- c(1:99999)
+  j = 1
+  for(i in points$Name){
+    if(i %in% vec){
+      points$Name[j] <- paste("T",i, sep = "")
+      j = j +1
+
+    }
+  }
+  return(points)
+}
 
 
 

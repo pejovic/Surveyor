@@ -279,18 +279,18 @@ surveynet2DAdjustment_Import_fun.xlsx <- function(points = points, observations 
 
   vec <- c(1:99999)
   j = 1
-  for(i in observations$From){
+  for(i in observations$from){
     if(i %in% vec){
-      observations$From[j] <- paste("T",i, sep = "")
+      observations$from[j] <- paste("T",i, sep = "")
       j = j +1
     }
   }
 
   vec <- c(1:99999)
   j = 1
-  for(i in observations$To){
+  for(i in observations$to){
     if(i %in% vec){
-      observations$To[j] <- paste("T",i, sep = "")
+      observations$to[j] <- paste("T",i, sep = "")
       j = j +1
     }
   }
@@ -301,15 +301,15 @@ surveynet2DAdjustment_Import_fun.xlsx <- function(points = points, observations 
     dest_crs <- 3857
   }
 
-  observations$x_station <- points$x[match(observations$From, points$Name)]
-  observations$y_station <- points$y[match(observations$From, points$Name)]
-  observations$x_obs.point <- points$x[match(observations$To, points$Name)]
-  observations$y_obs.point <- points$y[match(observations$To, points$Name)]
+  observations$x_station <- points$x[match(observations$from, points$Name)]
+  observations$y_station <- points$y[match(observations$from, points$Name)]
+  observations$x_obs.point <- points$x[match(observations$to, points$Name)]
+  observations$y_obs.point <- points$y[match(observations$to, points$Name)]
 
   points <- points %>% as.data.frame() %>% sf::st_as_sf(coords = c("x","y")) %>% sf::st_set_crs(dest_crs)
 
   dt <- as.data.table(observations)
-  dt$id <- c(1:length(dt$From))
+  dt$id <- c(1:length(dt$from))
   dt_1 <- dt[
     , {
       geometry <- sf::st_linestring(x = matrix(c(x_station, x_obs.point, y_station, y_obs.point), ncol = 2))
@@ -319,8 +319,8 @@ surveynet2DAdjustment_Import_fun.xlsx <- function(points = points, observations 
     , by = id
     ]
   dt_1 <- sf::st_as_sf(dt_1)
-  dt_1 %<>% mutate(From = observations$From,
-                   To = observations$To,
+  dt_1 %<>% mutate(From = observations$from,
+                   To = observations$to,
                    HzD = observations$HzD,
                    HzM = observations$HzM,
                    HzS = round(observations$HzS, 2),
