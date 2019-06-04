@@ -325,6 +325,7 @@ surveynet2DAdjustment_Import_fun.xlsx <- function(points = points, observations 
                    HzM = observations$HzM,
                    HzS = round(observations$HzS, 2),
                    SD = round(observations$SD, 3),
+                   HD = round(observations$HD, 3),
                    VzD = observations$VzD,
                    VzM = observations$VzM,
                    VzS = round(observations$VzS, 2)
