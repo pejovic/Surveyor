@@ -5,6 +5,7 @@ library(readxl)
 library(here)
 library(ggplot2)
 library(purrr)
+library(writexl)
 
 
 A <- c(393.979,	419.038)
@@ -26,47 +27,47 @@ st_coords <- A
 target_coords <- T1
 orient_coords <- B
 
-dist <- function(pt1_coords, pt2_coords, axises = c("East", "North")){
+dist <- function(pt1_coords, pt2_coords, axes = c("Easting", "Northing")){
   ## check if the axis were set:
-  if(length(axises) < 2) stop("Axises must be defined with East and North")
-  if(!any(axises %in% list("North", "East"))){ stop(paste(type, "Axises must be North and East.")) }
+  if(length(axes) < 2) stop("axes must be defined with Easting and Northing")
+  if(!any(axes %in% list("Northing", "Easting"))){ stop(paste(type, "axes must be Northing and Easting.")) }
 
-  north_ind <- which(axises == "North")
-  east_ind <- which(axises == "East")
+  Northing_ind <- which(axes == "Northing")
+  Easting_ind <- which(axes == "Easting")
 
   ## body
-  east1 <- pt1_coords[east_ind]
-  north1 <- pt1_coords[north_ind]
-  east2 <- pt2_coords[east_ind]
-  north2 <- pt2_coords[north_ind]
-  deast <- as.numeric(east2 - east1)
-  dnorth <- as.numeric(north2 - north1)
-  distance <- sqrt(deast^2 + dnorth^2)
+  Easting1 <- pt1_coords[Easting_ind]
+  Northing1 <- pt1_coords[Northing_ind]
+  Easting2 <- pt2_coords[Easting_ind]
+  Northing2 <- pt2_coords[Northing_ind]
+  dEasting <- as.numeric(Easting2 - Easting1)
+  dNorthing <- as.numeric(Northing2 - Northing1)
+  distance <- sqrt(dEasting^2 + dNorthing^2)
   return(distance)
 }
 
 
 
-ni <- function(pt1_coords, pt2_coords, type = list("dec", "dms", "rad"), axises = c("East", "North")){
+ni <- function(pt1_coords, pt2_coords, type = list("dec", "dms", "rad"), axes = c("Easting", "Northing")){
   ## check if the axis were set:
-  if(length(axises) < 2) stop("Axises must be defined with East and North")
-  if(!any(axises %in% list("North", "East"))){ stop(paste(type, "Axises must be North and East.")) }
+  if(length(axes) < 2) stop("axes must be defined with Eastinging and Northinging")
+  if(!any(axes %in% list("Northing", "Easting"))){ stop(paste(type, "axes must be Northing and Easting.")) }
 
-  north_ind <- which(axises == "North")
-  east_ind <- which(axises == "East")
+  Northing_ind <- which(axes == "Northing")
+  Easting_ind <- which(axes == "Easting")
 
   ## check if the type exists:
   if(length(type) > 1){ type <- type[[1]] }
   if(!any(type %in% list("dms", "dec", "rad"))){ stop(paste(type, "method not available.")) }
 
   ## body
-  east1 <- pt1_coords[east_ind]
-  north1 <- pt1_coords[north_ind]
-  east2 <- pt2_coords[east_ind]
-  north2 <- pt2_coords[north_ind]
-  deast <- as.numeric(east2 - east1)
-  dnorth <- as.numeric(north2 - north1)
-  atg <- ifelse(deast < 0, atan(dnorth/deast)*180/pi + 180, atan(dnorth/deast)*180/pi)
+  Easting1 <- pt1_coords[Easting_ind]
+  Northing1 <- pt1_coords[Northing_ind]
+  Easting2 <- pt2_coords[Easting_ind]
+  Northing2 <- pt2_coords[Northing_ind]
+  dEasting <- as.numeric(Easting2 - Easting1)
+  dNorthing <- as.numeric(Northing2 - Northing1)
+  atg <- ifelse(dEasting < 0, atan(dNorthing/dEasting)*180/pi + 180, atan(dNorthing/dEasting)*180/pi)
   ang <- ifelse(atg < 0, atg + 360, atg)
 
   deg <- floor(ang); minut <- floor((ang-deg)*60); sec <- ((ang-deg)*60-minut)*60
@@ -82,27 +83,27 @@ ni <- function(pt1_coords, pt2_coords, type = list("dec", "dms", "rad"), axises 
   return(ang)
 }
 
-# ni(pt1_coords = st_coords, pt2_coords = target_coords, type = "dms", axises = c("East", "North"))
+# ni(pt1_coords = st_coords, pt2_coords = target_coords, type = "dms", axes = c("Easting", "Northing"))
 
 
-# st_coords = A; target_coords = B; hz_orient = NULL; hz0 = 255; scent = 2; standard_hz = 5; seed = 111; c =  10; sc = 5; scent_or = 5; scent_target = 5; sfocus = NULL; faces = list("mean", "both" ,"face1", "face2"); type = list("dec", "dec", "rad"); axises = c("North", "East")
+# st_coords = A; target_coords = B; Hz_orient = NULL; Hz0 = 255; sd_cent = 2; sd_Hz = 5; seed = 111; c =  10; sd_colim = 5; sd_cent_back = 5; sd_cent_target = 5; sd_focus = NULL; faces = list("mean", "both" ,"face1", "face2"); type = list("dec", "dec", "rad"); axes = c("Northing", "Easting")
 
-hz <- function(st_coords, target_coords, hz_orient = NULL, hz0 = 0, scent = 2, standard_hz = 5, c =  10, sc = 5, scent_target = NULL, sfocus = NULL, seed = NULL, faces = list("mean", "both" ,"face1", "face2"), type = list("dms", "dec", "rad"), axises = c("North", "East")){
+sim_Hz <- function(st_coords, target_coords, Hz_orient = NULL, Hz0 = 0, sd_cent = 2, sd_Hz = 5, c =  10, sd_colim = 5, sd_cent_target = NULL, sd_focus = NULL, seed = NULL, faces = list("mean", "both" ,"face1", "face2"), type = list("dms", "dec", "rad"), axes = c("Northing", "Easting")){
   ## check if the axis were set:
-  if(length(axises) < 2) stop("Axises must be defined with East and North")
-  if(!any(axises %in% list("North", "East"))){ stop(paste(type, "Axises must be North and East.")) }
+  if(length(axes) < 2) stop("axes must be defined with Easting and Northing")
+  if(!any(axes %in% list("Northing", "Easting"))){ stop(paste(type, "axes must be Northing and Easting.")) }
 
-  north_ind <- which(axises == "North")
-  east_ind <- which(axises == "East")
+  Northing_ind <- which(axes == "Northing")
+  Easting_ind <- which(axes == "Easting")
 
   ## check if the type exists:
   if(length(type) > 1){ type <- type[[1]] }
   if(!any(type %in% list("dms", "dec", "rad"))){ stop(paste(type, "method not available.")) }
 
 
-  d <- dist(pt1_coords = st_coords, pt2_coords = target_coords, axises = c("North", "East"))
-  ni1 <- ni(pt1_coords = st_coords, pt2_coords = target_coords, type = "dec", axises = axises)
-  z <- 360-hz0
+  d <- dist(pt1_coords = st_coords, pt2_coords = target_coords, axes = axes)
+  ni1 <- ni(pt1_coords = st_coords, pt2_coords = target_coords, type = "dec", axes = axes)
+  z <- 360-Hz0
   ro <- 180/pi*3600
   twoc = 2*c
 
@@ -110,62 +111,62 @@ hz <- function(st_coords, target_coords, hz_orient = NULL, hz0 = 0, scent = 2, s
   if(length(type) > 1){ type <- type[[1]] }
   if(!any(type %in% list("dms", "dec", "rad"))){ stop(paste(type, "method not available.")) }
 
-  if(ni1 >= hz0){
-    hzm <- z+ni1-360
+  if(ni1 >= Hz0){
+    Hz <- z+ni1-360
   }else{
-    hzm <- z+ni1
+    Hz <- z+ni1
   }
 
   # seed mora biti fiksiran za stanicu
-  if(!is.null(scent)){
+  if(!is.null(sd_cent)){
     set.seed(seed)
-    scent <- abs(rnorm(1, 0, scent))
-    scent <- sqrt((scent^2*ro^2)/(2*(d*1000)^2))
-    hzm <- hzm + scent/3600
+    sd_cent <- abs(rnorm(1, 0, sd_cent))
+    sd_cent <- sqrt((sd_cent^2*ro^2)/(2*(d*1000)^2))
+    Hz <- Hz + sd_cent/3600
     }
-  if(!is.null(scent_target)){
+  if(!is.null(sd_cent_target)){
     set.seed(seed)
-    scent_target <- abs(rnorm(1, 0, scent_target))
-    scent_target <- sqrt((scent_target^2*ro^2)/(2*(d*1000)^2))
-    hzm <- hzm + scent_target/3600
+    sd_cent_target <- abs(rnorm(1, 0, sd_cent_target))
+    sd_cent_target <- sqrt((sd_cent_target^2*ro^2)/(2*(d*1000)^2))
+    Hz <- Hz + sd_cent_target/3600
     }
 
   set.seed(Sys.time())
-  hzm <- hzm + sqrt((rnorm(1, 0, standard_hz))^2)/3600
+  Hz <- Hz + sqrt((rnorm(1, 0, sd_Hz))^2)/3600
 
   if(type == "dms"){
-    deg <- floor(hzm); minut <- floor((hzm-deg)*60); sec <- ((hzm-deg)*60-minut)*60
-    hzm <- c(deg, minut, sec)
-    names(hzm) <- c("deg","min","sec")
-    return(round(hzm))
+    HzD <- floor(Hz); HzM <- floor((Hz-HzD)*60); HzS <- ((Hz-HzD)*60-HzM)*60
+    Hz <- c(HzD, HzM, HzS)
+    names(Hz) <- c("deg","min","sec")
+    return(round(Hz))
   }
   if(type == "rad"){
-    hzm <- hzm*pi/180
+    Hz <- Hz*pi/180
   }
-return(hzm)
+return(Hz)
 }
 
 
-# hz(A, T1, hz0 = 255, scent = 2, scent_target = 2, standard_hz = 6, seed = 111, type = "dms", axises = c("East", "North"))
+# sim_Hz(A, T1, Hz0 = 255, sd_cent = 12, sd_cent_target = 12, sd_Hz = 16, seed = 111, type = "dms", axes = c("Easting", "Northing"))
 
 
 
-m_ang <- function(st_coords, orient_coords, target_coords, seed, hz0 = 0, standard_hz = 5, c =  10, scent = 2, scent_or = 2, scent_target = 0, type = list("dms", "dec", "rad"), axises = c("East", "North")){
+sim_ang <- function(st_coords, orient_coords, target_coords, seed, Hz0 = 0, sd_Hz = 5, c =  10, sd_cent = 2, sd_cent_back = 2, sd_cent_target = 0, type = list("dms", "dec", "rad"), axes = c("Easting", "Northing")){
   ## check if the axis were set:
-  if(length(axises) < 2) stop("Axises must be defined with East and North")
-  if(!any(axises %in% list("North", "East"))){ stop(paste(type, "Axises must be North and East.")) }
+  if(length(axes) < 2) stop("axes must be defined with Easting and Northing")
+  if(!any(axes %in% list("Northing", "Easting"))){ stop(paste(type, "axes must be Northing and Easting.")) }
 
   ## check if the type exists:
   if(length(type) > 1){ type <- type[[1]] }
   if(!any(type %in% list("dms", "dec", "rad"))){ stop(paste(type, "method not available.")) }
 
-  hz1 <- hz(st_coords = st_coords, target_coords =  target_coords, hz0 = hz0, scent = scent, standard_hz = standard_hz, scent_target = scent_target, type = "dec", seed = seed, axises = c("North", "East"))
-  hz2 <- hz(st_coords = st_coords, target_coords =  orient_coords, hz0 = hz0, scent = scent, standard_hz = standard_hz, scent_target = scent_or, type = "dec", seed = seed, axises = c("North", "East"))
+  Hz1 <- sim_Hz(st_coords = st_coords, target_coords =  target_coords, Hz0 = Hz0, sd_cent = sd_cent, sd_Hz = sd_Hz, sd_cent_target = sd_cent_target, type = "dec", seed = seed, axes = c("Northing", "Easting"))
+  Hz2 <- sim_Hz(st_coords = st_coords, target_coords =  orient_coords, Hz0 = Hz0, sd_cent = sd_cent, sd_Hz = sd_Hz, sd_cent_target = sd_cent_back, type = "dec", seed = seed, axes = c("Northing", "Easting"))
 
-  # ni1 <- ni(pt1_coords = st_coords, pt2_coords = target_coords, type = "dec", axises = c("North", "East"))
-  # ni2 <- ni(pt1_coords = st_coords, pt2_coords = orient_coords, type = "dec", axises = c("North", "East"))
+  # ni1 <- ni(pt1_coords = st_coords, pt2_coords = target_coords, type = "dec", axes = c("Northing", "Easting"))
+  # ni2 <- ni(pt1_coords = st_coords, pt2_coords = orient_coords, type = "dec", axes = c("Northing", "Easting"))
 
-  dang <- as.numeric(hz1-hz2)
+  dang <- as.numeric(Hz1-Hz2)
   dang <- ifelse(dang < 0, 360+dang, dang)
 
   if(type == "dms"){
@@ -180,134 +181,135 @@ m_ang <- function(st_coords, orient_coords, target_coords, seed, hz0 = 0, standa
   return(dang)
 }
 
-# m_ang(st_coords = A, target_coords = T1, orient_coords = B, seed = NULL, hz0 = 288, scent = 2, scent_or =  2, scent_target = 1,  type = "dec", axises = c("East", "North"))
+# sim_ang(st_coords = A, target_coords = T1, orient_coords = B, seed = NULL, Hz0 = 288, sd_cent = 2, sd_cent_back =  2, sd_cent_target = 1,  type = "dms", axes = c("Easting", "Northing"))
 
 
-m_dist <- function(st_coords, target_coords, scent_station = NULL, scent_target = NULL, standard_d = 3, seed = NULL, axises = c("East", "North")){
+sim_dist <- function(st_coords, target_coords, sd_cent_station = NULL, sd_cent_target = NULL, sd_dist = 3, seed = NULL, axes = c("Easting", "Northing")){
   ## check if the axis were set:
-  if(length(axises) < 2) stop("Axises must be defined with East and North")
-  if(!any(axises %in% list("North", "East"))){ stop(paste(type, "Axises must be North and East.")) }
+  if(length(axes) < 2) stop("axes must be defined with Easting and Northing")
+  if(!any(axes %in% list("Northing", "Easting"))){ stop(paste(type, "axes must be Northing and Easting.")) }
 
-  distance = dist(pt1_coords = st_coords, pt2_coords = target_coords, axises = axises)
+  distance = dist(pt1_coords = st_coords, pt2_coords = target_coords, axes = axes)
 
-  if(!is.null(scent_station)){
+  if(!is.null(sd_cent_station)){
     set.seed(seed)
-    scent_station <- abs(rnorm(1, 0, scent_station))
-    scent_station <- sqrt(scent_station^2/2)
+    sd_cent_station <- abs(rnorm(1, 0, sd_cent_station))
+    sd_cent_station <- sqrt(sd_cent_station^2/2)
   }
-  if(!is.null(scent_target)){
+  if(!is.null(sd_cent_target)){
     set.seed(seed)
-    scent_target <- abs(rnorm(1, 0, scent_target))
-    scent_target <- sqrt(scent_target^2/2)
+    sd_cent_target <- abs(rnorm(1, 0, sd_cent_target))
+    sd_cent_target <- sqrt(sd_cent_target^2/2)
   }
-  distance <- distance + scent_station/1000 + scent_target/1000
+  distance <- distance + sd_cent_station/1000 + sd_cent_target/1000
   set.seed(seed)
-  distance <- distance + sqrt((rnorm(1, 0, standard_d))^2)/1000
+  distance <- distance + sqrt((rnorm(1, 0, sd_dist))^2)/1000
   return(distance)
 }
 
 
-# m_dist(st_coords = A, target_coords = B, seed = 111, scent_station = 2, scent_target =  2, standard_d = 3)
+# sim_dist(st_coords = A, target_coords = B, seed = 111, sd_cent_station = 2, sd_cent_target =  2, sd_dist = 3)
 
 station = as.numeric(points[1, c(2,3)])
 target_points = points[c(2, 5), ]
 
 stA <- data.frame(rep = points[which(points$Name == obs_plan[1, 1]), c(2,3)], target_points)
 
-station_hz <- function(station, target_points, hz0 = 0, scent_station = 2, standard_hz = 5, c =  10, sc = 5, scent_target = NULL, sfocus = NULL, seed = NULL, faces = list("mean", "both" ,"face1", "face2"), type = list("dms", "dec", "rad"), axises = c("North", "East")){
-  target_points %>% group_by(Name) %>% hz(st_coords = station, target_coords =  (target_points[,c(2,3)]), hz0 = hz0, scent = scent, standard_hz = standard_hz, scent_target = scent_target, type = "dec", seed = seed, axises = c("North", "East"))
+station_Hz <- function(station, target_points, Hz0 = 0, sd_cent_station = 2, sd_Hz = 5, c =  10, sd_colim = 5, sd_cent_target = NULL, sd_focus = NULL, seed = NULL, faces = list("mean", "both" ,"face1", "face2"), type = list("dms", "dec", "rad"), axes = c("Northing", "Easting")){
+  target_points %>% group_by(Name) %>% Hz(st_coords = station, target_coords =  (target_points[,c(2,3)]), Hz0 = Hz0, sd_cent = sd_cent, sd_Hz = sd_Hz, sd_cent_target = sd_cent_target, type = "dec", seed = seed, axes = c("Northing", "Easting"))
 
-  t(apply(target_points, 1, function(x) hz(st_coords = station, target_coords = as.numeric(x[c(2:3)]), hz0 = 270, scent = 2, standard_hz = 5, scent_target = 2, type = "dms", seed = 111, axises = c("North", "East"))))
+  t(apply(target_points, 1, function(x) Hz(st_coords = station, target_coords = as.numeric(x[c(2:3)]), Hz0 = 270, sd_cent = 2, sd_Hz = 5, sd_cent_target = 2, type = "dms", seed = 111, axes = c("Northing", "Easting"))))
 
 }
 
-obs_hz <- filter(obs_plan, type == "p") %>% select(1,2)
-hz0 = c(0, 0, 0, 0); scent_station = c(1, 1, 1, 1); scent_target = c(1, 1, 1, 1); standard_hz = c(5, 5, 5, 5); seed = NULL #c(111, 222, 333, 444)
-red = FALSE
+obs_Hz <- filter(obs_plan, type == "p") %>% select(1,2)
+#Hz0 = c(0, 0, 0, 0); sd_cent_station = c(1, 1, 1, 1); sd_cent_target = c(1, 1, 1, 1); sd_Hz = c(5, 5, 5, 5); seed = NULL #c(111, 222, 333, 444)
+#red = FALSE
 
 
-sim_hz_meas <- function(obs_hz, points, red = TRUE, hz0 = c(0, 0, 0, 0), scent_station = c(1, 1, 1, 1), scent_target = c(1, 1, 1, 1), standard_hz = c(5, 5, 5, 5), seed = c(111, 222, 333, 444), type = list("dms", "dec", "rad"), axises = c("North", "East")){
+sim_Hz_all <- function(obs_Hz, points, red = TRUE, Hz0 = NA, sd_cent_station = c(1, 1, 1, 1), sd_cent_target = c(1, 1, 1, 1), sd_Hz = c(5, 5, 5, 5), seed = c(111, 222, 333, 444), type = list("dms", "dec", "rad"), axes = c("Northing", "Easting")){
 
-  if(length(hz0) == 1)hz0 <- rep(hz0, length(unique(obs_hz$station)))
-  if(length(hz0) != length(unique(obs_hz$station))) stop("hz0 must be of length either 1 or number of stations")
+  if(is.na(Hz0)) {Hz0 <- sample(1:359, size = length(unique(obs_Hz$station)))}else{
+    if(length(Hz0) != length(unique(obs_Hz$station))) stop("Hz0 must be of length either 1 or number of stations")
+  }
 
-  if(length(scent_station) == 1) scent_station <- rep(scent_station, length(unique(obs_hz$station)))
-  if(length(scent_station) != length(unique(obs_hz$station))) stop("scent_station must be of length either 1 or the number of stations")
+  if(length(sd_cent_station) == 1) sd_cent_station <- rep(sd_cent_station, length(unique(obs_Hz$station)))
+  if(length(sd_cent_station) != length(unique(obs_Hz$station))) stop("sd_cent_station must be of length either 1 or the number of stations")
 
-  if(length(scent_target) == 1) scent_target <- rep(scent_target, length(unique(obs_hz$station)))
-  if(length(scent_target) != length(unique(obs_hz$station))) stop("scent_target must be of length either 1 or the number of stations")
+  if(length(sd_cent_target) == 1) sd_cent_target <- rep(sd_cent_target, length(unique(obs_Hz$station)))
+  if(length(sd_cent_target) != length(unique(obs_Hz$station))) stop("sd_cent_target must be of length either 1 or the number of stations")
 
-  if(length(standard_hz) == 1) standard_hz <- rep(standard_hz, length(unique(obs_hz$station)))
-  if(length(standard_hz) != length(unique(obs_hz$station))) stop("standard_hz must be of length either 1 or the number of stations")
+  if(length(sd_Hz) == 1) sd_Hz <- rep(sd_Hz, length(unique(obs_Hz$station)))
+  if(length(sd_Hz) != length(unique(obs_Hz$station))) stop("sd_Hz must be of length either 1 or the number of stations")
 
   if(!is.null(seed)){
-    if(length(seed) == 1) seed <- rep(seed, length(unique(obs_hz$station)))
-    if(length(seed) != length(unique(obs_hz$station))) stop("seed must be of length either 1 or the number of stations")
+    if(length(seed) == 1) seed <- rep(seed, length(unique(obs_Hz$station)))
+    if(length(seed) != length(unique(obs_Hz$station))) stop("seed must be of length either 1 or the number of stations")
   }else{
-    seed <- rep(NULL, length(unique(obs_hz$station)))
+    seed <- rep(NULL, length(unique(obs_Hz$station)))
   }
 
 
 
-  obs_hz <- mutate(obs_hz, xs = rep(NA, dim(obs_hz)[1]), ys = rep(NA, dim(obs_hz)[1]), xt = rep(NA, dim(obs_hz)[1]), yt = rep(NA, dim(obs_hz)[1]))
-  for(i in 1:dim(obs_hz)[1]){
-    obs_hz[i , c("xs", "ys")] <- points[which(obs_hz$station[i] == points$Name), 2:3]
-    obs_hz[i , c("xt", "yt")] <- points[which(obs_hz$obs.point[i] == points$Name), 2:3]
+  obs_Hz <- mutate(obs_Hz, x_station = rep(NA, dim(obs_Hz)[1]), y_station = rep(NA, dim(obs_Hz)[1]), x_target = rep(NA, dim(obs_Hz)[1]), y_target = rep(NA, dim(obs_Hz)[1]))
+  for(i in 1:dim(obs_Hz)[1]){
+    obs_Hz[i , c("x_station", "y_station")] <- points[which(obs_Hz$station[i] == points$Name), 2:3]
+    obs_Hz[i , c("x_target", "y_target")] <- points[which(obs_Hz$obs.point[i] == points$Name), 2:3]
   }
 
-  obs.hz.list <- split(obs_hz, obs_hz$station)
-  for(i in 1:length(obs.hz.list)){
-    obs.hz.list[[i]]$hz0 <- rep(hz0[i], dim(obs.hz.list[[i]])[1])
-    obs.hz.list[[i]]$scent_station <- rep(scent_station[i], dim(obs.hz.list[[i]])[1])
-    obs.hz.list[[i]]$scent_target <- rep(scent_target[i], dim(obs.hz.list[[i]])[1])
-    obs.hz.list[[i]]$standard_hz <- rep(standard_hz[i], dim(obs.hz.list[[i]])[1])
-    obs.hz.list[[i]]$seed <- rep(seed[i], dim(obs.hz.list[[i]])[1])
+  obs.Hz.list <- split(obs_Hz, obs_Hz$station)
+  for(i in 1:length(obs.Hz.list)){
+    obs.Hz.list[[i]]$Hz0 <- rep(Hz0[i], dim(obs.Hz.list[[i]])[1])
+    obs.Hz.list[[i]]$sd_cent_station <- rep(sd_cent_station[i], dim(obs.Hz.list[[i]])[1])
+    obs.Hz.list[[i]]$sd_cent_target <- rep(sd_cent_target[i], dim(obs.Hz.list[[i]])[1])
+    obs.Hz.list[[i]]$sd_Hz <- rep(sd_Hz[i], dim(obs.Hz.list[[i]])[1])
+    obs.Hz.list[[i]]$seed <- rep(seed[i], dim(obs.Hz.list[[i]])[1])
   }
 
-  meas.hz.list <- as.list(rep(NA, length(obs.hz.list)))
+  meas.Hz.list <- as.list(rep(NA, length(obs.Hz.list)))
   if(!is.null(seed)){
-    for(i in 1:length(obs.hz.list)){
-      meas.hz.list[[i]] <- t(apply(obs.hz.list[[i]], 1, function(x) hz(st_coords = as.numeric(x[c(3:4)]), target_coords = as.numeric(x[c(5:6)]), hz0 = as.numeric(x[7]), scent = as.numeric(x[8]), scent_target = as.numeric(x[9]), standard_hz = as.numeric(x[10]), type = "dms", seed = as.numeric(x[11]), axises = c("North", "East"))))
+    for(i in 1:length(obs.Hz.list)){
+      meas.Hz.list[[i]] <- t(apply(obs.Hz.list[[i]], 1, function(x) sim_Hz(st_coords = as.numeric(x[c(3:4)]), target_coords = as.numeric(x[c(5:6)]), Hz0 = as.numeric(x[7]), sd_cent = as.numeric(x[8]), sd_cent_target = as.numeric(x[9]), sd_Hz = as.numeric(x[10]), type = "dms", seed = as.numeric(x[11]), axes = c("Northing", "Easting"))))
     }
   }else{
-    for(i in 1:length(obs.hz.list)){
-      meas.hz.list[[i]] <- t(apply(obs.hz.list[[i]], 1, function(x) hz(st_coords = as.numeric(x[c(3:4)]), target_coords = as.numeric(x[c(5:6)]), hz0 = as.numeric(x[7]), scent = as.numeric(x[8]), scent_target = as.numeric(x[9]), standard_hz = as.numeric(x[10]), type = "dms", axises = c("North", "East"))))
+    for(i in 1:length(obs.Hz.list)){
+      meas.Hz.list[[i]] <- t(apply(obs.Hz.list[[i]], 1, function(x) sim_Hz(st_coords = as.numeric(x[c(3:4)]), target_coords = as.numeric(x[c(5:6)]), Hz0 = as.numeric(x[7]), sd_cent = as.numeric(x[8]), sd_cent_target = as.numeric(x[9]), sd_Hz = as.numeric(x[10]), type = "dms", axes = c("Northing", "Easting"))))
     }
   }
 
   if(red){
-    meas.hz.list <-  do.call(rbind, meas.hz.list) %>% as.data.frame() %>% mutate(dec = deg + min/60 + sec/3600) %>% select(dec)
-    hz_meas <- cbind(do.call(rbind, obs.hz.list), meas.hz.list) %>% group_by(station) %>% mutate(dec.red = dec - dec[1])
-    hz_meas$dec.red[which(hz_meas$dec.red < 0)] <- hz_meas$dec.red[which(hz_meas$dec.red < 0)] + 360
-    hz_meas <- hz_meas %>% mutate(deg = floor(dec.red), minut = floor((dec.red-deg)*60), sec = ((dec.red-deg)*60-minut)*60) %>% select(station, obs.point, deg, minut, sec)
+    meas.Hz.list <-  do.call(rbind, meas.Hz.list) %>% as.data.frame() %>% mutate(dec = deg + min/60 + sec/3600) %>% select(dec)
+    Hz_meas <- cbind(do.call(rbind, obs.Hz.list), meas.Hz.list) %>% group_by(station) %>% mutate(dec.red = dec - dec[1])
+    Hz_meas$dec.red[which(Hz_meas$dec.red < 0)] <- Hz_meas$dec.red[which(Hz_meas$dec.red < 0)] + 360
+    Hz_meas <- Hz_meas %>% mutate(deg = floor(dec.red), minut = floor((dec.red-deg)*60), sec = ((dec.red-deg)*60-minut)*60) %>% select(station, obs.point, deg, minut, sec)
 
   }else{
-    hz_meas <- cbind(do.call(rbind, obs.hz.list), do.call(rbind, meas.hz.list)) %>% select(station, obs.point, deg, min, sec)
+    Hz_meas <- cbind(do.call(rbind, obs.Hz.list), do.call(rbind, meas.Hz.list)) %>% select(station, obs.point, deg, min, sec)
   }
 
-  return(hz_meas)
+  return(Hz_meas)
 }
 
 
-obs_hz <- filter(obs_plan, type == "p") %>% select(1,2)
+obs_Hz <- filter(obs_plan, type == "p") %>% select(1,2)
 
-sim_hz_meas(obs_hz = obs_hz, points = points, hz0 = 312, red = TRUE, scent_station = 2, scent_target = 3, standard_hz = 10, seed = NULL)
+sim_Hz_all(obs_Hz = obs_Hz, points = points, Hz0 = NA, red = TRUE, sd_cent_station = 2, sd_cent_target = 3, sd_Hz = 10, seed = NULL)
 
 
 
 obs_d <- filter(obs_plan, type == "d") %>% select(1,2)
-scent_station = c(1, 1, 1, 1); scent_target = c(3, 3, 3, 3); standard_d = c(3, 3, 3, 3); seed = c(111, 222, 333, 444)
+#sd_cent_station = c(1, 1, 1, 1); sd_cent_target = c(3, 3, 3, 3); sd_dist = c(3, 3, 3, 3); seed = c(111, 222, 333, 444)
 
-sim_d_meas <- function(obs_d, points, scent_station = c(1, 1, 1, 1), scent_target = c(1, 1, 1, 1), standard_d = c(3, 3, 3, 3), seed = c(111, 222, 333, 444)){
+sim_dist_all <- function(obs_d, points, sd_cent_station = c(1, 1, 1, 1), sd_cent_target = c(1, 1, 1, 1), sd_dist = c(3, 3, 3, 3), seed = c(111, 222, 333, 444)){
 
-      if(length(scent_station) == 1) scent_station <- rep(scent_station, length(unique(obs_d$station)))
-      if(length(scent_station) != length(unique(obs_d$station))) stop("scent_station must be of length either 1 or the number of stations")
+      if(length(sd_cent_station) == 1) sd_cent_station <- rep(sd_cent_station, length(unique(obs_d$station)))
+      if(length(sd_cent_station) != length(unique(obs_d$station))) stop("sd_cent_station must be of length either 1 or the number of stations")
 
-      if(length(scent_target) == 1) scent_target <- rep(scent_target, length(unique(obs_d$station)))
-      if(length(scent_target) != length(unique(obs_d$station))) stop("scent_target must be of length either 1 or the number of stations")
+      if(length(sd_cent_target) == 1) sd_cent_target <- rep(sd_cent_target, length(unique(obs_d$station)))
+      if(length(sd_cent_target) != length(unique(obs_d$station))) stop("sd_cent_target must be of length either 1 or the number of stations")
 
-      if(length(standard_d) == 1) standard_d <- rep(standard_d, length(unique(obs_d$station)))
-      if(length(standard_d) != length(unique(obs_d$station))) stop("standard_d must be of length either 1 or the number of stations")
+      if(length(sd_dist) == 1) sd_dist <- rep(sd_dist, length(unique(obs_d$station)))
+      if(length(sd_dist) != length(unique(obs_d$station))) stop("sd_dist must be of length either 1 or the number of stations")
 
       if(!is.null(seed)){
         if(length(seed) == 1) seed <- rep(seed, length(unique(obs_d$station)))
@@ -316,28 +318,28 @@ sim_d_meas <- function(obs_d, points, scent_station = c(1, 1, 1, 1), scent_targe
         seed <- rep(NULL, length(unique(obs_d$station)))
       }
 
-      obs_d <- mutate(obs_d, xs = rep(NA, dim(obs_d)[1]), ys = rep(NA, dim(obs_d)[1]), xt = rep(NA, dim(obs_d)[1]), yt = rep(NA, dim(obs_d)[1]))
+      obs_d <- mutate(obs_d, x_station = rep(NA, dim(obs_d)[1]), y_station = rep(NA, dim(obs_d)[1]), x_target = rep(NA, dim(obs_d)[1]), y_target = rep(NA, dim(obs_d)[1]))
       for(i in 1:dim(obs_d)[1]){
-        obs_d[i , c("xs", "ys")] <- points[which(obs_d$station[i] == points$Name), 2:3]
-        obs_d[i , c("xt", "yt")] <- points[which(obs_d$obs.point[i] == points$Name), 2:3]
+        obs_d[i , c("x_station", "y_station")] <- points[which(obs_d$station[i] == points$Name), 2:3]
+        obs_d[i , c("x_target", "y_target")] <- points[which(obs_d$obs.point[i] == points$Name), 2:3]
       }
 
       obs.d.list <- split(obs_d, obs_d$station)
       for(i in 1:length(obs.d.list)){
-        obs.d.list[[i]]$scent_station <- rep(scent_station[i], dim(obs.d.list[[i]])[1])
-        obs.d.list[[i]]$scent_target <- rep(scent_target[i], dim(obs.d.list[[i]])[1])
-        obs.d.list[[i]]$standard_d <- rep(standard_d[i], dim(obs.d.list[[i]])[1])
+        obs.d.list[[i]]$sd_cent_station <- rep(sd_cent_station[i], dim(obs.d.list[[i]])[1])
+        obs.d.list[[i]]$sd_cent_target <- rep(sd_cent_target[i], dim(obs.d.list[[i]])[1])
+        obs.d.list[[i]]$sd_dist <- rep(sd_dist[i], dim(obs.d.list[[i]])[1])
         obs.d.list[[i]]$seed <- rep(seed[i], dim(obs.d.list[[i]])[1])
       }
 
       meas.d.list <- as.list(rep(NA, length(obs.d.list)))
       if(!is.null(seed)){
         for(i in 1:length(obs.d.list)){
-          meas.d.list[[i]] <- data.frame(dist = (apply(obs.d.list[[i]], 1, function(x) m_dist(st_coords = as.numeric(x[c(3:4)]), target_coords = as.numeric(x[c(5:6)]), scent = as.numeric(x[7]), scent_target = as.numeric(x[8]), standard_d = as.numeric(x[9]), seed = as.numeric(x[10]), axises = c("North", "East")))))
+          meas.d.list[[i]] <- data.frame(dist = (apply(obs.d.list[[i]], 1, function(x) sim_dist(st_coords = as.numeric(x[c(3:4)]), target_coords = as.numeric(x[c(5:6)]), sd_cent = as.numeric(x[7]), sd_cent_target = as.numeric(x[8]), sd_dist = as.numeric(x[9]), seed = as.numeric(x[10]), axes = c("Northing", "Easting")))))
         }
       }else{
         for(i in 1:length(obs.d.list)){
-          meas.d.list[[i]] <- data.frame(dist = (apply(obs.d.list[[i]], 1, function(x) m_dist(st_coords = as.numeric(x[c(3:4)]), target_coords = as.numeric(x[c(5:6)]), scent = as.numeric(x[7]), scent_target = as.numeric(x[8]), standard_d = as.numeric(x[9]), axises = c("North", "East")))))
+          meas.d.list[[i]] <- data.frame(dist = (apply(obs.d.list[[i]], 1, function(x) sim_dist(st_coords = as.numeric(x[c(3:4)]), target_coords = as.numeric(x[c(5:6)]), sd_cent = as.numeric(x[7]), sd_cent_target = as.numeric(x[8]), sd_dist = as.numeric(x[9]), axes = c("Northing", "Easting")))))
         }
       }
 
@@ -346,7 +348,7 @@ sim_d_meas <- function(obs_d, points, scent_station = c(1, 1, 1, 1), scent_targe
       return(d_meas)
   }
 
-sim_d_meas(obs_d = obs_d, points = points, scent_station = 2, scent_target = 2, standard_d = 3, seed = NULL)
+sim_dist_all(obs_d = obs_d, points = points, sd_cent_station = 2, sd_cent_target = 2, sd_dist = 3, seed = NULL)
 
 
 ########### ZADATAK 1 ######################################################
@@ -357,20 +359,29 @@ obs_plan1 <- data.frame(station = rep(c("A", "A", "A", "B", "B", "C", "C", "C", 
 obs_plan2 <- data.frame(station = rep(c("A", "A", "A", "B", "B", "C", "C", "D", "D", "D"), 2), obs.point = rep(c("B", "T1", "T4", "A", "T1", "D", "T2", "A", "T2", "T4"), 2), type = c(rep("p", 10), rep("d", 10)) )
 
 
-obs_d <- filter(obs_plan1, type == "d") %>% select(1,2)
-sim_d_meas(obs_d = obs_d, points = points, scent_station = 2, scent_target = 2, standard_d = 3, seed = NULL)
+obs_plan1 <- obs_plan1[-which(obs_plan1$obs.point %in% c("A", "B", "C", "D") & obs_plan1$type == "d"), ]
+
+obs1_d <- filter(obs_plan1, type == "d") %>% select(1,2)
+sim_dist_1 <- sim_dist_all(obs_d = obs1_d, points = points, sd_cent_station = 2, sd_cent_target = 2, sd_dist = 3, seed = NULL)
 
 
-obs_hz <- filter(obs_plan1, type == "p") %>% select(1,2)
-sim_hz <- sim_hz_meas(obs_hz = obs_hz, points = points, hz0 = 312, red = TRUE, scent_station = 2, scent_target = 3, standard_hz = 10, seed = NULL)
+obs1_Hz <- filter(obs_plan1, type == "p") %>% select(1,2)
+sim_Hz_1 <- sim_Hz_all(obs_Hz = obs1_Hz, points = points, Hz0 = NA, red = TRUE, sd_cent_station = 2, sd_cent_target = 3, sd_Hz = 10, seed = NULL)
+
+
+sim_obs1 <- dplyr::full_join(sim_Hz_1, sim_dist_1) %>% mutate(sd_Hz = 10, sd_dist = 3, SD = NA, VzD = NA, VzM = NA, VzS = NA, sd_Vz = NA) %>% dplyr::select(from = station, to = obs.point, HzD = deg, HzM = minut, HzS = sec, HD = dist, SD, VzD, VzM, VzS, sd_Hz, sd_dist, sd_Vz)
+points1 <- points %>% dplyr::mutate(id = row_number(), FIX_X = FALSE, FIX_Y = FALSE, Point_object = FALSE) %>% dplyr::select(id, Name, x, y, FIX_X, FIX_Y, Point_object)
+
+obs1_list <- list(Points = points1, Observations = sim_obs1)
+writexl::write_xlsx(obs1_list, path = "obs1_list.xlsx")
 
 
 obs_d <- filter(obs_plan2, type == "d") %>% select(1,2)
-sim_d_meas(obs_d = obs_d, points = points, scent_station = 2, scent_target = 2, standard_d = 3, seed = NULL)
+sim_dist_all(obs_d = obs_d, points = points, sd_cent_station = 2, sd_cent_target = 2, sd_dist = 3, seed = NULL)
 
 
-obs_hz <- filter(obs_plan2, type == "p") %>% select(1,2)
-sim_hz <- sim_hz_meas(obs_hz = obs_hz, points = points, hz0 = 312, red = TRUE, scent_station = 2, scent_target = 3, standard_hz = 10, seed = NULL)
+obs_Hz <- filter(obs_plan2, type == "p") %>% select(1,2)
+sim_Hz_all(obs_Hz = obs_Hz, points = points, Hz0 = NA, red = FALSE, sd_cent_station = 2, sd_cent_target = 3, sd_Hz = 10, seed = NULL)
 
 
 write.table(sim_d, "sim_d.txt", sep = " ")

@@ -38,7 +38,7 @@ avala[[2]]
 
 ni <- function(pt1_coords, pt2_coords, type = list("dec", "dms", "rad"), axes = c("Easting", "Northing")){
   ## check if the axis were set:
-  if(length(axes) < 2) stop("axes must be defined with East and North")
+  if(length(axes) < 2) stop("axes must be defined with Easting and Northing")
   if(!any(axes %in% list("Northing", "Easting"))){ stop(paste(type, "axes must be North and East.")) }
 
   north_ind <- which(axes == "Northing")
