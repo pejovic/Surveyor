@@ -315,7 +315,7 @@ sim_dist_all <- function(obs_d, points, sd_cent_station = c(1, 1, 1, 1), sd_cent
         if(length(seed) == 1) seed <- rep(seed, length(unique(obs_d$station)))
         if(length(seed) != length(unique(obs_d$station))) stop("seed must be of length either 1 or the number of stations")
       }else{
-        seed <- rep(NULL, length(unique(obs_d$station)))
+        seed <- sample(1:1000, size = length(unique(obs_d$station))) # rep(NULL, length(unique(obs_d$station)))
       }
 
       obs_d <- mutate(obs_d, x_station = rep(NA, dim(obs_d)[1]), y_station = rep(NA, dim(obs_d)[1]), x_target = rep(NA, dim(obs_d)[1]), y_target = rep(NA, dim(obs_d)[1]))
@@ -373,7 +373,7 @@ sim_obs1 <- dplyr::full_join(sim_Hz_1, sim_dist_1) %>% mutate(sd_Hz = 10, sd_dis
 points1 <- points %>% dplyr::mutate(id = row_number(), FIX_X = FALSE, FIX_Y = FALSE, Point_object = FALSE) %>% dplyr::select(id, Name, x, y, FIX_X, FIX_Y, Point_object)
 
 obs1_list <- list(Points = points1, Observations = sim_obs1)
-writexl::write_xlsx(obs1_list, path = "obs1_list.xlsx")
+writexl::write_xlsx(obs1_list, path = "obs11_list.xlsx")
 
 
 obs_d <- filter(obs_plan2, type == "d") %>% select(1,2)

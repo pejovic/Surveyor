@@ -72,7 +72,7 @@ ni <- function(pt1_coords, pt2_coords, type = list("dec", "dms", "rad"), axes = 
 }
 
 
-points = avala_points; observations = avala_obs
+#points = avala_points; observations = avala_obs
 
 
 import_surveynet2D <- function(points = points, observations = observations, dest_crs = NA){
@@ -192,9 +192,14 @@ z_obs <- readxl::read_xlsx(path = here::here("Data/Input/With_observations/Zadat
 zadatak1 <- import_surveynet2D(points = z_points, observations = z_obs, dest_crs = NA)
 
 
-A <- Amat(survey.net = zadatak1, units = "mm")
-f <- data.frame(f = fmat(survey.net = zadatak1))
-P <- data.frame(Wmat(survey.net = zadatak1, apriori = 5))
+z_points <- readxl::read_xlsx(path = here::here("Data/Input/With_observations/Zadatak 2/Zadatak_22.xlsx"), sheet = "Points", col_types = c("numeric", "text", "numeric", "numeric", "logical", "logical", "logical"))
+z_obs <- readxl::read_xlsx(path = here::here("Data/Input/With_observations/Zadatak 2/Zadatak_22.xlsx"), sheet = "Observations", col_types = c("text", "text", "numeric", "numeric", "numeric", "numeric","numeric","numeric", "numeric", "numeric","numeric", "numeric", "numeric"))
+zadatak2 <- import_surveynet2D(points = z_points, observations = z_obs, dest_crs = NA)
+
+
+A <- Amat(survey.net = zadatak2, units = "mm")
+f <- data.frame(f = fmat(survey.net = zadatak2))
+P <- data.frame(Wmat(survey.net = zadatak2, apriori = 5))
 
 zadatak1.list <- list("A" = A, "f" = f, "P" = P)
 
