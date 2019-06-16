@@ -5,30 +5,6 @@
 
 # Functions:
 
-#library(shiny)
-#library(shinythemes)
-#library(leaflet)
-#library(tidyverse)
-#library(magrittr)
-#library(ggplot2)
-#library(geomnet)
-#library(ggnetwork)
-#library(sf)
-#library(ggmap)
-#library(sp)
-#library(rgdal)
-#library(leaflet)
-#library(xlsx)
-#library(data.table)
-#library(mapview)
-#library(mapedit)
-#library(leaflet.extras)
-#library(rhandsontable)
-#library(readxl)
-#library(here)
-#library(matlib)
-#library(nngeo)
-#library(dplyr)
 
 ### coeficients for distances #####################################################
 
@@ -137,12 +113,12 @@ fix.params <- function(net.points, axes = c("Easting", "Northing")){
 
 Amat <- function(survey.net, units, axes = c("Easting", "Northing")){
 
-  A_dir <- survey.net[[2]] %>% dplyr::filter(direction) %>% st_coordinates() %>% as.data.frame() %>% mutate_at(vars(L1), list(name = ~factor)) %>%
+  A_dir <- survey.net[[2]] %>% dplyr::filter(direction) %>% st_coordinates() %>% as.data.frame() %>% mutate_at(vars(L1), as.factor) %>%
     split(., .$L1) %>%
     lapply(., function(x) coef_p(pt1 = x[1, 1:2], pt2 = x[2, 1:2], pts = st_coordinates(survey.net[[1]][, 1:2]), units = units, axes = axes)) %>%
     do.call(rbind, .)
 
-  A_dist <- survey.net[[2]] %>% dplyr::filter(distance) %>% st_coordinates() %>% as.data.frame() %>% mutate_at(vars(L1), list(name = ~factor)) %>%
+  A_dist <- survey.net[[2]] %>% dplyr::filter(distance) %>% st_coordinates() %>% as.data.frame() %>% mutate_at(vars(L1), as.factor) %>%
     split(., .$L1) %>%
     lapply(., function(x) coef_d(pt1 = x[1, 1:2], pt2 = x[2, 1:2], pts = st_coordinates(survey.net[[1]][, 1:2]), units = units, axes = axes)) %>%
     do.call(rbind, .)
@@ -166,30 +142,16 @@ Amat <- function(survey.net, units, axes = c("Easting", "Northing")){
 
 
 # Weights matrix
-#Wmat <- function(survey.net, apriori = 1){
-#  #TODO: Omoguciti zadavanje i drugih kovariacionih formi izmedju merenja.
-#  obs.data <- survey.net[[2]] %>% st_drop_geometry()
-#  obs.data_1 <- data.frame(id = rep(obs.data$id,2),
-#                     from = rep(obs.data$from,2),
-#                     to = rep(obs.data$to,2),
-#                     type = c(obs.data$direction, obs.data$distance),
-#                     standard = c(obs.data$standard_dir, obs.data$standard_dist)) %>%
-#    dplyr::filter(type == TRUE) %>%
-#    dplyr::select(from, to, standard)
-#  return(diag(apriori^2/obs.data_1$standard^2))
-#}
-
-
-# Weights matrix
+# Wmat je ista, samo je promenjen naziv standarda. Stavljeni su "sd_Hz" i "sd_dist".
 Wmat <- function(survey.net, apriori = 1){
   #TODO: Omoguciti zadavanje i drugih kovariacionih formi izmedju merenja.
   obs.data <- rbind(survey.net[[2]] %>% st_drop_geometry() %>%
                       dplyr::filter(direction) %>%
-                      dplyr::select(from, to, standard = standard_dir ) %>%
+                      dplyr::select(from, to, standard = sd_Hz) %>%
                       dplyr::mutate(type = "direction"),
                     survey.net[[2]] %>% st_drop_geometry() %>%
                       dplyr::filter(distance) %>%
-                      dplyr::select(from, to, standard = standard_dist) %>%
+                      dplyr::select(from, to, standard = sd_dist) %>%
                       dplyr::mutate(type = "distance")
   )
   return(diag(apriori^2/obs.data$standard^2))
@@ -331,6 +293,66 @@ design.snet <- function(survey.net, apriori = 1, prob = NA, result.units = list(
 }
 
 
+
+import_surveynet2D <- function(points = points, observations = observations, dest_crs = NA){
+
+  # Create geometry columns for points
+  if (is.na(dest_crs)){
+    dest_crs <- 3857
+  }
+
+  observations$x_station <- points$x[match(observations$from, points$Name)]
+  observations$y_station <- points$y[match(observations$from, points$Name)]
+  observations$x_obs.point <- points$x[match(observations$to, points$Name)]
+  observations$y_obs.point <- points$y[match(observations$to, points$Name)]
+
+  points <- points %>% as.data.frame() %>% sf::st_as_sf(coords = c("x","y")) %>% sf::st_set_crs(dest_crs)
+
+  observations <- observations %>% dplyr::mutate(Hz = HzD + HzM/60 + HzS/3600,
+                                                 Vz = VzD + VzM/60 + VzS/3600,
+                                                 distance = (!is.na(.$HD) | !is.na(.$SD)),
+                                                 direction = !is.na(Hz))
+
+  observations <- as.data.table(observations) %>% dplyr::mutate(id = seq.int(nrow(.))) %>% split(., f = as.factor(.$id)) %>%
+    lapply(., function(row) {lmat <- matrix(unlist(row[14:17]), ncol = 2, byrow = TRUE)
+    st_linestring(lmat)}) %>%
+    sf::st_sfc() %>%
+    sf::st_sf('ID' = seq.int(nrow(observations)), observations, 'geometry' = .)
+
+  # Creating list
+  survey_net <- list(points, observations = observations)
+  return(survey_net)
+}
+
+
+
+fdir_st <- function(st.survey.net, units.dir = "sec", axes = c("Easting", "Northing")){
+  units.table <- c("sec" = 3600, "min" = 60, "deg" = 1)
+  st.survey.net <- st.survey.net %>% split(., f = as.factor(.$to)) %>%
+    lapply(., function(x) {x$ni = ni(pt1_coords = as.numeric(x[, c("y_station", "x_station")]), pt2_coords = as.numeric(x[, c("y_obs.point", "x_obs.point")]), type = "dec", axes = c("Easting", "Northing")); return(x)}) %>%
+    do.call(rbind,.) %>%
+    dplyr::mutate(z = Hz-ni) %>%
+    dplyr::arrange(ID)
+  st.survey.net$z <- ifelse(st.survey.net$z < 0, st.survey.net$z + 360, st.survey.net$z)
+  z0_mean <- mean(st.survey.net$z)
+  st.survey.net$Hz0 <- z0_mean + st.survey.net$ni
+  st.survey.net$Hz0 <- ifelse(st.survey.net$z > 360, st.survey.net$Hz0 - 360, st.survey.net$Hz0)
+  f <- (st.survey.net$Hz0 - st.survey.net$Hz)
+  f <- ifelse(f >= 360 | f >= 355, f - 360, f)*units.table[units.dir]
+  return(f)
+}
+
+
+fmat <- function(survey.net, units.dir = "sec", units.dist = "mm", axes = c("Easting", "Northing")){
+  f_dir <- survey.net[[2]] %>% dplyr::filter(direction) %>% st_drop_geometry() %>% split(.,.$from) %>%
+    lapply(., function(x) fdir_st(x, units.dir = units.dir)) %>%
+    do.call(c, .) %>% as.numeric()
+  dist.units.table <- c("mm" = 1000, "cm" = 100, "m" = 1)
+  survey.net[[2]] <- survey.net[[2]] %>% dplyr::filter(distance) %>% st_drop_geometry() %>%
+    dplyr::mutate(dist0 = sqrt((x_station-x_obs.point)^2+(y_station-y_obs.point)^2))
+  f_dist <- (survey.net[[2]]$dist0 - survey.net[[2]]$HD)*dist.units.table[units.dist]
+  return(c(f_dir, f_dist))
+}
 
 
 
