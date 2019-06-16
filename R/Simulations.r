@@ -9,22 +9,23 @@ library(writexl)
 
 
 A <- c(393.979,	419.038)
-B <- c(366.358, 550.138)
-C <- c(601.903, 632.171)
-D <- c(705.481, 538.638)
+B <- c(366.358,550.138)
+C <- c(601.903,632.171)
+D <- c(705.481,538.638)
 
 
-T1 <- c(500.000, 500.000)
-T2 <- c(585.023, 548.609)
-T3 <- c(500.000, 548.609)
-T4 <- c(585.023, 500.000)
+O1 <- c(500.000,500.000)
+O2 <- c(585.023,548.609)
+O3 <- c(500.000,548.609)
+O4 <- c(585.023,500.000)
+O5 <- c(542.511,524.304)
 
-points <- rbind(A, B, C, D, T1, T2, T3, T4) %>% as.data.frame() %>% rownames_to_column("Name") %>% rename(x = V1, y = V2)
+points <- rbind(A, B, C, D, O1, O2, O3, O4, O5) %>% as.data.frame() %>% rownames_to_column("Name") %>% rename(x = V1, y = V2)
 
-obs_plan <- data.frame(station = rep(c("A", "A", "A", "B", "B", "C", "C", "C", "D", "D"), 2), obs.point = rep(c("B", "T1", "T3", "A", "T1", "D", "T2","T3", "C", "T2"), 2), type = c(rep("p", 10), rep("d", 10)) )
+obs_plan <- data.frame(station = rep(c("A", "A", "A", "B", "B", "C", "C", "C", "D", "D"), 2), obs.point = rep(c("B", "O1", "O3", "A", "O1", "D", "O2","O3", "C", "O2"), 2), type = c(rep("p", 10), rep("d", 10)) )
 
 st_coords <- A
-target_coords <- T1
+target_coords <- O1
 orient_coords <- B
 
 dist <- function(pt1_coords, pt2_coords, axes = c("Easting", "Northing")){
@@ -147,7 +148,7 @@ return(Hz)
 }
 
 
-# sim_Hz(A, T1, Hz0 = 255, sd_cent = 12, sd_cent_target = 12, sd_Hz = 16, seed = 111, type = "dms", axes = c("Easting", "Northing"))
+# sim_Hz(A, O1, Hz0 = 255, sd_cent = 12, sd_cent_target = 12, sd_Hz = 16, seed = 111, type = "dms", axes = c("Easting", "Northing"))
 
 
 
@@ -181,7 +182,7 @@ sim_ang <- function(st_coords, orient_coords, target_coords, seed, Hz0 = 0, sd_H
   return(dang)
 }
 
-# sim_ang(st_coords = A, target_coords = T1, orient_coords = B, seed = NULL, Hz0 = 288, sd_cent = 2, sd_cent_back =  2, sd_cent_target = 1,  type = "dms", axes = c("Easting", "Northing"))
+# sim_ang(st_coords = A, target_coords = O1, orient_coords = B, seed = NULL, Hz0 = 288, sd_cent = 2, sd_cent_back =  2, sd_cent_target = 1,  type = "dms", axes = c("Easting", "Northing"))
 
 
 sim_dist <- function(st_coords, target_coords, sd_cent_station = NULL, sd_cent_target = NULL, sd_dist = 3, seed = NULL, axes = c("Easting", "Northing")){
@@ -210,19 +211,19 @@ sim_dist <- function(st_coords, target_coords, sd_cent_station = NULL, sd_cent_t
 
 # sim_dist(st_coords = A, target_coords = B, seed = 111, sd_cent_station = 2, sd_cent_target =  2, sd_dist = 3)
 
-station = as.numeric(points[1, c(2,3)])
-target_points = points[c(2, 5), ]
+#station = as.numeric(points[1, c(2,3)])
+#target_points = points[c(2, 5), ]
 
-stA <- data.frame(rep = points[which(points$Name == obs_plan[1, 1]), c(2,3)], target_points)
+#stA <- data.frame(rep = points[which(points$Name == obs_plan[1, 1]), c(2,3)], target_points)
 
-station_Hz <- function(station, target_points, Hz0 = 0, sd_cent_station = 2, sd_Hz = 5, c =  10, sd_colim = 5, sd_cent_target = NULL, sd_focus = NULL, seed = NULL, faces = list("mean", "both" ,"face1", "face2"), type = list("dms", "dec", "rad"), axes = c("Northing", "Easting")){
-  target_points %>% group_by(Name) %>% Hz(st_coords = station, target_coords =  (target_points[,c(2,3)]), Hz0 = Hz0, sd_cent = sd_cent, sd_Hz = sd_Hz, sd_cent_target = sd_cent_target, type = "dec", seed = seed, axes = c("Northing", "Easting"))
+#station_Hz <- function(station, target_points, Hz0 = 0, sd_cent_station = 2, sd_Hz = 5, c =  10, sd_colim = 5, sd_cent_target = NULL, sd_focus = NULL, seed = NULL, faces = list("mean", "both" ,"face1", "face2"), type = list("dms", "dec", "rad"), axes = c("Northing", "Easting")){
+#  target_points %>% group_by(Name) %>% Hz(st_coords = station, target_coords =  (target_points[,c(2,3)]), Hz0 = Hz0, sd_cent = sd_cent, sd_Hz = sd_Hz, sd_cent_target = sd_cent_target, type = "dec", seed = seed, axes = c("Northing", "Easting"))
+#
+#  t(apply(target_points, 1, function(x) Hz(st_coords = station, target_coords = as.numeric(x[c(2:3)]), Hz0 = 270, sd_cent = 2, sd_Hz = 5, sd_cent_target = 2, type = "dms", seed = 111, axes = c("Northing", "Easting"))))
+#
+#}
 
-  t(apply(target_points, 1, function(x) Hz(st_coords = station, target_coords = as.numeric(x[c(2:3)]), Hz0 = 270, sd_cent = 2, sd_Hz = 5, sd_cent_target = 2, type = "dms", seed = 111, axes = c("Northing", "Easting"))))
-
-}
-
-obs_Hz <- filter(obs_plan, type == "p") %>% select(1,2)
+#obs_Hz <- filter(obs_plan, type == "p") %>% select(1,2)
 #Hz0 = c(0, 0, 0, 0); sd_cent_station = c(1, 1, 1, 1); sd_cent_target = c(1, 1, 1, 1); sd_Hz = c(5, 5, 5, 5); seed = NULL #c(111, 222, 333, 444)
 #red = FALSE
 
@@ -291,13 +292,13 @@ sim_Hz_all <- function(obs_Hz, points, red = TRUE, Hz0 = NA, sd_cent_station = c
 }
 
 
-obs_Hz <- filter(obs_plan, type == "p") %>% select(1,2)
+# obs_Hz <- filter(obs_plan, type == "p") %>% select(1,2)
 
-sim_Hz_all(obs_Hz = obs_Hz, points = points, Hz0 = NA, red = TRUE, sd_cent_station = 2, sd_cent_target = 3, sd_Hz = 10, seed = NULL)
+# sim_Hz_all(obs_Hz = obs_Hz, points = points, Hz0 = NA, red = TRUE, sd_cent_station = 2, sd_cent_target = 3, sd_Hz = 10, seed = NULL)
 
 
 
-obs_d <- filter(obs_plan, type == "d") %>% select(1,2)
+# obs_d <- filter(obs_plan, type == "d") %>% select(1,2)
 #sd_cent_station = c(1, 1, 1, 1); sd_cent_target = c(3, 3, 3, 3); sd_dist = c(3, 3, 3, 3); seed = c(111, 222, 333, 444)
 
 sim_dist_all <- function(obs_d, points, sd_cent_station = c(1, 1, 1, 1), sd_cent_target = c(1, 1, 1, 1), sd_dist = c(3, 3, 3, 3), seed = c(111, 222, 333, 444)){
@@ -348,15 +349,37 @@ sim_dist_all <- function(obs_d, points, sd_cent_station = c(1, 1, 1, 1), sd_cent
       return(d_meas)
   }
 
-sim_dist_all(obs_d = obs_d, points = points, sd_cent_station = 2, sd_cent_target = 2, sd_dist = 3, seed = NULL)
+# sim_dist_all(obs_d = obs_d, points = points, sd_cent_station = 2, sd_cent_target = 2, sd_dist = 3, seed = NULL)
+
+########### ISPIT 14.6.2019. ######################################################
+
+points <- rbind(A, B, C, D, O1, O2, O5) %>% as.data.frame() %>% rownames_to_column("Name") %>% rename(x = V1, y = V2)
+obs_plan <- data.frame(station = rep(c("A", "A", "A", "B", "B", "B", "C", "C", "C", "D", "D", "D"), 2), obs.point = rep(c("B", "O1", "O5", "A", "O1", "O5", "D", "O2", "O5", "C", "O5", "O2"), 2), type = c(rep("p", 12), rep("d", 12)) )
+obs_plan <- obs_plan[-which(obs_plan$obs.point %in% c("A", "B", "C", "D") & obs_plan$type == "d"), ]
+
+obs1_d <- filter(obs_plan, type == "d") %>% select(1,2)
+sim_dist_1 <- sim_dist_all(obs_d = obs1_d, points = points, sd_cent_station = 2, sd_cent_target = 2, sd_dist = 3, seed = NULL)
+
+
+obs1_Hz <- filter(obs_plan, type == "p") %>% select(1,2)
+sim_Hz_1 <- sim_Hz_all(obs_Hz = obs1_Hz, points = points, Hz0 = NA, red = TRUE, sd_cent_station = 2, sd_cent_target = 3, sd_Hz = 10, seed = NULL)
+
+
+sim_obs1 <- dplyr::full_join(sim_Hz_1, sim_dist_1) %>% mutate(sd_Hz = 5, sd_dist = 3, SD = NA, VzD = NA, VzM = NA, VzS = NA, sd_Vz = NA) %>% dplyr::select(from = station, to = obs.point, HzD = deg, HzM = minut, HzS = sec, HD = dist, SD, VzD, VzM, VzS, sd_Hz, sd_dist, sd_Vz)
+points1 <- points %>% dplyr::mutate(id = row_number(), FIX_X = FALSE, FIX_Y = FALSE, Point_object = FALSE) %>% dplyr::select(id, Name, x, y, FIX_X, FIX_Y, Point_object)
+
+obs1_list <- list(Points = points1, Observations = sim_obs1)
+writexl::write_xlsx(obs1_list, path = "zadatak_1462019.xlsx")
+
+
 
 
 ########### ZADATAK 1 ######################################################
 
-points <- rbind(A, B, C, D, T1, T2, T3, T4) %>% as.data.frame() %>% rownames_to_column("Name") %>% rename(x = V1, y = V2)
+points <- rbind(A, B, C, D, O1, O2, O3, O4) %>% as.data.frame() %>% rownames_to_column("Name") %>% rename(x = V1, y = V2)
 
-obs_plan1 <- data.frame(station = rep(c("A", "A", "A", "B", "B", "C", "C", "C", "D", "D"), 2), obs.point = rep(c("B", "T1", "T3", "A", "T1", "D", "T2","T3", "A", "T2"), 2), type = c(rep("p", 10), rep("d", 10)) )
-obs_plan2 <- data.frame(station = rep(c("A", "A", "A", "B", "B", "C", "C", "D", "D", "D"), 2), obs.point = rep(c("B", "T1", "T4", "A", "T1", "D", "T2", "A", "T2", "T4"), 2), type = c(rep("p", 10), rep("d", 10)) )
+obs_plan1 <- data.frame(station = rep(c("A", "A", "A", "B", "B", "C", "C", "C", "D", "D"), 2), obs.point = rep(c("B", "O1", "O3", "A", "O1", "D", "O2","O3", "A", "O2"), 2), type = c(rep("p", 10), rep("d", 10)) )
+obs_plan2 <- data.frame(station = rep(c("A", "A", "A", "B", "B", "C", "C", "D", "D", "D"), 2), obs.point = rep(c("B", "O1", "O4", "A", "O1", "D", "O2", "A", "O2", "O4"), 2), type = c(rep("p", 10), rep("d", 10)) )
 
 
 obs_plan1 <- obs_plan1[-which(obs_plan1$obs.point %in% c("A", "B", "C", "D") & obs_plan1$type == "d"), ]

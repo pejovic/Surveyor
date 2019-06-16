@@ -128,7 +128,7 @@ fdir_st <- function(st.survey.net, units.dir = "sec", axes = c("Easting", "North
 
 
 
-fdir_st(st.survey.net = st.survey.net, units = "sec")
+#fdir_st(st.survey.net = st.survey.net, units = "sec")
 
 fmat <- function(survey.net, units.dir = "sec", units.dist = "mm", axes = c("Easting", "Northing")){
   f_dir <- survey.net[[2]] %>% dplyr::filter(direction) %>% st_drop_geometry() %>% split(.,.$from) %>%
@@ -158,12 +158,12 @@ Wmat <- function(survey.net, apriori = 1){
 
 Amat <- function(survey.net, units, axes = c("Easting", "Northing")){
 
-  A_dir <- survey.net[[2]] %>% dplyr::filter(direction) %>% st_coordinates() %>% as.data.frame() %>% mutate_at(vars(L1), list(name = ~factor)) %>%
+  A_dir <- survey.net[[2]] %>% dplyr::filter(direction) %>% st_coordinates() %>% as.data.frame() %>% mutate_at(vars(L1), as.factor) %>%
     split(., .$L1) %>%
     lapply(., function(x) coef_p(pt1 = x[1, 1:2], pt2 = x[2, 1:2], pts = st_coordinates(survey.net[[1]][, 1:2]), units = units, axes = axes)) %>%
     do.call(rbind, .)
 
-  A_dist <- survey.net[[2]] %>% dplyr::filter(distance) %>% st_coordinates() %>% as.data.frame() %>% mutate_at(vars(L1), list(name = ~factor)) %>%
+  A_dist <- survey.net[[2]] %>% dplyr::filter(distance) %>% st_coordinates() %>% as.data.frame() %>% mutate_at(vars(L1), as.factor) %>%
     split(., .$L1) %>%
     lapply(., function(x) coef_d(pt1 = x[1, 1:2], pt2 = x[2, 1:2], pts = st_coordinates(survey.net[[1]][, 1:2]), units = units, axes = axes)) %>%
     do.call(rbind, .)
@@ -185,6 +185,21 @@ Amat <- function(survey.net, units, axes = c("Easting", "Northing")){
   return(A)
 }
 
+################### ISPIT 14.6.2019. ########################################################
+
+z_points <- readxl::read_xlsx(path = here::here("Data/Input/With_observations/Zadatak 3/Zadatak_1462019.xlsx"), sheet = "Points", col_types = c("numeric", "text", "numeric", "numeric", "logical", "logical", "logical"))
+z_obs <- readxl::read_xlsx(path = here::here("Data/Input/With_observations/Zadatak 3/Zadatak_1462019.xlsx"), sheet = "Observations", col_types = c("text", "text", "numeric", "numeric", "numeric", "numeric","numeric","numeric", "numeric", "numeric","numeric", "numeric", "numeric"))
+zadatak3 <- import_surveynet2D(points = z_points, observations = z_obs, dest_crs = NA)
+
+
+A <- data.frame(Amat(survey.net = zadatak3, units = "mm"))
+f <- data.frame(f = fmat(survey.net = zadatak3))
+P <- data.frame(Wmat(survey.net = zadatak3, apriori = 5))
+
+zadatak3.list <- list("A" = A, "f" = f, "P" = P)
+write_xlsx(zadatak3.list, path = "zadatak3_design.xlsx")
+
+#############################################################################################
 
 
 z_points <- readxl::read_xlsx(path = here::here("Data/Input/With_observations/Zadatak 1/Zadatak_1.xlsx"), sheet = "Points", col_types = c("numeric", "text", "numeric", "numeric", "logical", "logical", "logical"))
