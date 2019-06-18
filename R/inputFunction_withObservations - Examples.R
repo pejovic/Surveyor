@@ -87,8 +87,6 @@ avala_1 <- surveynet.xlsx_1(points = avala_points, observations = avala_obs, des
 net_spatial_view_2DAdjustment_Import(points = avala_1[[1]], observations = avala[[2]])
 
 
-#
-
 
 
 
