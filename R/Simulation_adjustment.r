@@ -39,7 +39,7 @@ points <- points %>% dplyr::mutate(id = row_number(), FIX_X = FALSE, FIX_Y = FAL
 
 obs_plan <- data.frame(station = rep(c("A", "A", "A", "B", "B", "B", "C", "C", "C", "D", "D", "D"), 2),
                        obs.point = rep(c("B", "O1", "O2", "A", "O2", "O1", "D", "O2","O1", "C", "O1", "O2"), 2),
-                       type = c(rep("p", 12), rep("d", 12)))
+                       type = c(rep("p", 12), rep("d", 12)), stringsAsFactors = FALSE)
 obs_plan <- obs_plan[-which(obs_plan$obs.point %in% c("A", "B", "C", "D") & obs_plan$type == "d"), ]
 
 
@@ -65,7 +65,19 @@ A <- Amat(survey.net = sim.survey.net, units = "mm")
 f <- data.frame(f = fmat(survey.net = sim.survey.net))
 P <- data.frame(Wmat(survey.net = sim.survey.net, apriori = 5))
 
+design.snet(survey.net = sim.survey.net, apriori = 1, prob = NA, result.units = list("mm", "cm", "m"), ellipse.scale = 1, axes = c("Easting", "Northing"), teta.unit = list("deg", "rad"), all = FALSE)
 
+survey.net = sim.survey.net; apriori = 1; prob = NA; result.units = list("mm", "cm", "m"); ellipse.scale = 1; axes = c("Easting", "Northing"); teta.unit = list("deg", "rad"); all = FALSE
 
 writexl::write_xlsx(obs1_list, path = "obs11_list.xlsx")
+
+# Zadatak
+
+z_points <- readxl::read_xlsx(path = here::here("Data/Input/Without_observations/xlsx/zadatak_1462019.xlsx"), sheet = "Points", col_types = c("numeric", "text", "numeric", "numeric", "logical", "logical", "logical"))
+z_obs <- readxl::read_xlsx(path = here::here("Data/Input/Without_observations/xlsx/zadatak_1462019.xlsx"), sheet = "Observations", col_types = c("text", "text", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric","numeric","numeric", "numeric", "numeric"))
+z.survey.net <- import_surveynet2D(points = z_points, observations = z_obs)
+
+design.snet(survey.net = z.survey.net, apriori = 1, prob = NA, result.units = list("mm", "cm", "m"), ellipse.scale = 1, axes = c("Easting", "Northing"), teta.unit = list("deg", "rad"), all = FALSE)
+
+
 

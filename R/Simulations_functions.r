@@ -5,7 +5,7 @@ coef_d <- function (pt1, pt2, pts, units, axes = c("Easting", "Northing")) {
   pt1 <- as.numeric(pt1)
   pt2 <- as.numeric(pt2)
   coords <- pts[,-1]
-  vec_d <- c(rep(0, dim(coords)[1]*2)) # Ovde je nesto promenjeno
+  vec_d <- c(rep(0, dim(pts)[1]*2)) # Ovde je nesto promenjeno
 
   x_coords <- coords[, xind]
   y_coords <- coords[, yind]
@@ -52,7 +52,7 @@ coef_p <- function (pt1, pt2, pts, units, axes = c("Easting", "Northing")) {
   pt1 <- as.numeric(pt1)
   pt2 <- as.numeric(pt2)
   coords <- pts[,-1]
-  vec_p <- c(rep(0, dim(coords)[1]*2)) # Ovde je nesto promenjeno
+  vec_p <- c(rep(0, dim(pts)[1]*2)) # Ovde je nesto promenjeno
   ro <- 180/pi*3600
 
   x_coords <- coords[, xind]
@@ -299,8 +299,8 @@ sim_Hz_all <- function(obs_Hz, points, red = TRUE, Hz0 = NA, sd_cent_station = c
 
   obs_Hz <- mutate(obs_Hz, x_station = rep(NA, dim(obs_Hz)[1]), y_station = rep(NA, dim(obs_Hz)[1]), x_target = rep(NA, dim(obs_Hz)[1]), y_target = rep(NA, dim(obs_Hz)[1]))
   for(i in 1:dim(obs_Hz)[1]){
-    obs_Hz[i , c("x_station", "y_station")] <- points[which(obs_Hz$station[i] == points$Name), 2:3]
-    obs_Hz[i , c("x_target", "y_target")] <- points[which(obs_Hz$obs.point[i] == points$Name), 2:3]
+    obs_Hz[i , c("x_station", "y_station")] <- points[which(obs_Hz$station[i] == points$Name), c("x", "y")]
+    obs_Hz[i , c("x_target", "y_target")] <- points[which(obs_Hz$obs.point[i] == points$Name), c("x", "y")]
   }
 
   obs.Hz.list <- split(obs_Hz, obs_Hz$station)
@@ -357,8 +357,8 @@ sim_dist_all <- function(obs_d, points, sd_cent_station = c(1, 1, 1, 1), sd_cent
 
   obs_d <- mutate(obs_d, x_station = rep(NA, dim(obs_d)[1]), y_station = rep(NA, dim(obs_d)[1]), x_target = rep(NA, dim(obs_d)[1]), y_target = rep(NA, dim(obs_d)[1]))
   for(i in 1:dim(obs_d)[1]){
-    obs_d[i , c("x_station", "y_station")] <- points[which(obs_d$station[i] == points$Name), 2:3]
-    obs_d[i , c("x_target", "y_target")] <- points[which(obs_d$obs.point[i] == points$Name), 2:3]
+    obs_d[i , c("x_station", "y_station")] <- points[which(obs_d$station[i] == points$Name), c("x", "y")]
+    obs_d[i , c("x_target", "y_target")] <- points[which(obs_d$obs.point[i] == points$Name), c("x", "y")]
   }
 
   obs.d.list <- split(obs_d, obs_d$station)

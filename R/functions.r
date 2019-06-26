@@ -15,7 +15,7 @@ coef_d <- function (pt1, pt2, pts, units, axes = c("Easting", "Northing")) {
   pt1 <- as.numeric(pt1)
   pt2 <- as.numeric(pt2)
   coords <- pts
-  vec_d <- c(rep(0, length(coords)))
+  vec_d <- c(rep(0, dim(pts)[1]*2))#c(rep(0, length(coords)))
 
   x_coords <- coords[, xind]
   y_coords <- coords[, yind]
@@ -62,7 +62,7 @@ coef_p <- function (pt1, pt2, pts, units, axes = c("Easting", "Northing")) {
   pt1 <- as.numeric(pt1)
   pt2 <- as.numeric(pt2)
   coords <- pts
-  vec_p <- c(rep(0, length(coords)))
+  vec_p <- c(rep(0, dim(pts)[1]*2))#c(rep(0, length(coords)))
   ro <- 180/pi*3600
 
   x_coords <- coords[, xind]
@@ -123,9 +123,11 @@ Amat <- function(survey.net, units, axes = c("Easting", "Northing")){
     lapply(., function(x) coef_d(pt1 = x[1, 1:2], pt2 = x[2, 1:2], pts = st_coordinates(survey.net[[1]][, 1:2]), units = units, axes = axes)) %>%
     do.call(rbind, .)
 
+  station.names <- survey.net[[2]] %>% dplyr::filter(direction) %>% dplyr::select(from) %>% st_drop_geometry() %>% unique() %>% unlist(use.names = FALSE)
+
   Z_mat <- survey.net[[2]] %>% dplyr::filter(direction) %>%
     tidyr::spread(key = from, value = direction, fill = FALSE) %>%
-    dplyr::select(survey.net[[1]]$Name[!survey.net[[1]]$Point_object]) %>%
+    dplyr::select(station.names) %>%
     st_drop_geometry() %>%
     as.matrix()*1
 
@@ -239,7 +241,7 @@ design.snet <- function(survey.net, apriori = 1, prob = NA, result.units = list(
   used.points.ind <- which(survey.net[[1]]$Name %in% used.points)
   used.points <- survey.net[[1]]$Name[used.points.ind]
   survey.net[[1]] <- survey.net[[1]][used.points.ind, ]
-  observations <- gather(survey.net[[2]] %>%
+  observations <- tidyr::gather(survey.net[[2]] %>%
     dplyr::select(from, to, direction, distance, geometry), key = type, value = used, -c(from, to, geometry)) %>%
     dplyr::filter(used == TRUE) %>%
     dplyr::mutate(from_to = str_c(.$from, .$to, sep = "_"))
@@ -312,6 +314,9 @@ import_surveynet2D <- function(points = points, observations = observations, des
                                                  Vz = VzD + VzM/60 + VzS/3600,
                                                  distance = (!is.na(.$HD) | !is.na(.$SD)),
                                                  direction = !is.na(Hz))
+
+  observations$distance[!is.na(observations$sd_dist)] <- TRUE
+  observations$direction[!is.na(observations$sd_Hz)] <- TRUE
 
   observations <- as.data.table(observations) %>% dplyr::mutate(id = seq.int(nrow(.))) %>% split(., f = as.factor(.$id)) %>%
     lapply(., function(row) {lmat <- matrix(unlist(row[14:17]), ncol = 2, byrow = TRUE)
