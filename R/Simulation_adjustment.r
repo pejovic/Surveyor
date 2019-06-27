@@ -21,9 +21,8 @@ library(nngeo)
 library(writexl)
 library(here)
 
-
-source("./R/functions.r")
 source("./R/Simulations_functions.r")
+source("./R/functions.r")
 
 
 A <- c(393.979,	419.038)
@@ -73,11 +72,19 @@ writexl::write_xlsx(obs1_list, path = "obs11_list.xlsx")
 
 # Zadatak
 
-z_points <- readxl::read_xlsx(path = here::here("Data/Input/Without_observations/xlsx/zadatak_1462019.xlsx"), sheet = "Points", col_types = c("numeric", "text", "numeric", "numeric", "logical", "logical", "logical"))
-z_obs <- readxl::read_xlsx(path = here::here("Data/Input/Without_observations/xlsx/zadatak_1462019.xlsx"), sheet = "Observations", col_types = c("text", "text", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric","numeric","numeric", "numeric", "numeric"))
-z.survey.net <- import_surveynet2D(points = z_points, observations = z_obs)
+A_points <- readxl::read_xlsx(path = "B:/_Bechelor/_Ispiti/Projektovanje/28.6.2019/A_plan.xlsx", sheet = "Points", col_types = c("numeric", "text", "numeric", "numeric", "logical", "logical", "logical"))
+A_obs <- readxl::read_xlsx(path = "B:/_Bechelor/_Ispiti/Projektovanje/28.6.2019/A_plan.xlsx", sheet = "Observations", col_types = c("text", "text", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric","numeric","numeric", "numeric", "numeric"))
+A.survey.net <- import_surveynet2D(points = A_points, observations = A_obs)
 
-design.snet(survey.net = z.survey.net, apriori = 1, prob = NA, result.units = list("mm", "cm", "m"), ellipse.scale = 1, axes = c("Easting", "Northing"), teta.unit = list("deg", "rad"), all = FALSE)
+A.design <- design.snet(survey.net = A.survey.net, apriori = 3, prob = NA, result.units = list("mm", "cm", "m"), ellipse.scale = 1, axes = c("Easting", "Northing"), teta.unit = list("deg", "rad"), all = FALSE)
 
 
+B_points <- readxl::read_xlsx(path = "B:/_Bechelor/_Ispiti/Projektovanje/28.6.2019/B_plan.xlsx", sheet = "Points", col_types = c("numeric", "text", "numeric", "numeric", "logical", "logical", "logical"))
+B_obs <- readxl::read_xlsx(path = "B:/_Bechelor/_Ispiti/Projektovanje/28.6.2019/B_plan.xlsx", sheet = "Observations", col_types = c("text", "text", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric","numeric","numeric", "numeric", "numeric"))
+B.survey.net <- import_surveynet2D(points = B_points, observations = B_obs)
 
+B.design <- design.snet(survey.net = B.survey.net, apriori = 3, prob = NA, result.units = list("mm", "cm", "m"), ellipse.scale = 1, axes = c("Easting", "Northing"), teta.unit = list("deg", "rad"), all = FALSE)
+
+
+A.design$net.points
+B.design$net.points
