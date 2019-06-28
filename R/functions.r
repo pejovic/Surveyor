@@ -145,7 +145,7 @@ Amat <- function(survey.net, units, axes = c("Easting", "Northing")){
 
 # Weights matrix
 # Wmat je ista, samo je promenjen naziv standarda. Stavljeni su "sd_Hz" i "sd_dist".
-Wmat <- function(survey.net, apriori = 1){
+Wmat <- function(survey.net, sd.apriori = 1){
   #TODO: Omoguciti zadavanje i drugih kovariacionih formi izmedju merenja.
   obs.data <- rbind(survey.net[[2]] %>% st_drop_geometry() %>%
                       dplyr::filter(direction) %>%
@@ -156,7 +156,7 @@ Wmat <- function(survey.net, apriori = 1){
                       dplyr::select(from, to, standard = sd_dist) %>%
                       dplyr::mutate(type = "distance")
   )
-  return(diag(apriori^2/obs.data$standard^2))
+  return(diag(sd.apriori^2/obs.data$standard^2))
 }
 
 
@@ -181,7 +181,7 @@ Qxy <- function(Qx, n, fixd = fix){
 }
 #
 
-error.ellipse <- function(Qxy, prob = NA, apriori = 1, axes = c("Easting", "Northing"), teta.unit = list("deg", "rad")) {
+error.ellipse <- function(Qxy, prob = NA, sd.apriori = 1, axes = c("Easting", "Northing"), teta.unit = list("deg", "rad")) {
   if(("Easting" == axes)[1]){
     Qee <- Qxy[1, 1]
     Qnn <- Qxy[2, 2]
@@ -201,11 +201,11 @@ error.ellipse <- function(Qxy, prob = NA, apriori = 1, axes = c("Easting", "Nort
     lambda1 <- 0.5*(Qee + Qnn + k)
     lambda2 <- 0.5*(Qee + Qnn - k)
     if(is.na(prob)){
-      A <- apriori*sqrt(lambda1)
-      B <- apriori*sqrt(lambda2)
+      A <- sd.apriori*sqrt(lambda1)
+      B <- sd.apriori*sqrt(lambda2)
     }else{
-      A <- apriori*sqrt(lambda1*qchisq(prob, df = 2))
-      B <- apriori*sqrt(lambda2*qchisq(prob, df = 2))
+      A <- sd.apriori*sqrt(lambda1*qchisq(prob, df = 2))
+      B <- sd.apriori*sqrt(lambda2*qchisq(prob, df = 2))
     }
     teta <- ifelse((Qnn - Qee) == 0, 0, 0.5*atan(2*Qen/(Qnn - Qee)))
     teta <- ifelse(teta >= 0, teta, teta + 2*pi)
@@ -230,11 +230,11 @@ sf.ellipse <- function(ellipse.param, scale = 10){
   return(ellipse.sf)
 }
 
-sigma.xy <- function(Qxy.mat, apriori){
-  sigma <- diag(diag(apriori, 2, 2)%*%diag(sqrt(diag(Qxy.mat)), 2, 2))
+sigma.xy <- function(Qxy.mat, sd.apriori){
+  sigma <- diag(diag(sd.apriori, 2, 2)%*%diag(sqrt(diag(Qxy.mat)), 2, 2))
 }
 
-design.snet <- function(survey.net, apriori = 1, prob = NA, result.units = list("mm", "cm", "m"), ellipse.scale = 1, axes = c("Easting", "Northing"), teta.unit = list("deg", "rad"), all = FALSE){
+design.snet <- function(survey.net, sd.apriori = 1, prob = NA, result.units = list("mm", "cm", "m"), ellipse.scale = 1, axes = c("Easting", "Northing"), teta.unit = list("deg", "rad"), all = FALSE){
   # TODO: Set warning if there are different or not used points in two elements of survey.net list.
   # Check which points are used for measurements, if not
   used.points <- unique(do.call(c, survey.net[[2]][, c("from", "to")] %>% st_drop_geometry()))
@@ -249,7 +249,7 @@ design.snet <- function(survey.net, apriori = 1, prob = NA, result.units = list(
   units <- result.units[[1]]
   A <- Amat(survey.net, units = units, axes = axes)
   rownames(A) <- observations$from_to
-  W <- Wmat(survey.net)
+  W <- Wmat(survey.net, sd.apriori = sd.apriori)
   colnames(W) <- observations$from_to
   rownames(W) <- observations$from_to
   N <- crossprod(A, W) %*% A
@@ -271,12 +271,12 @@ design.snet <- function(survey.net, apriori = 1, prob = NA, result.units = list(
     survey.net[[1]] %>% st_drop_geometry() %>%  dplyr::select(FIX_Y, FIX_X) == FALSE
   }
   Qxy.list <- Qxy(Qx, n = lenght(used.points), fixd = fix*1)
-  ellipses <- lapply(Qxy.list, function(x) error.ellipse(x, prob = 0.95, apriori = apriori, axes = axes, teta.unit = teta.unit[[1]]))
+  ellipses <- lapply(Qxy.list, function(x) error.ellipse(x, prob = 0.95, sd.apriori = sd.apriori, axes = axes, teta.unit = teta.unit[[1]]))
   ellipses <- do.call(rbind, ellipses) %>%
     as.data.frame() %>%
     dplyr::select(A = V1, B = V2, teta = V3) %>%
     mutate(Name = used.points)
-  sigmas <- lapply(Qxy.list, function(x) sigma.xy(x, apriori = apriori)) %>%
+  sigmas <- lapply(Qxy.list, function(x) sigma.xy(x, sd.apriori = sd.apriori)) %>%
     do.call(rbind,.) %>%
     as.data.frame() %>%
     dplyr::select(sx = V1, sy = V2) %>% #TODO: proveriti da li ovde treba voditi racuna o redosledu sx i sy.
@@ -293,6 +293,96 @@ design.snet <- function(survey.net, apriori = 1, prob = NA, result.units = list(
     return(design[-1])
   }
 }
+
+
+adjust.snet <- function(survey.net, sd.apriori = 1, prob = 0.95, result.units = list("mm", "cm", "m"), ellipse.scale = 1, axes = c("Easting", "Northing"), teta.unit = list("deg", "rad"), all = FALSE){
+  # TODO: Set warning if there are different or not used points in two elements of survey.net list.
+  # Check which points are used for measurements, if not
+  used.points <- unique(do.call(c, survey.net[[2]][, c("from", "to")] %>% st_drop_geometry()))
+  used.points.ind <- which(survey.net[[1]]$Name %in% used.points)
+  used.points <- survey.net[[1]]$Name[used.points.ind]
+  survey.net[[1]] <- survey.net[[1]][used.points.ind, ]
+  observations <- tidyr::gather(survey.net[[2]] %>%
+                                  dplyr::select(from, to, direction, distance, geometry), key = type, value = used, -c(from, to, geometry)) %>%
+    dplyr::filter(used == TRUE) %>%
+    dplyr::mutate(from_to = str_c(.$from, .$to, sep = "_"))
+  # =======
+  units <- result.units[[1]]
+  A.mat <- Amat(survey.net, units = units, axes = axes)
+  rownames(A.mat) <- observations$from_to
+  W.mat <- Wmat(survey.net, sd.apriori = sd.apriori)
+  colnames(W.mat) <- observations$from_to
+  rownames(W.mat) <- observations$from_to
+  N.mat <- crossprod(A.mat, W.mat) %*% A.mat
+  Qx.mat <- tryCatch(
+    {
+      x = Qx.mat = solve(N.mat)
+    },
+    error = function(e) {
+      x = Qx.mat = MASS::ginv(N.mat)
+    })
+  colnames(Qx.mat) <- colnames(N.mat)
+  rownames(Qx.mat) <- rownames(N.mat)
+  Ql.mat <- A.mat %*% tcrossprod(Qx.mat, A.mat)
+  Qv.mat <- solve(W.mat) - Ql.mat
+  r <- Qv.mat%*%W.mat
+  fix <- if(("Easting" == axes)[1]){
+    survey.net[[1]] %>% st_drop_geometry() %>%  dplyr::select(FIX_X, FIX_Y) == FALSE
+  }else{
+    survey.net[[1]] %>% st_drop_geometry() %>%  dplyr::select(FIX_Y, FIX_X) == FALSE
+  }
+  if(adjust){
+    if(length(fix) != sum(fix)){
+      df <- abs(diff(dim(A.mat)))
+    }else{
+      df <- abs(diff(dim(A.mat))) + 3
+    }
+    f.mat <- fmat(survey.net = survey.net)
+    n.mat <- crossprod(A.mat, W.mat) %*% f
+    x.mat <- -Qx.mat %*% n.mat
+    v.mat <- A.mat%*%x.mat + f.mat
+    sd.estimated <- sqrt((tcrossprod(v.mat, W.mat) %*% v.mat)/(df))
+    F.estimated <- if(sd.estimated > sd.apriori){sd.estimated^2/sd.apriori^2}else{sd.apriori^2/sd.estimated^2}
+    F.test.conclsion <- if(F.estimated > qchisq(prob, df = 2)){
+      paste("Model je adekvatan")
+    }else{
+      paste("Model nije adekvatan")
+    }
+
+    ############################ OVDE SAM STAO ###############################################################
+  }
+
+  # Computing error ellipses
+  Qxy.list <- Qxy(Qx.mat, n = lenght(used.points), fixd = fix*1)
+  ellipses <- lapply(Qxy.list, function(x) error.ellipse(x, prob = prob, sd.apriori = sd.apriori, axes = axes, teta.unit = teta.unit[[1]]))
+  ellipses <- do.call(rbind, ellipses) %>%
+    as.data.frame() %>%
+    dplyr::select(A = V1, B = V2, teta = V3) %>%
+    mutate(Name = used.points)
+  # Computing parameters sigmas
+  sigmas <- lapply(Qxy.list, function(x) sigma.xy(x, sd.apriori = sd.apriori)) %>%
+    do.call(rbind,.) %>%
+    as.data.frame() %>%
+    dplyr::select(sx = V1, sy = V2) %>% #TODO: proveriti da li ovde treba voditi racuna o redosledu sx i sy.
+    dplyr::mutate(sp = sqrt(sx^2 + sy^2), Name = used.points)
+  survey.net[[1]] <- merge(survey.net[[1]], ellipses, by = "Name") %>% merge(., sigmas)
+  observations <- observations %>% dplyr::mutate(Ql.mat = diag(Ql.mat), Qv.mat = diag(Qv.mat), rii = diag(r))
+  ellipse.net <- do.call(rbind, lapply(split(survey.net[[1]], survey.net[[1]]$Name), function(x) sf.ellipse(x, scale = ellipse.scale)))
+  ellipse.net <- merge(ellipse.net, sigmas)
+  ellipse.net %<>% sf::st_set_crs(st_crs(survey.net[[1]]))
+  design <- list(design.matrices = list(A = A, W = W.mat, Qx = Qx.mat, Ql = Ql.mat, Qv = Qv.mat), ellipse.net = ellipse.net, net.points = survey.net[[1]], observations = observations)
+  if(all){
+    return(design)
+  }else{
+    return(design[-1])
+  }
+}
+
+
+
+
+
+
 
 
 
