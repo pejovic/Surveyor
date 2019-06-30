@@ -294,8 +294,8 @@ design.snet <- function(survey.net, sd.apriori = 1, prob = NA, result.units = li
   }
 }
 
-
-adjust.snet <- function(survey.net, sd.apriori = 1, prob = 0.95, result.units = list("mm", "cm", "m"), ellipse.scale = 1, axes = c("Easting", "Northing"), teta.unit = list("deg", "rad"), all = FALSE){
+survey.net = avala; sd.apriori = 1; prob = 0.95; result.units = list("mm", "cm", "m"); ellipse.scale = 1; axes = c("Easting", "Northing"); teta.unit = list("deg", "rad"); all = FALSE
+adjust.snet <- function(survey.net, sd.apriori = 1, prob = 0.95, result.units = list("mm", "cm", "m"), ellipse.scale = 1, axes = c("Easting", "Northing"), teta.unit = list("deg", "rad"), units.dir = "sec", units.dist = "mm", all = FALSE){
   # TODO: Set warning if there are different or not used points in two elements of survey.net list.
   # Check which points are used for measurements, if not
   used.points <- unique(do.call(c, survey.net[[2]][, c("from", "to")] %>% st_drop_geometry()))
@@ -337,13 +337,18 @@ adjust.snet <- function(survey.net, sd.apriori = 1, prob = 0.95, result.units = 
     }else{
       df <- abs(diff(dim(A.mat))) + 3
     }
-    f.mat <- fmat(survey.net = survey.net)
-    n.mat <- crossprod(A.mat, W.mat) %*% f
+    f.mat <- fmat(survey.net = survey.net, units.dir = units.dir, units.dist = units.dist, axes = axes)
+    n.mat <- crossprod(A.mat, W.mat) %*% f.mat
     x.mat <- -Qx.mat %*% n.mat
     v.mat <- A.mat%*%x.mat + f.mat
     sd.estimated <- sqrt((tcrossprod(v.mat, W.mat) %*% v.mat)/(df))
-    F.estimated <- if(sd.estimated > sd.apriori){sd.estimated^2/sd.apriori^2}else{sd.apriori^2/sd.estimated^2}
-    F.test.conclsion <- if(F.estimated > qchisq(prob, df = 2)){
+    if(sd.estimated > sd.apriori){
+      F.estimated <- sd.estimated^2/sd.apriori^2
+      F.quantile <- qf(p = prob, df1 = df, df2 = 10^1000)
+      }else{
+      F.estimated <- sd.apriori^2/sd.estimated^2
+      F.quantile <- qf(p = prob, df1 = 10^1000, df2 = df)}
+    F.test.conclsion <- if(F.estimated >= F.quantile){
       paste("Model je adekvatan")
     }else{
       paste("Model nije adekvatan")
@@ -419,7 +424,7 @@ import_surveynet2D <- function(points = points, observations = observations, des
   return(survey_net)
 }
 
-
+st.survey.net <- avala[[2]] %>% dplyr::filter(from == "S4")
 
 fdir_st <- function(st.survey.net, units.dir = "sec", axes = c("Easting", "Northing")){
   units.table <- c("sec" = 3600, "min" = 60, "deg" = 1)
@@ -431,9 +436,9 @@ fdir_st <- function(st.survey.net, units.dir = "sec", axes = c("Easting", "North
   st.survey.net$z <- ifelse(st.survey.net$z < 0, st.survey.net$z + 360, st.survey.net$z)
   z0_mean <- mean(st.survey.net$z)
   st.survey.net$Hz0 <- z0_mean + st.survey.net$ni
-  st.survey.net$Hz0 <- ifelse(st.survey.net$z > 360, st.survey.net$Hz0 - 360, st.survey.net$Hz0)
-  f <- (st.survey.net$Hz0 - st.survey.net$Hz)
-  f <- ifelse(f >= 360 | f >= 355, f - 360, f)*units.table[units.dir]
+  st.survey.net$Hz0 <- ifelse(st.survey.net$Hz0 > 360, st.survey.net$Hz0 - 360, st.survey.net$Hz0)
+  f <- (st.survey.net$Hz0 - st.survey.net$Hz)*units.table[units.dir]
+  #f <- ifelse(f >= 360 | f >= 355, f - 360, f)
   return(f)
 }
 

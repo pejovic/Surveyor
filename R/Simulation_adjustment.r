@@ -101,10 +101,23 @@ Makis_obs <- readxl::read_xlsx(path = ("./Data/Input/With_observations/Makis/Mak
 Makis.survey.net <- import_surveynet2D(points = Makis_points, observations = Makis_obs)
 
 
-Makis.design <- design.snet(survey.net = A.survey.net, sd.apriori = 6, prob = NA, result.units = "mm", ellipse.scale = 1, axes = c("Easting", "Northing"), teta.unit = list("deg", "rad"), all = TRUE)
+Makis.design <- design.snet(survey.net = Makis.survey.net, sd.apriori = 6, prob = NA, result.units = "mm", ellipse.scale = 1, axes = c("Easting", "Northing"), teta.unit = list("deg", "rad"), all = TRUE)
 
 
 A <- Amat(survey.net = Makis.survey.net, units = "mm")
 f <- data.frame(f = fmat(survey.net = Makis.survey.net))
 P <- data.frame(Wmat(survey.net = Makis.survey.net, sd.apriori = 3))
+
+
+
+# AVALA
+
+avala_points <- readxl::read_xlsx(path = here::here("Data/Input/With_observations/Avala/Avala_observations.xlsx"), sheet = "Points", col_types = c("numeric", "text", "numeric", "numeric", "logical", "logical", "logical"))
+avala_obs <- readxl::read_xlsx(path = here::here("Data/Input/With_observations/Avala/Avala_observations.xlsx"), sheet = "Observations", col_types = c("text", "text", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric"))
+avala <- import_surveynet2D(points = avala_points, observations = avala_obs)
+avala[[2]] <- mutate(avala[[2]], Hz = HzD + HzM/60 + HzS/3600, Vz = VzD + VzM/60 + VzS/3600, HD = SD*sin(Vz*pi/180)) %>%
+  dplyr::filter(to %in% c("S1","S2","S3","S4","S5","S6","S7"))
+
+
+
 
