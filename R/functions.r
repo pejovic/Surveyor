@@ -294,7 +294,7 @@ design.snet <- function(survey.net, sd.apriori = 1, prob = NA, result.units = li
   }
 }
 
-survey.net = avala; sd.apriori = 1; prob = 0.95; result.units = list("mm", "cm", "m"); ellipse.scale = 1; axes = c("Easting", "Northing"); teta.unit = list("deg", "rad"); all = FALSE
+survey.net = brana; sd.apriori = 3; prob = 0.95; result.units = list("mm", "cm", "m"); ellipse.scale = 1; axes = c("Easting", "Northing"); teta.unit = list("deg", "rad"); all = FALSE; units.dir = "sec"; units.dist = "mm"
 adjust.snet <- function(survey.net, sd.apriori = 1, prob = 0.95, result.units = list("mm", "cm", "m"), ellipse.scale = 1, axes = c("Easting", "Northing"), teta.unit = list("deg", "rad"), units.dir = "sec", units.dist = "mm", all = FALSE){
   # TODO: Set warning if there are different or not used points in two elements of survey.net list.
   # Check which points are used for measurements, if not
@@ -310,7 +310,7 @@ adjust.snet <- function(survey.net, sd.apriori = 1, prob = 0.95, result.units = 
   units <- result.units[[1]]
   A.mat <- Amat(survey.net, units = units, axes = axes)
   rownames(A.mat) <- observations$from_to
-  W.mat <- Wmat(survey.net, sd.apriori = sd.apriori)
+  W.mat <- Wmat(survey.net, sd.apriori = sd.apriori) #TODO: Check if each observations has its own standard.
   colnames(W.mat) <- observations$from_to
   rownames(W.mat) <- observations$from_to
   N.mat <- crossprod(A.mat, W.mat) %*% A.mat
@@ -341,7 +341,7 @@ adjust.snet <- function(survey.net, sd.apriori = 1, prob = 0.95, result.units = 
     n.mat <- crossprod(A.mat, W.mat) %*% f.mat
     x.mat <- -Qx.mat %*% n.mat
     v.mat <- A.mat%*%x.mat + f.mat
-    sd.estimated <- sqrt((tcrossprod(v.mat, W.mat) %*% v.mat)/(df))
+    sd.estimated <- sqrt((crossprod(v.mat, W.mat) %*% v.mat)/(df))
     if(sd.estimated > sd.apriori){
       F.estimated <- sd.estimated^2/sd.apriori^2
       F.quantile <- qf(p = prob, df1 = df, df2 = 10^1000)
@@ -424,21 +424,21 @@ import_surveynet2D <- function(points = points, observations = observations, des
   return(survey_net)
 }
 
-st.survey.net <- avala[[2]] %>% dplyr::filter(from == "S4")
+st.survey.net <- brana[[2]] %>% dplyr::filter(from == "T3")
 
 fdir_st <- function(st.survey.net, units.dir = "sec", axes = c("Easting", "Northing")){
   units.table <- c("sec" = 3600, "min" = 60, "deg" = 1)
   st.survey.net <- st.survey.net %>% split(., f = as.factor(.$to)) %>%
-    lapply(., function(x) {x$ni = ni(pt1_coords = as.numeric(x[, c("y_station", "x_station")]), pt2_coords = as.numeric(x[, c("y_obs.point", "x_obs.point")]), type = "dec", axes = c("Easting", "Northing")); return(x)}) %>%
+    lapply(., function(x) {x$ni = ni(pt1_coords = as.numeric(x[, c("y_station", "x_station")]), pt2_coords = as.numeric(x[, c("y_obs.point", "x_obs.point")]), type = "dec", axes = axes); return(x)}) %>%
     do.call(rbind,.) %>%
     dplyr::mutate(z = Hz-ni) %>%
     dplyr::arrange(ID)
-  st.survey.net$z <- ifelse(st.survey.net$z < 0, st.survey.net$z + 360, st.survey.net$z)
+  #st.survey.net$z <- ifelse(st.survey.net$z < 0, st.survey.net$z + 360, st.survey.net$z)
+  #st.survey.net$z <- ifelse(abs(st.survey.net$z) >= 355, st.survey.net$z - 360, st.survey.net$z)
   z0_mean <- mean(st.survey.net$z)
   st.survey.net$Hz0 <- z0_mean + st.survey.net$ni
   st.survey.net$Hz0 <- ifelse(st.survey.net$Hz0 > 360, st.survey.net$Hz0 - 360, st.survey.net$Hz0)
   f <- (st.survey.net$Hz0 - st.survey.net$Hz)*units.table[units.dir]
-  #f <- ifelse(f >= 360 | f >= 355, f - 360, f)
   return(f)
 }
 
