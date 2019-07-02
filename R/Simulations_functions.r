@@ -1,60 +1,6 @@
 
 
-dist <- function(pt1_coords, pt2_coords, axes = c("Easting", "Northing")){
-  ## check if the axis were set:
-  if(length(axes) < 2) stop("axes must be defined with Easting and Northing")
-  if(!any(axes %in% list("Northing", "Easting"))){ stop(paste(type, "axes must be Northing and Easting.")) }
 
-  Northing_ind <- which(axes == "Northing")
-  Easting_ind <- which(axes == "Easting")
-
-  ## body
-  Easting1 <- pt1_coords[Easting_ind]
-  Northing1 <- pt1_coords[Northing_ind]
-  Easting2 <- pt2_coords[Easting_ind]
-  Northing2 <- pt2_coords[Northing_ind]
-  dEasting <- as.numeric(Easting2 - Easting1)
-  dNorthing <- as.numeric(Northing2 - Northing1)
-  distance <- sqrt(dEasting^2 + dNorthing^2)
-  return(distance)
-}
-
-
-
-ni <- function(pt1_coords, pt2_coords, type = list("dec", "dms", "rad"), axes = c("Easting", "Northing")){
-  ## check if the axis were set:
-  if(length(axes) < 2) stop("axes must be defined with Eastinging and Northinging")
-  if(!any(axes %in% list("Northing", "Easting"))){ stop(paste(type, "axes must be Northing and Easting.")) }
-
-  Northing_ind <- which(axes == "Northing")
-  Easting_ind <- which(axes == "Easting")
-
-  ## check if the type exists:
-  if(length(type) > 1){ type <- type[[1]] }
-  if(!any(type %in% list("dms", "dec", "rad"))){ stop(paste(type, "method not available.")) }
-
-  ## body
-  Easting1 <- pt1_coords[Easting_ind]
-  Northing1 <- pt1_coords[Northing_ind]
-  Easting2 <- pt2_coords[Easting_ind]
-  Northing2 <- pt2_coords[Northing_ind]
-  dEasting <- as.numeric(Easting2 - Easting1)
-  dNorthing <- as.numeric(Northing2 - Northing1)
-  atg <- ifelse(dEasting < 0, atan(dNorthing/dEasting)*180/pi + 180, atan(dNorthing/dEasting)*180/pi)
-  ang <- ifelse(atg < 0, atg + 360, atg)
-
-  deg <- floor(ang); minut <- floor((ang-deg)*60); sec <- ((ang-deg)*60-minut)*60
-
-  if(type == "dms"){
-    ang <- c(deg, minut, sec)
-    names(ang) <- c("deg","min","sec")
-  }
-  if(type == "rad"){
-    ang <- ang*pi/180
-  }
-
-  return(ang)
-}
 
 
 

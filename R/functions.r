@@ -5,40 +5,68 @@
 
 # Functions:
 
+dist <- function(pt1_coords, pt2_coords){
+  dEasting <- as.numeric(pt2_coords[1] - pt1_coords[1])
+  dNorthing <- as.numeric(pt2_coords[2] - pt1_coords[2])
+  distance <- sqrt(dEasting^2 + dNorthing^2)
+  return(distance)
+}
+
+
+
+ni <- function(pt1_coords, pt2_coords, type = list("dec", "dms", "rad")){
+  ## check if the type exists:
+  if(length(type) > 1){ type <- type[[1]]}
+  if(!any(type %in% list("dms", "dec", "rad"))){stop(paste(type, "method not available."))}
+
+  ## body
+  dEasting <- as.numeric(pt2_coords[1] - pt1_coords[1])
+  dNorthing <- as.numeric(pt2_coords[2] - pt1_coords[2])
+  atg <- ifelse(dNorthing < 0, atan(dEasting/dNorthing)*180/pi + 180, atan(dEasting/dNorthing)*180/pi)
+  ang <- ifelse(atg < 0, atg + 360, atg)
+
+  deg <- floor(ang); minut <- floor((ang-deg)*60); sec <- ((ang-deg)*60-minut)*60
+
+  if(type == "dms"){
+    ang <- c(deg, minut, sec)
+    names(ang) <- c("deg","min","sec")
+  }
+  if(type == "rad"){
+    ang <- ang*pi/180
+  }
+ return(ang)
+}
 
 ### coeficients for distances #####################################################
-
-coef_d <- function (pt1, pt2, pts, units, axes = c("Easting", "Northing")) {
-  yind <- which("Easting" == axes)
-  xind <- which("Northing" == axes)
+coef_d <- function (pt1, pt2, pts, units) {
   units.table <- c("mm" = 1000, "cm" = 100, "m" = 1)
   pt1 <- as.numeric(pt1)
   pt2 <- as.numeric(pt2)
   coords <- pts
   vec_d <- c(rep(0, dim(pts)[1]*2))#c(rep(0, length(coords)))
 
-  x_coords <- coords[, xind]
-  y_coords <- coords[, yind]
-  x1 <- pt1[xind]
-  y1 <- pt1[yind]
-  x2 <- pt2[xind]
-  y2 <- pt2[yind]
-  dx1 <- (x_coords-x1)
+  y_coords <- coords[, 2]
+  x_coords <- coords[, 1]
+  y1 <- pt1[2]
+  x1 <- pt1[1]
+  y2 <- pt2[2]
+  x2 <- pt2[1]
   dy1 <- (y_coords-y1)
-  dx2 <- (x_coords-x2)
+  dx1 <- (x_coords-x1)
   dy2 <- (y_coords-y2)
-  i <- which(dx1 == dy1 & dx1 == 0 & dy1 == 0)
-  j <- which(dx2 == dy2 & dx2 == 0 & dy2 == 0)
+  dx2 <- (x_coords-x2)
+  i <- which(dy1 == dx1 & dy1 == 0 & dx1 == 0)
+  j <- which(dy2 == dx2 & dy2 == 0 & dx2 == 0)
 
-  dx <- (x2-x1)*units.table[units]
   dy <- (y2-y1)*units.table[units]
-  d <- sqrt(dx^2+dy^2)
-  A <- (-dx/d)
-  B <- (-dy/d)
+  dx <- (x2-x1)*units.table[units]
+  d <- sqrt(dy^2+dx^2)
+  A <- (-dy/d)
+  B <- (-dx/d)
   A1 <- -A
   B1 <- -B
 
-  if(xind == 1){
+  if(2 == 1){
     vec_d[2*i-1] <- A
     vec_d[2*j-1] <- A1
     vec_d[2*i] <- B
@@ -55,9 +83,7 @@ coef_d <- function (pt1, pt2, pts, units, axes = c("Easting", "Northing")) {
 
 ### coeficients for directions (pravac) #####################################################
 
-coef_p <- function (pt1, pt2, pts, units, axes = c("Easting", "Northing")) {
-  yind <- which("Easting" == axes)
-  xind <- which("Northing" == axes)
+coef_p <- function (pt1, pt2, pts, units) {
   units.table <- c("mm" = 1000, "cm" = 100, "m" = 1)
   pt1 <- as.numeric(pt1)
   pt2 <- as.numeric(pt2)
@@ -65,28 +91,28 @@ coef_p <- function (pt1, pt2, pts, units, axes = c("Easting", "Northing")) {
   vec_p <- c(rep(0, dim(pts)[1]*2))#c(rep(0, length(coords)))
   ro <- 180/pi*3600
 
-  x_coords <- coords[, xind]
-  y_coords <- coords[, yind]
-  x1 <- pt1[xind]
-  y1 <- pt1[yind]
-  x2 <- pt2[xind]
-  y2 <- pt2[yind]
-  dx1 <- (x_coords-x1)
+  y_coords <- coords[, 2]
+  x_coords <- coords[, 1]
+  y1 <- pt1[2]
+  x1 <- pt1[1]
+  y2 <- pt2[2]
+  x2 <- pt2[1]
   dy1 <- (y_coords-y1)
-  dx2 <- (x_coords-x2)
+  dx1 <- (x_coords-x1)
   dy2 <- (y_coords-y2)
-  i <- which(dx1 == dy1 & dx1 == 0 & dy1 == 0)
-  j <- which(dx2 == dy2 & dx2 == 0 & dy2 == 0)
+  dx2 <- (x_coords-x2)
+  i <- which(dy1 == dx1 & dy1 == 0 & dx1 == 0)
+  j <- which(dy2 == dx2 & dy2 == 0 & dx2 == 0)
 
-  dx <- (x2-x1)*units.table[units]
   dy <- (y2-y1)*units.table[units]
-  d <- sqrt(dx^2 + dy^2)
-  A <- (ro*dy/d^2)
-  B <- (-ro*dx/d^2)
-  A1 <- -(ro*dy/d^2)
-  B1 <- -(-ro*dx/d^2)
+  dx <- (x2-x1)*units.table[units]
+  d <- sqrt(dy^2 + dx^2)
+  A <- (ro*dx/d^2)
+  B <- (-ro*dy/d^2)
+  A1 <- -(ro*dx/d^2)
+  B1 <- -(-ro*dy/d^2)
 
-  if(xind == 1){
+  if(2 == 1){
     vec_p[2*i-1] <- A
     vec_p[2*j-1] <- A1
     vec_p[2*i] <- B
@@ -102,25 +128,21 @@ coef_p <- function (pt1, pt2, pts, units, axes = c("Easting", "Northing")) {
 }
 
 
-fix.params <- function(net.points, axes = c("Easting", "Northing")){
-  if(("Easting" == axes)[1]) {
+fix.params <- function(net.points){
     as.logical(c(apply(cbind(net.points$FIX_X, net.points$FIX_Y), 1, as.numeric)))
-  }else{
-    as.logical(c(apply(cbind(net.points$FIX_Y, net.points$FIX_X), 1, as.numeric)))
-  }
 }
 
 
-Amat <- function(survey.net, units, axes = c("Easting", "Northing")){
+Amat <- function(survey.net, units){
 
   A_dir <- survey.net[[2]] %>% dplyr::filter(direction) %>% st_coordinates() %>% as.data.frame() %>% mutate_at(vars(L1), as.factor) %>%
     split(., .$L1) %>%
-    lapply(., function(x) coef_p(pt1 = x[1, 1:2], pt2 = x[2, 1:2], pts = st_coordinates(survey.net[[1]][, 1:2]), units = units, axes = axes)) %>%
+    lapply(., function(x) coef_p(pt1 = x[1, 1:2], pt2 = x[2, 1:2], pts = st_coordinates(survey.net[[1]][, 1:2]), units = units)) %>%
     do.call(rbind, .)
 
   A_dist <- survey.net[[2]] %>% dplyr::filter(distance) %>% st_coordinates() %>% as.data.frame() %>% mutate_at(vars(L1), as.factor) %>%
     split(., .$L1) %>%
-    lapply(., function(x) coef_d(pt1 = x[1, 1:2], pt2 = x[2, 1:2], pts = st_coordinates(survey.net[[1]][, 1:2]), units = units, axes = axes)) %>%
+    lapply(., function(x) coef_d(pt1 = x[1, 1:2], pt2 = x[2, 1:2], pts = st_coordinates(survey.net[[1]][, 1:2]), units = units)) %>%
     do.call(rbind, .)
 
   station.names <- survey.net[[2]] %>% dplyr::filter(direction) %>% dplyr::select(from) %>% st_drop_geometry() %>% unique() %>% unlist(use.names = FALSE)
@@ -131,13 +153,13 @@ Amat <- function(survey.net, units, axes = c("Easting", "Northing")){
     st_drop_geometry() %>%
     as.matrix()*1
 
-  fix <- fix.params(net.points = survey.net[[1]], axes = axes)
+  fix <- fix.params(net.points = survey.net[[1]])
 
   rest_mat <- matrix(0, nrow = dim(A_dist)[1], ncol = dim(Z_mat)[2])
 
   A <- cbind(rbind(A_dir, A_dist)[, !fix], rbind(Z_mat, rest_mat))
 
-  if(("Easting" == axes)[1]) {sufix <- c("dE", "dN")} else {sufix <- c("dN", "dE")}
+  sufix <- c("dE", "dN")
   colnames(A) <- c(paste(rep(survey.net[[1]]$Name, each = 2), rep(sufix, length(survey.net[[1]]$Name)), sep = "_")[!fix], paste(colnames(Z_mat), "z", sep = "_"))
   return(A)
 }
@@ -181,16 +203,10 @@ Qxy <- function(Qx, n, fixd = fix){
 }
 #
 
-error.ellipse <- function(Qxy, prob = NA, sd.apriori = 1, axes = c("Easting", "Northing"), teta.unit = list("deg", "rad")) {
-  if(("Easting" == axes)[1]){
+error.ellipse <- function(Qxy, prob = NA, sd.apriori = 1, teta.unit = list("deg", "rad")) {
     Qee <- Qxy[1, 1]
     Qnn <- Qxy[2, 2]
     Qen <- Qxy[1, 2]
-  }else{
-    Qee <- Qxy[2, 2]
-    Qnn <- Qxy[1, 1]
-    Qen <- Qxy[1, 2]
-  }
   if(any(c(Qee, Qnn) == 0)){
     A <- 0
     B <- 0
@@ -234,7 +250,7 @@ sigma.xy <- function(Qxy.mat, sd.apriori){
   sigma <- diag(diag(sd.apriori, 2, 2)%*%diag(sqrt(diag(Qxy.mat)), 2, 2))
 }
 
-design.snet <- function(survey.net, sd.apriori = 1, prob = NA, result.units = list("mm", "cm", "m"), ellipse.scale = 1, axes = c("Easting", "Northing"), teta.unit = list("deg", "rad"), all = FALSE){
+design.snet <- function(survey.net, sd.apriori = 1, prob = NA, result.units = list("mm", "cm", "m"), ellipse.scale = 1, teta.unit = list("deg", "rad"), all = FALSE){
   # TODO: Set warning if there are different or not used points in two elements of survey.net list.
   # Check which points are used for measurements, if not
   used.points <- unique(do.call(c, survey.net[[2]][, c("from", "to")] %>% st_drop_geometry()))
@@ -247,7 +263,7 @@ design.snet <- function(survey.net, sd.apriori = 1, prob = NA, result.units = li
     dplyr::mutate(from_to = str_c(.$from, .$to, sep = "_"))
   # =======
   units <- result.units[[1]]
-  A <- Amat(survey.net, units = units, axes = axes)
+  A <- Amat(survey.net, units = units)
   rownames(A) <- observations$from_to
   W <- Wmat(survey.net, sd.apriori = sd.apriori)
   colnames(W) <- observations$from_to
@@ -265,13 +281,9 @@ design.snet <- function(survey.net, sd.apriori = 1, prob = NA, result.units = li
   Ql <- A %*% tcrossprod(Qx, A)
   Qv <- solve(W) - Ql
   r <- Qv%*%W
-  fix <- if(("Easting" == axes)[1]){
-    survey.net[[1]] %>% st_drop_geometry() %>%  dplyr::select(FIX_X, FIX_Y) == FALSE
-  }else{
-    survey.net[[1]] %>% st_drop_geometry() %>%  dplyr::select(FIX_Y, FIX_X) == FALSE
-  }
+  survey.net[[1]] %>% st_drop_geometry() %>%  dplyr::select(FIX_X, FIX_Y) == FALSE
   Qxy.list <- Qxy(Qx, n = lenght(used.points), fixd = fix*1)
-  ellipses <- lapply(Qxy.list, function(x) error.ellipse(x, prob = 0.95, sd.apriori = sd.apriori, axes = axes, teta.unit = teta.unit[[1]]))
+  ellipses <- lapply(Qxy.list, function(x) error.ellipse(x, prob = 0.95, sd.apriori = sd.apriori, teta.unit = teta.unit[[1]]))
   ellipses <- do.call(rbind, ellipses) %>%
     as.data.frame() %>%
     dplyr::select(A = V1, B = V2, teta = V3) %>%
@@ -294,21 +306,23 @@ design.snet <- function(survey.net, sd.apriori = 1, prob = NA, result.units = li
   }
 }
 
-survey.net = brana; sd.apriori = 3; prob = 0.95; result.units = list("mm", "cm", "m"); ellipse.scale = 1; axes = c("Easting", "Northing"); teta.unit = list("deg", "rad"); all = FALSE; units.dir = "sec"; units.dist = "mm"
-adjust.snet <- function(survey.net, sd.apriori = 1, prob = 0.95, result.units = list("mm", "cm", "m"), ellipse.scale = 1, axes = c("Easting", "Northing"), teta.unit = list("deg", "rad"), units.dir = "sec", units.dist = "mm", all = FALSE){
+survey.net = brana; sd.apriori = 3; prob = 0.95; result.units = list("mm", "cm", "m"); ellipse.scale = 1; teta.unit = list("deg", "rad"); all = FALSE; units.dir = "sec"; units.dist = "mm"
+adjust.snet <- function(survey.net, sd.apriori = 1, prob = 0.95, result.units = list("mm", "cm", "m"), ellipse.scale = 1, teta.unit = list("deg", "rad"), units.dir = "sec", units.dist = "mm", all = FALSE){
   # TODO: Set warning if there are different or not used points in two elements of survey.net list.
   # Check which points are used for measurements, if not
+  "%!in%" <- Negate("%in%")
+  units <- result.units[[1]]
   used.points <- unique(do.call(c, survey.net[[2]][, c("from", "to")] %>% st_drop_geometry()))
+  if(!!any(used.points %!in% survey.net[[1]]$Name)) stop(paste("There is no coordinates for point", used.points[which(used.points %!in% survey.net[[1]]$Name)]), sep = " ")
   used.points.ind <- which(survey.net[[1]]$Name %in% used.points)
   used.points <- survey.net[[1]]$Name[used.points.ind]
   survey.net[[1]] <- survey.net[[1]][used.points.ind, ]
   observations <- tidyr::gather(survey.net[[2]] %>%
-                                  dplyr::select(from, to, direction, distance, geometry), key = type, value = used, -c(from, to, geometry)) %>%
+    dplyr::select(from, to, direction, distance, geometry), key = type, value = used, -c(from, to, geometry)) %>%
     dplyr::filter(used == TRUE) %>%
     dplyr::mutate(from_to = str_c(.$from, .$to, sep = "_"))
-  # =======
-  units <- result.units[[1]]
-  A.mat <- Amat(survey.net, units = units, axes = axes)
+  # =
+  A.mat <- Amat(survey.net, units = units)
   rownames(A.mat) <- observations$from_to
   W.mat <- Wmat(survey.net, sd.apriori = sd.apriori) #TODO: Check if each observations has its own standard.
   colnames(W.mat) <- observations$from_to
@@ -326,18 +340,15 @@ adjust.snet <- function(survey.net, sd.apriori = 1, prob = 0.95, result.units = 
   Ql.mat <- A.mat %*% tcrossprod(Qx.mat, A.mat)
   Qv.mat <- solve(W.mat) - Ql.mat
   r <- Qv.mat%*%W.mat
-  fix <- if(("Easting" == axes)[1]){
-    survey.net[[1]] %>% st_drop_geometry() %>%  dplyr::select(FIX_X, FIX_Y) == FALSE
+  survey.net[[1]] %>% st_drop_geometry() %>%  dplyr::select(FIX_X, FIX_Y) == FALSE
+
+  if(length(fix) != sum(fix)){
+    df <- abs(diff(dim(A.mat)))
   }else{
-    survey.net[[1]] %>% st_drop_geometry() %>%  dplyr::select(FIX_Y, FIX_X) == FALSE
+    df <- abs(diff(dim(A.mat))) + 3
   }
   if(adjust){
-    if(length(fix) != sum(fix)){
-      df <- abs(diff(dim(A.mat)))
-    }else{
-      df <- abs(diff(dim(A.mat))) + 3
-    }
-    f.mat <- fmat(survey.net = survey.net, units.dir = units.dir, units.dist = units.dist, axes = axes)
+    f.mat <- fmat(survey.net = survey.net, units.dir = units.dir, units.dist = units)
     n.mat <- crossprod(A.mat, W.mat) %*% f.mat
     x.mat <- -Qx.mat %*% n.mat
     v.mat <- A.mat%*%x.mat + f.mat
@@ -359,7 +370,7 @@ adjust.snet <- function(survey.net, sd.apriori = 1, prob = 0.95, result.units = 
 
   # Computing error ellipses
   Qxy.list <- Qxy(Qx.mat, n = lenght(used.points), fixd = fix*1)
-  ellipses <- lapply(Qxy.list, function(x) error.ellipse(x, prob = prob, sd.apriori = sd.apriori, axes = axes, teta.unit = teta.unit[[1]]))
+  ellipses <- lapply(Qxy.list, function(x) error.ellipse(x, prob = prob, sd.apriori = sd.apriori, teta.unit = teta.unit[[1]]))
   ellipses <- do.call(rbind, ellipses) %>%
     as.data.frame() %>%
     dplyr::select(A = V1, B = V2, teta = V3) %>%
@@ -374,7 +385,7 @@ adjust.snet <- function(survey.net, sd.apriori = 1, prob = 0.95, result.units = 
   observations <- observations %>% dplyr::mutate(Ql.mat = diag(Ql.mat), Qv.mat = diag(Qv.mat), rii = diag(r))
   ellipse.net <- do.call(rbind, lapply(split(survey.net[[1]], survey.net[[1]]$Name), function(x) sf.ellipse(x, scale = ellipse.scale)))
   ellipse.net <- merge(ellipse.net, sigmas)
-  ellipse.net %<>% sf::st_set_crs(st_crs(survey.net[[1]]))
+  ellipse.net <- ellipse.net %>% sf::st_set_crs(st_crs(survey.net[[1]]))
   design <- list(design.matrices = list(A = A, W = W.mat, Qx = Qx.mat, Ql = Ql.mat, Qv = Qv.mat), ellipse.net = ellipse.net, net.points = survey.net[[1]], observations = observations)
   if(all){
     return(design)
@@ -391,12 +402,14 @@ adjust.snet <- function(survey.net, sd.apriori = 1, prob = 0.95, result.units = 
 
 
 
-import_surveynet2D <- function(points = points, observations = observations, dest_crs = NA){
+import_surveynet2D <- function(points = points, observations = observations, dest_crs = NA, axes = c("Easting", "Northing")){
 
   # Create geometry columns for points
   if (is.na(dest_crs)){
     dest_crs <- 3857
   }
+
+  if(which(axes == "Easting") == 2){points <- points %>% dplyr::rename(x = y,  y = x)}
 
   observations$x_station <- points$x[match(observations$from, points$Name)]
   observations$y_station <- points$y[match(observations$from, points$Name)]
@@ -424,26 +437,29 @@ import_surveynet2D <- function(points = points, observations = observations, des
   return(survey_net)
 }
 
-st.survey.net <- brana[[2]] %>% dplyr::filter(from == "T3")
+#st.survey.net <- Makis.survey.net[[2]] %>% dplyr::filter(from == "OM1")
+#st.survey.net <- brana[[2]] %>% dplyr::filter(from == "T1")
+#st.survey.net <- avala[[2]] %>% dplyr::filter(from == "S2")
 
-fdir_st <- function(st.survey.net, units.dir = "sec", axes = c("Easting", "Northing")){
+fdir_st <- function(st.survey.net, units.dir = "sec"){
   units.table <- c("sec" = 3600, "min" = 60, "deg" = 1)
   st.survey.net <- st.survey.net %>% split(., f = as.factor(.$to)) %>%
-    lapply(., function(x) {x$ni = ni(pt1_coords = as.numeric(x[, c("y_station", "x_station")]), pt2_coords = as.numeric(x[, c("y_obs.point", "x_obs.point")]), type = "dec", axes = axes); return(x)}) %>%
+    lapply(., function(x) {x$ni = ni(pt1_coords = as.numeric(x[, c("x_station", "y_station")]), pt2_coords = as.numeric(x[, c("x_obs.point", "y_obs.point")]), type = "dec"); return(x)}) %>%
     do.call(rbind,.) %>%
     dplyr::mutate(z = Hz-ni) %>%
     dplyr::arrange(ID)
-  #st.survey.net$z <- ifelse(st.survey.net$z < 0, st.survey.net$z + 360, st.survey.net$z)
-  #st.survey.net$z <- ifelse(abs(st.survey.net$z) >= 355, st.survey.net$z - 360, st.survey.net$z)
+  #st.survey.net$z <- ifelse(st.survey.net$z < 0 & abs(st.survey.net$z) > 1, st.survey.net$z + 360, st.survey.net$z)
+  st.survey.net$z <- ifelse(st.survey.net$z < 1, st.survey.net$z + 360, st.survey.net$z)
   z0_mean <- mean(st.survey.net$z)
   st.survey.net$Hz0 <- z0_mean + st.survey.net$ni
+  st.survey.net$Hz <- ifelse(st.survey.net$Hz < 1, st.survey.net$Hz + 360, st.survey.net$Hz)
   st.survey.net$Hz0 <- ifelse(st.survey.net$Hz0 > 360, st.survey.net$Hz0 - 360, st.survey.net$Hz0)
   f <- (st.survey.net$Hz0 - st.survey.net$Hz)*units.table[units.dir]
   return(f)
 }
 
 
-fmat <- function(survey.net, units.dir = "sec", units.dist = "mm", axes = c("Easting", "Northing")){
+fmat <- function(survey.net, units.dir = "sec", units.dist = "mm"){
   f_dir <- survey.net[[2]] %>% dplyr::filter(direction) %>% st_drop_geometry() %>% split(.,.$from) %>%
     lapply(., function(x) fdir_st(x, units.dir = units.dir)) %>%
     do.call(c, .) %>% as.numeric()
