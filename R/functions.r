@@ -61,23 +61,16 @@ coef_d <- function (pt1, pt2, pts, units) {
   dy <- (y2-y1)*units.table[units]
   dx <- (x2-x1)*units.table[units]
   d <- sqrt(dy^2+dx^2)
+
   A <- (-dy/d)
   B <- (-dx/d)
   A1 <- -A
   B1 <- -B
 
-  if(2 == 1){
-    vec_d[2*i-1] <- A
-    vec_d[2*j-1] <- A1
-    vec_d[2*i] <- B
-    vec_d[2*j] <- B1
-  }else{
-    vec_d[2*i-1] <- B
-    vec_d[2*j-1] <- B1
-    vec_d[2*i] <- A
-    vec_d[2*j] <- A1
-  }
-
+  vec_d[2*i-1] <- B
+  vec_d[2*j-1] <- B1
+  vec_d[2*i] <- A
+  vec_d[2*j] <- A1
   return(vec_d)
 }
 
@@ -93,37 +86,33 @@ coef_p <- function (pt1, pt2, pts, units) {
 
   y_coords <- coords[, 2]
   x_coords <- coords[, 1]
+
   y1 <- pt1[2]
   x1 <- pt1[1]
   y2 <- pt2[2]
   x2 <- pt2[1]
+
   dy1 <- (y_coords-y1)
   dx1 <- (x_coords-x1)
   dy2 <- (y_coords-y2)
   dx2 <- (x_coords-x2)
+
   i <- which(dy1 == dx1 & dy1 == 0 & dx1 == 0)
   j <- which(dy2 == dx2 & dy2 == 0 & dx2 == 0)
 
   dy <- (y2-y1)*units.table[units]
   dx <- (x2-x1)*units.table[units]
   d <- sqrt(dy^2 + dx^2)
+
   A <- (ro*dx/d^2)
   B <- (-ro*dy/d^2)
   A1 <- -(ro*dx/d^2)
   B1 <- -(-ro*dy/d^2)
 
-  if(2 == 1){
-    vec_p[2*i-1] <- A
-    vec_p[2*j-1] <- A1
-    vec_p[2*i] <- B
-    vec_p[2*j] <- B1
-  }else{
-    vec_p[2*i-1] <- B
-    vec_p[2*j-1] <- B1
-    vec_p[2*i] <- A
-    vec_p[2*j] <- A1
-  }
-
+  vec_p[2*i-1] <- B
+  vec_p[2*j-1] <- B1
+  vec_p[2*i] <- A
+  vec_p[2*j] <- A1
   return(vec_p)
 }
 
@@ -159,7 +148,7 @@ Amat <- function(survey.net, units){
 
   A <- cbind(rbind(A_dir, A_dist)[, !fix], rbind(Z_mat, rest_mat))
 
-  sufix <- c("dE", "dN")
+  sufix <- c("dx", "dy")
   colnames(A) <- c(paste(rep(survey.net[[1]]$Name, each = 2), rep(sufix, length(survey.net[[1]]$Name)), sep = "_")[!fix], paste(colnames(Z_mat), "z", sep = "_"))
   return(A)
 }
@@ -247,7 +236,7 @@ sf.ellipse <- function(ellipse.param, scale = 10){
 }
 
 sigma.xy <- function(Qxy.mat, sd.apriori){
-  sigma <- diag(diag(sd.apriori, 2, 2)%*%diag(sqrt(diag(Qxy.mat)), 2, 2))
+  sigma <- diag(diag(as.numeric(sd.apriori), 2, 2)%*%diag(sqrt(diag(Qxy.mat)), 2, 2))
 }
 
 design.snet <- function(survey.net, sd.apriori = 1, prob = NA, result.units = list("mm", "cm", "m"), ellipse.scale = 1, teta.unit = list("deg", "rad"), all = FALSE){
@@ -340,9 +329,8 @@ adjust.snet <- function(survey.net, sd.apriori = 1, prob = 0.95, result.units = 
   Ql.mat <- A.mat %*% tcrossprod(Qx.mat, A.mat)
   Qv.mat <- solve(W.mat) - Ql.mat
   r <- Qv.mat%*%W.mat
-  survey.net[[1]] %>% st_drop_geometry() %>%  dplyr::select(FIX_X, FIX_Y) == FALSE
-
-  if(length(fix) != sum(fix)){
+  fix.mat <- survey.net[[1]] %>% st_drop_geometry() %>%  dplyr::select(FIX_X, FIX_Y) == FALSE
+  if(length(fix.mat) != sum(fix.mat)){
     df <- abs(diff(dim(A.mat)))
   }else{
     df <- abs(diff(dim(A.mat))) + 3
@@ -359,17 +347,27 @@ adjust.snet <- function(survey.net, sd.apriori = 1, prob = 0.95, result.units = 
       }else{
       F.estimated <- sd.apriori^2/sd.estimated^2
       F.quantile <- qf(p = prob, df1 = 10^1000, df2 = df)}
-    F.test.conclsion <- if(F.estimated >= F.quantile){
+    F.test.conclsion <- if(F.estimated <= F.quantile){
       paste("Model je adekvatan")
     }else{
       paste("Model nije adekvatan")
     }
+      sd.apriori <- sd.estimated
+      res.unit.lookup <- c("mm" = 1000, "cm" = 100, "m" = 1)
+      coords.inc <- as.data.frame(matrix(x.mat[1:(2*length(used.points)),], length(used.points), 2, byrow = TRUE))
+      names(coords.inc) <- c(paste("dx", paste("[",units,"]", sep = ""), sep = " "), paste("dy", paste("[",units,"]", sep = ""), sep = " "))
+      coords.estimation <- as.vector(t(st_coordinates(survey.net[[1]]))) + x.mat[1:(2*length(used.points)),]/res.unit.lookup[units]
+      coords.estimation <- as.data.frame(matrix(coords.estimation, ncol = 2, byrow = TRUE)) %>%
+        cbind(Name = used.points, coords.inc, .) %>%
+        dplyr::rename(X = V1, Y = V2)
+
+      point.adj.results <- merge(survey.net[[1]], coords.estimation, by = "Name")
 
     ############################ OVDE SAM STAO ###############################################################
   }
 
   # Computing error ellipses
-  Qxy.list <- Qxy(Qx.mat, n = lenght(used.points), fixd = fix*1)
+  Qxy.list <- Qxy(Qx.mat, n = lenght(used.points), fixd = fix.mat*1)
   ellipses <- lapply(Qxy.list, function(x) error.ellipse(x, prob = prob, sd.apriori = sd.apriori, teta.unit = teta.unit[[1]]))
   ellipses <- do.call(rbind, ellipses) %>%
     as.data.frame() %>%
