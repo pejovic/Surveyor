@@ -270,8 +270,8 @@ design.snet <- function(survey.net, sd.apriori = 1, prob = NA, result.units = li
   Ql <- A %*% tcrossprod(Qx, A)
   Qv <- solve(W) - Ql
   r <- Qv%*%W
-  survey.net[[1]] %>% st_drop_geometry() %>%  dplyr::select(FIX_X, FIX_Y) == FALSE
-  Qxy.list <- Qxy(Qx, n = lenght(used.points), fixd = fix*1)
+  fix.mat <- survey.net[[1]] %>% st_drop_geometry() %>%  dplyr::select(FIX_X, FIX_Y) == FALSE
+  Qxy.list <- Qxy(Qx, n = lenght(used.points), fixd = fix.mat*1)
   ellipses <- lapply(Qxy.list, function(x) error.ellipse(x, prob = 0.95, sd.apriori = sd.apriori, teta.unit = teta.unit[[1]]))
   ellipses <- do.call(rbind, ellipses) %>%
     as.data.frame() %>%
@@ -301,6 +301,8 @@ adjust.snet <- function(survey.net, sd.apriori = 1, prob = 0.95, result.units = 
   # Check which points are used for measurements, if not
   "%!in%" <- Negate("%in%")
   units <- result.units[[1]]
+  res.unit.lookup <- c("mm" = 1000, "cm" = 100, "m" = 1)
+  disp.unit.lookup <- c("mm" = 1, "cm" = 2, "m" = 3)
   used.points <- unique(do.call(c, survey.net[[2]][, c("from", "to")] %>% st_drop_geometry()))
   if(!!any(used.points %!in% survey.net[[1]]$Name)) stop(paste("There is no coordinates for point", used.points[which(used.points %!in% survey.net[[1]]$Name)]), sep = " ")
   used.points.ind <- which(survey.net[[1]]$Name %in% used.points)
@@ -353,15 +355,15 @@ adjust.snet <- function(survey.net, sd.apriori = 1, prob = 0.95, result.units = 
       paste("Model nije adekvatan")
     }
       sd.apriori <- sd.estimated
-      res.unit.lookup <- c("mm" = 1000, "cm" = 100, "m" = 1)
-      coords.inc <- as.data.frame(matrix(x.mat[1:(2*length(used.points)),], length(used.points), 2, byrow = TRUE))
+      coords.inc <- as.data.frame(matrix(x.mat[1:(2*length(used.points)),], length(used.points), 2, byrow = TRUE)) %>%
+        dplyr::mutate_if(is.numeric, round, disp.unit.lookup[units])
       names(coords.inc) <- c(paste("dx", paste("[",units,"]", sep = ""), sep = " "), paste("dy", paste("[",units,"]", sep = ""), sep = " "))
       coords.estimation <- as.vector(t(st_coordinates(survey.net[[1]]))) + x.mat[1:(2*length(used.points)),]/res.unit.lookup[units]
       coords.estimation <- as.data.frame(matrix(coords.estimation, ncol = 2, byrow = TRUE)) %>%
         cbind(Name = used.points, coords.inc, .) %>%
         dplyr::rename(X = V1, Y = V2)
 
-      point.adj.results <- merge(survey.net[[1]], coords.estimation, by = "Name")
+      point.adj.results <- coords.estimation %>% sf::st_as_sf(coords = c("X","Y"), remove = FALSE)
 
     ############################ OVDE SAM STAO ###############################################################
   }
@@ -372,13 +374,18 @@ adjust.snet <- function(survey.net, sd.apriori = 1, prob = 0.95, result.units = 
   ellipses <- do.call(rbind, ellipses) %>%
     as.data.frame() %>%
     dplyr::select(A = V1, B = V2, teta = V3) %>%
-    mutate(Name = used.points)
+    mutate(Name = used.points) %>%
+    dplyr::mutate_if(is.numeric, round, disp.unit.lookup[units])
   # Computing parameters sigmas
   sigmas <- lapply(Qxy.list, function(x) sigma.xy(x, sd.apriori = sd.apriori)) %>%
     do.call(rbind,.) %>%
     as.data.frame() %>%
     dplyr::select(sx = V1, sy = V2) %>% #TODO: proveriti da li ovde treba voditi racuna o redosledu sx i sy.
-    dplyr::mutate(sp = sqrt(sx^2 + sy^2), Name = used.points)
+    dplyr::mutate(sp = sqrt(sx^2 + sy^2), Name = used.points) %>%
+    dplyr::mutate_if(is.numeric, round, disp.unit.lookup[units])
+  if(adjust){
+    survey.net[[1]] <- merge(point.adj.results, ellipses, by = "Name") %>% merge(., sigmas)
+  }
   survey.net[[1]] <- merge(survey.net[[1]], ellipses, by = "Name") %>% merge(., sigmas)
   observations <- observations %>% dplyr::mutate(Ql.mat = diag(Ql.mat), Qv.mat = diag(Qv.mat), rii = diag(r))
   ellipse.net <- do.call(rbind, lapply(split(survey.net[[1]], survey.net[[1]]$Name), function(x) sf.ellipse(x, scale = ellipse.scale)))
@@ -403,9 +410,9 @@ adjust.snet <- function(survey.net, sd.apriori = 1, prob = 0.95, result.units = 
 import_surveynet2D <- function(points = points, observations = observations, dest_crs = NA, axes = c("Easting", "Northing")){
 
   # Create geometry columns for points
-  if (is.na(dest_crs)){
-    dest_crs <- 3857
-  }
+  # if (is.na(dest_crs)){
+  #   dest_crs <- 3857
+  # }
 
   if(which(axes == "Easting") == 2){points <- points %>% dplyr::rename(x = y,  y = x)}
 
