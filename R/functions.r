@@ -295,10 +295,11 @@ design.snet <- function(survey.net, sd.apriori = 1, prob = NA, result.units = li
   }
 }
 
-# survey.net = brana; sd.apriori = 3; prob = 0.95; result.units = list("mm", "cm", "m"); ellipse.scale = 1; teta.unit = list("deg", "rad"); all = FALSE; units.dir = "sec"; units.dist = "mm"
-adjust.snet <- function(survey.net, sd.apriori = 1, prob = 0.95, result.units = list("mm", "cm", "m"), ellipse.scale = 1, teta.unit = list("deg", "rad"), units.dir = "sec", units.dist = "mm", all = FALSE){
+adjust = TRUE; survey.net = brana; sd.apriori = 3; prob = 0.95; result.units = list("mm", "cm", "m"); ellipse.scale = 1; teta.unit = list("deg", "rad"); all = FALSE; units.dir = "sec"; units.dist = "mm"
+adjust.snet <- function(adjust = TRUE, survey.net, sd.apriori = 1, prob = 0.95, result.units = list("mm", "cm", "m"), ellipse.scale = 1, teta.unit = list("deg", "rad"), units.dir = "sec", units.dist = "mm", use.sd.estimated = TRUE, all = FALSE){
   # TODO: Set warning if there are different or not used points in two elements of survey.net list.
-  # Check which points are used for measurements, if not
+  # TODO: Check if any point has no sufficient measurements to be adjusted.
+
   "%!in%" <- Negate("%in%")
   units <- result.units[[1]]
   res.unit.lookup <- c("mm" = 1000, "cm" = 100, "m" = 1)
@@ -348,13 +349,14 @@ adjust.snet <- function(survey.net, sd.apriori = 1, prob = 0.95, result.units = 
       F.quantile <- qf(p = prob, df1 = df, df2 = 10^1000)
       }else{
       F.estimated <- sd.apriori^2/sd.estimated^2
-      F.quantile <- qf(p = prob, df1 = 10^1000, df2 = df)}
-    F.test.conclsion <- if(F.estimated <= F.quantile){
-      paste("Model je adekvatan")
+      F.quantile <- qf(p = prob, df1 = 10^1000, df2 = df)
+      }
+    if(F.estimated > F.quantile){
+      F.test.conclusion <- paste("Model nije adekvatan")
+      # Data snooping and others have to be put in the list
     }else{
-      paste("Model nije adekvatan")
-    }
-      sd.apriori <- sd.estimated
+      F.test.conclusion <- paste("Model je adekvatan")
+      if(use.sd.estimated){sd.apriori <- sd.estimated}
       coords.inc <- as.data.frame(matrix(x.mat[1:(2*length(used.points)),], length(used.points), 2, byrow = TRUE)) %>%
         dplyr::mutate_if(is.numeric, round, disp.unit.lookup[units])
       names(coords.inc) <- c(paste("dx", paste("[",units,"]", sep = ""), sep = " "), paste("dy", paste("[",units,"]", sep = ""), sep = " "))
@@ -362,12 +364,10 @@ adjust.snet <- function(survey.net, sd.apriori = 1, prob = 0.95, result.units = 
       coords.estimation <- as.data.frame(matrix(coords.estimation, ncol = 2, byrow = TRUE)) %>%
         cbind(Name = used.points, coords.inc, .) %>%
         dplyr::rename(X = V1, Y = V2)
-
       point.adj.results <- coords.estimation %>% sf::st_as_sf(coords = c("X","Y"), remove = FALSE)
-
+    }
     ############################ OVDE SAM STAO ###############################################################
   }
-
   # Computing error ellipses
   Qxy.list <- Qxy(Qx.mat, n = lenght(used.points), fixd = fix.mat*1)
   ellipses <- lapply(Qxy.list, function(x) error.ellipse(x, prob = prob, sd.apriori = sd.apriori, teta.unit = teta.unit[[1]]))
@@ -385,13 +385,15 @@ adjust.snet <- function(survey.net, sd.apriori = 1, prob = 0.95, result.units = 
     dplyr::mutate_if(is.numeric, round, disp.unit.lookup[units])
   if(adjust){
     survey.net[[1]] <- merge(point.adj.results, ellipses, by = "Name") %>% merge(., sigmas)
+  }else{
+    survey.net[[1]] <- merge(survey.net[[1]], ellipses, by = "Name") %>% merge(., sigmas)
   }
-  survey.net[[1]] <- merge(survey.net[[1]], ellipses, by = "Name") %>% merge(., sigmas)
-  observations <- observations %>% dplyr::mutate(Ql.mat = diag(Ql.mat), Qv.mat = diag(Qv.mat), rii = diag(r))
+  observations <- observations %>% dplyr::mutate(Ql.mat = diag(Ql.mat), Qv.mat = diag(Qv.mat), rii = diag(r)) %>%
+    dplyr::mutate_if(is.numeric, round, disp.unit.lookup[units]*2)
   ellipse.net <- do.call(rbind, lapply(split(survey.net[[1]], survey.net[[1]]$Name), function(x) sf.ellipse(x, scale = ellipse.scale)))
   ellipse.net <- merge(ellipse.net, sigmas)
   ellipse.net <- ellipse.net %>% sf::st_set_crs(st_crs(survey.net[[1]]))
-  design <- list(design.matrices = list(A = A, W = W.mat, Qx = Qx.mat, Ql = Ql.mat, Qv = Qv.mat), ellipse.net = ellipse.net, net.points = survey.net[[1]], observations = observations)
+  design <- list(design.matrices = list(A = A.mat, W = W.mat, Qx = Qx.mat, Ql = Ql.mat, Qv = Qv.mat), ellipse.net = ellipse.net, net.points = survey.net[[1]], observations = observations)
   if(all){
     return(design)
   }else{
@@ -399,6 +401,8 @@ adjust.snet <- function(survey.net, sd.apriori = 1, prob = 0.95, result.units = 
   }
 }
 
+
+adjust.snet(survey.net = B.survey.net, adjust = FALSE, all = FALSE, result.units = "mm")
 
 
 
