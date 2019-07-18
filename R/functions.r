@@ -295,7 +295,7 @@ design.snet <- function(survey.net, sd.apriori = 1, prob = NA, result.units = li
   }
 }
 
-adjust = TRUE; survey.net = brana; sd.apriori = 3; prob = 0.95; result.units = list("mm", "cm", "m"); ellipse.scale = 1; teta.unit = list("deg", "rad"); all = FALSE; units.dir = "sec"; units.dist = "mm"
+# adjust = TRUE; survey.net = brana; sd.apriori = 3; prob = 0.95; result.units = list("mm", "cm", "m"); ellipse.scale = 1; teta.unit = list("deg", "rad"); all = FALSE; units.dir = "sec"; units.dist = "mm"
 adjust.snet <- function(adjust = TRUE, survey.net, sd.apriori = 1, prob = 0.95, result.units = list("mm", "cm", "m"), ellipse.scale = 1, teta.unit = list("deg", "rad"), units.dir = "sec", units.dist = "mm", use.sd.estimated = TRUE, all = FALSE){
   # TODO: Set warning if there are different or not used points in two elements of survey.net list.
   # TODO: Check if any point has no sufficient measurements to be adjusted.
@@ -356,6 +356,7 @@ adjust.snet <- function(adjust = TRUE, survey.net, sd.apriori = 1, prob = 0.95, 
       # Data snooping and others have to be put in the list
     }else{
       F.test.conclusion <- paste("Model je adekvatan")
+    }
       if(use.sd.estimated){sd.apriori <- sd.estimated}
       coords.inc <- as.data.frame(matrix(x.mat[1:(2*length(used.points)),], length(used.points), 2, byrow = TRUE)) %>%
         dplyr::mutate_if(is.numeric, round, disp.unit.lookup[units])
@@ -365,7 +366,6 @@ adjust.snet <- function(adjust = TRUE, survey.net, sd.apriori = 1, prob = 0.95, 
         cbind(Name = used.points, coords.inc, .) %>%
         dplyr::rename(X = V1, Y = V2)
       point.adj.results <- coords.estimation %>% sf::st_as_sf(coords = c("X","Y"), remove = FALSE)
-    }
     ############################ OVDE SAM STAO ###############################################################
   }
   # Computing error ellipses
@@ -400,11 +400,6 @@ adjust.snet <- function(adjust = TRUE, survey.net, sd.apriori = 1, prob = 0.95, 
     return(design[-1])
   }
 }
-
-
-adjust.snet(survey.net = B.survey.net, adjust = FALSE, all = FALSE, result.units = "mm")
-
-
 
 
 

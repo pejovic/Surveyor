@@ -136,5 +136,10 @@ brana_points <- readxl::read_xlsx(path = here::here("Data/Input/With_observation
 brana_obs <- readxl::read_xlsx(path = here::here("Data/Input/With_observations/Brana/Brana.xlsx"), sheet = "Observations", col_types = c("text", "text", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric"))
 brana <- import_surveynet2D(points = brana_points, observations = brana_obs)
 
+
+brana.adjust <- adjust.snet(survey.net = brana, result.units = "cm")
+
+brana.adjust$net.points
+
 plot(brana[[1]]$geometry)
 
