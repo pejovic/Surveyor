@@ -14,8 +14,6 @@ library(xlsx)
 library(data.table)
 library(mapview)
 library(mapedit)
-library(leaflet.extras)
-library(here)
 library(matlib)
 library(nngeo)
 library(writexl)
@@ -143,3 +141,16 @@ brana.adjust$net.points
 
 plot(brana[[1]]$geometry)
 
+
+# TETO
+
+
+TETO_points <- readxl::read_xlsx(path = ("C:/R_projects/Surveyer/Data/Input/Without_observations/xlsx/TETO_plan opazanja.xlsx"), sheet = "Points", col_types = c("numeric", "text", "numeric", "numeric", "logical", "logical", "logical"))
+TETO_obs <- readxl::read_xlsx(path = ("C:/R_projects/Surveyer/Data/Input/Without_observations/xlsx/TETO_plan opazanja.xlsx"), sheet = "Observations", col_types = c("text", "text", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric","numeric","numeric", "numeric", "numeric"))
+TETO.survey.net <- import_surveynet2D(points = TETO_points, observations = TETO_obs, axes = c("Easting", "Northing"))
+
+
+TETO.adjust <- adjust.snet(survey.net = TETO.survey.net, adjust = FALSE, result.units = "mm")
+
+writexl::write_xlsx(TETO.adjust$observations %>% select(-geometry), "TETO_obs.xlsx")
+writexl::write_xlsx(TETO.adjust$net.points %>% select(-geometry), "TETO_points.xlsx")
