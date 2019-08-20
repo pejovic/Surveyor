@@ -350,13 +350,18 @@ adjust.snet <- function(adjust = TRUE, survey.net, sd.apriori = 1, prob = 0.95, 
     }else{
       F.estimated <- sd.apriori^2/sd.estimated^2
       F.quantile <- qf(p = prob, df1 = 10^1000, df2 = df)
+<<<<<<< HEAD
     }
+=======
+      }
+>>>>>>> 0872a4fff5cced8a1605fa604a3cc1d19de64534
     if(F.estimated > F.quantile){
       F.test.conclusion <- paste("Model nije adekvatan")
       # Data snooping and others have to be put in the list
     }else{
       F.test.conclusion <- paste("Model je adekvatan")
     }
+<<<<<<< HEAD
     if(use.sd.estimated){sd.apriori <- sd.estimated}
     coords.inc <- as.data.frame(matrix(x.mat[1:(2*length(used.points)),], length(used.points), 2, byrow = TRUE)) %>%
       dplyr::mutate_if(is.numeric, round, disp.unit.lookup[units])
@@ -366,6 +371,17 @@ adjust.snet <- function(adjust = TRUE, survey.net, sd.apriori = 1, prob = 0.95, 
       cbind(Name = used.points, coords.inc, .) %>%
       dplyr::rename(X = V1, Y = V2)
     point.adj.results <- coords.estimation %>% sf::st_as_sf(coords = c("X","Y"), remove = FALSE)
+=======
+      if(use.sd.estimated){sd.apriori <- sd.estimated}
+      coords.inc <- as.data.frame(matrix(x.mat[1:(2*length(used.points)),], length(used.points), 2, byrow = TRUE)) %>%
+        dplyr::mutate_if(is.numeric, round, disp.unit.lookup[units])
+      names(coords.inc) <- c(paste("dx", paste("[",units,"]", sep = ""), sep = " "), paste("dy", paste("[",units,"]", sep = ""), sep = " "))
+      coords.estimation <- as.vector(t(st_coordinates(survey.net[[1]]))) + x.mat[1:(2*length(used.points)),]/res.unit.lookup[units]
+      coords.estimation <- as.data.frame(matrix(coords.estimation, ncol = 2, byrow = TRUE)) %>%
+        cbind(Name = used.points, coords.inc, .) %>%
+        dplyr::rename(X = V1, Y = V2)
+      point.adj.results <- coords.estimation %>% sf::st_as_sf(coords = c("X","Y"), remove = FALSE)
+>>>>>>> 0872a4fff5cced8a1605fa604a3cc1d19de64534
     ############################ OVDE SAM STAO ###############################################################
   }
   # Computing error ellipses
