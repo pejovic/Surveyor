@@ -114,19 +114,19 @@ surveynet.xlsx <- function(points = points, observations = observations, dest_cr
 #    3. dest_crs - destination Coordinate Reference System - set EPSG code [default: 3857 - Web Mercator projection coordinate system]
 #    4. raw_points - Excel file sheet with attributes related to points - geodetic network [Example: Data/Input/xlsx]
 
-surveynet.xlsx_updated <- function(points = points, observations = observations, dest_crs = NA, raw_points = raw_points){
+import_surveynet2D_updated <- function(points = points, observations = observations, dest_crs = NA, raw_points = raw_points, axes = c("Easting", "Northing")){
 
   # Check function for point names, that can not be just numbers -> must contain letter
-  raw_points$Name <- as.character(raw_points$Name)
-  vec <- c(1:99999)
-  j = 1
-  for(i in raw_points$Name){
-    if(i %in% vec){
-      raw_points$Name[j] <- paste("T",i, sep = "")
-      j = j +1
-
-    }
-  }
+  #raw_points$Name <- as.character(raw_points$Name)
+  #vec <- c(1:99999)
+  #j = 1
+  #for(i in raw_points$Name){
+  #  if(i %in% vec){
+  #    raw_points$Name[j] <- paste("T",i, sep = "")
+  #    j = j +1
+#
+  #  }
+  #}
 
   # Create geometry columns for points
   if (is.na(dest_crs)){
@@ -134,6 +134,8 @@ surveynet.xlsx_updated <- function(points = points, observations = observations,
   }else{
     dest_crs = dest_crs
   }
+
+  if(which(axes == "Easting") == 2){points <- points %>% dplyr::rename(x = y,  y = x)}
 
   points$x <- raw_points$x[match(points$Name, raw_points$Name)]
   points$y <- raw_points$y[match(points$Name, raw_points$Name)]
@@ -145,26 +147,42 @@ surveynet.xlsx_updated <- function(points = points, observations = observations,
 
   points <- points %>% as.data.frame %>% sf::st_as_sf(coords = c("x","y")) %>% sf::st_set_crs(dest_crs)
 
-  dt <- as.data.table(observations)
-  dt_1 <- dt[
-    , {
-      geometry <- sf::st_linestring(x = matrix(c(x_station, x_obs.point, y_station, y_obs.point), ncol = 2))
-      geometry <- sf::st_sfc(geometry)
-      geometry <- sf::st_sf(geometry = geometry)
-    }
-    , by = id
-    ]
-  dt_1 <- sf::st_as_sf(dt_1)
-  dt_1 %<>% mutate(from = observations$from,
-                   to = observations$to,
-                   distance = observations$distance,
-                   direction = observations$direction,
-                   standard_dir = observations$standard_dir,
-                   standard_dist = observations$standard_dist
-  )
+  observations <- observations %>% dplyr::mutate(Hz = HzD + HzM/60 + HzS/3600,
+                                                 Vz = VzD + VzM/60 + VzS/3600,
+                                                 distance = (!is.na(.$HD) | !is.na(.$SD)),
+                                                 direction = !is.na(Hz))
 
-  dt_1 <- dt_1 %>% sf::st_set_crs(dest_crs)
-  observations <- dt_1
+  observations$distance[!is.na(observations$sd_dist)] <- TRUE
+  observations$direction[!is.na(observations$sd_Hz)] <- TRUE
+
+  observations <- as.data.table(observations) %>% dplyr::mutate(id = seq.int(nrow(.))) %>% split(., f = as.factor(.$id)) %>%
+    lapply(., function(row) {lmat <- matrix(unlist(row[15:18]), ncol = 2, byrow = TRUE)
+    st_linestring(lmat)}) %>%
+    sf::st_sfc() %>%
+    sf::st_sf('ID' = seq.int(nrow(observations)), observations, 'geometry' = .)
+
+  observations <- observations %>% sf::st_set_crs(dest_crs)
+
+  #dt <- as.data.table(observations)
+  #dt_1 <- dt[
+  #  , {
+  #    geometry <- sf::st_linestring(x = matrix(c(x_station, x_obs.point, y_station, y_obs.point), ncol = 2))
+  #    geometry <- sf::st_sfc(geometry)
+  #    geometry <- sf::st_sf(geometry = geometry)
+  #  }
+  #  , by = id
+  #  ]
+  #dt_1 <- sf::st_as_sf(dt_1)
+  #dt_1 %<>% mutate(from = observations$from,
+  #                 to = observations$to,
+  #                 distance = observations$distance,
+  #                 direction = observations$direction,
+  #                 standard_dir = observations$standard_dir,
+  #                 standard_dist = observations$standard_dist
+  #)
+#
+  #dt_1 <- dt_1 %>% sf::st_set_crs(dest_crs)
+  #observations <- dt_1
 
   # Creating list
   survey_net <- list(points,observations)
@@ -625,7 +643,7 @@ surveynet.mapedit_points <- function(points = points){
       points$id <- (1:length(points$geometry))
     }
   }
-  points <- points %>% rename("Name" = "id")
+  points <- points %>% mutate("Name" = "id")
 
   points$Name <- as.character(points$Name)
   vec <- c(1:99999)
@@ -674,12 +692,19 @@ surveynet.mapedit_observations_edit <- function(points = points, st_dir = st_dir
   #observations$x_obs.point <- points$x[match(observations$to, points$Name)]
   #observations$y_obs.point <- points$y[match(observations$to, points$Name)]
 
-  observations$id <- 1:nrow(observations)
+  #observations$id <- 1:nrow(observations)
 
-  observations %<>% mutate(distance = TRUE,
-                           direction = TRUE,
-                           standard_dir = st_dir,
-                           standard_dist = st_dist
+  observations %<>% mutate(HzD = NA,
+                           HzM = NA,
+                           HzS = NA,
+                           HD = NA,
+                           SD = NA,
+                           VzD = NA,
+                           VzM = NA,
+                           VzS = NA,
+                           sd_Hz = as.numeric(st_dir),
+                           sd_dist = as.numeric(st_dist),
+                           sd_Vz = NA
   )
   return(observations)
 }
@@ -736,44 +761,63 @@ surveynet.mapedit <- function(points_raw = points_raw, points = points, observat
   observations$x_obs.point <- points$x[match(observations$to, points$Name)]
   observations$y_obs.point <- points$y[match(observations$to, points$Name)]
 
-  observations$id <- as.numeric(1:nrow(observations))
-
-  observations %<>% mutate(distance = distance,
-                           direction = direction,
-                           standard_dir = standard_dir,
-                           standard_dist = standard_dist
-  )
-
-  dt <- as.data.table(observations)
-  dt_1 <- dt[
-    , {
-      geometry <- sf::st_linestring(x = matrix(c(x_station, x_obs.point, y_station, y_obs.point), ncol = 2))
-      geometry <- sf::st_sfc(geometry)
-      geometry <- sf::st_sf(geometry = geometry)
-    }
-    , by = id
-    ]
-
-  dt_1 <- sf::st_as_sf(dt_1)
-
-  dt_1 %<>% mutate(from = as.character(observations$from),
-                   to = as.character(observations$to),
-                   distance = observations$distance,
-                   direction = observations$direction,
-                   standard_dir = observations$standard_dir,
-                   standard_dist = observations$standard_dist
-  )
-
-  dt_1 <- dt_1 %>% sf::st_set_crs(dest_crs)
-  observations <- dt_1
-
-  # Observational plan - adding new columns
-  observations %<>% mutate(distance = distance,
-                           direction = direction,
-                           standard_dir = as.numeric(standard_dir),
-                           standard_dist = as.numeric(standard_dist)
-  )
   points <- points %>% as.data.frame() %>% sf::st_as_sf(coords = c("x","y")) %>% sf::st_set_crs(dest_crs)
+
+  observations <- observations %>% dplyr::mutate(Hz = HzD + HzM/60 + HzS/3600,
+                                                 Vz = VzD + VzM/60 + VzS/3600,
+                                                 distance = (!is.na(.$HD) | !is.na(.$SD)),
+                                                 direction = !is.na(Hz))
+
+  observations$distance[!is.na(observations$sd_dist)] <- TRUE
+  observations$direction[!is.na(observations$sd_Hz)] <- TRUE
+
+  observations <- as.data.table(observations) %>% dplyr::mutate(id = seq.int(nrow(.))) %>% split(., f = as.factor(.$id)) %>%
+    lapply(., function(row) {lmat <- matrix(unlist(row[14:17]), ncol = 2, byrow = TRUE)
+    st_linestring(lmat)}) %>%
+    sf::st_sfc() %>%
+    sf::st_sf('ID' = seq.int(nrow(observations)), observations, 'geometry' = .)
+
+  observations <- observations %>% sf::st_set_crs(dest_crs)
+
+  #observations$id <- as.numeric(1:nrow(observations))
+#
+  #observations %<>% mutate(distance = distance,
+  #                         direction = direction,
+  #                         standard_dir = standard_dir,
+  #                         standard_dist = standard_dist
+  #)
+#
+  #dt <- as.data.table(observations)
+  #dt_1 <- dt[
+  #  , {
+  #    geometry <- sf::st_linestring(x = matrix(c(x_station, x_obs.point, y_station, y_obs.point), ncol = 2))
+  #    geometry <- sf::st_sfc(geometry)
+  #    geometry <- sf::st_sf(geometry = geometry)
+  #  }
+  #  , by = id
+  #  ]
+#
+  #dt_1 <- sf::st_as_sf(dt_1)
+#
+  #dt_1 %<>% mutate(from = as.character(observations$from),
+  #                 to = as.character(observations$to),
+  #                 distance = observations$distance,
+  #                 direction = observations$direction,
+  #                 standard_dir = observations$standard_dir,
+  #                 standard_dist = observations$standard_dist
+  #)
+#
+  #dt_1 <- dt_1 %>% sf::st_set_crs(dest_crs)
+  #observations <- dt_1
+#
+  ## Observational plan - adding new columns
+  observations %<>% mutate(from = as.character(observations$from),
+                           to = as.character(observations$to),
+                           distance = distance,
+                           direction = direction,
+                           sd_Hz= as.numeric(sd_Hz),
+                           sd_dist = as.numeric(sd_dist)
+  )
   #points <- subset(points, select = -c(x,y))
   # Creating list
   survey_net_mapedit <- list(points,observations)
@@ -862,112 +906,112 @@ adj_net_spatial_view <- function(adj.ellipses, adj.observations){
 #    3. dest_crs - destination Coordinate Reference System - set EPSG code [default: 3857 - Web Mercator projection coordinate system]
 #    4. obs - parameter that indicates type of input data, related to scenario design or adjustment of 2D geodetic network.
 
-surveynet.xlsx_1 <- function(points = points, observations = observations, dest_crs = NA, obs = FALSE){
-
-  # Check function for point names, that can not be just numbers -> must contain letter
-  points$Name <- as.character(points$Name)
-  vec <- c(1:99999)
-  j = 1
-  for(i in points$Name){
-    if(i %in% vec){
-      points$Name[j] <- paste("T",i, sep = "")
-      j = j +1
-
-    }
-  }
-
-  observations$from <- as.character(observations$from)
-  vec <- c(1:99999)
-  j = 1
-  for(i in observations$from){
-    if(i %in% vec){
-      observations$from[j] <- paste("T",i, sep = "")
-      j = j +1
-
-    }
-  }
-
-  observations$to <- as.character(observations$to)
-  vec <- c(1:99999)
-  j = 1
-  for(i in observations$to){
-    if(i %in% vec){
-      observations$to[j] <- paste("T",i, sep = "")
-      j = j +1
-
-    }
-  }
-
-  # Create geometry columns for points
-  if (is.na(dest_crs)){
-    dest_crs <- 3857
-  } else{
-    dest_crs <- dest_crs
-  }
-
-  observations$x_station <- points$x[match(observations$from, points$Name)]
-  observations$y_station <- points$y[match(observations$from, points$Name)]
-  observations$x_obs.point <- points$x[match(observations$to, points$Name)]
-  observations$y_obs.point <- points$y[match(observations$to, points$Name)]
-
-  points <- points %>% as.data.frame %>% sf::st_as_sf(coords = c("x","y")) %>% sf::st_set_crs(dest_crs)
-
-  if(obs == FALSE){
-
-    dt <- as.data.table(observations)
-    dt_1 <- dt[
-      , {
-        geometry <- sf::st_linestring(x = matrix(c(x_station, x_obs.point, y_station, y_obs.point), ncol = 2))
-        geometry <- sf::st_sfc(geometry)
-        geometry <- sf::st_sf(geometry = geometry)
-      }
-      , by = id
-      ]
-    dt_1 <- sf::st_as_sf(dt_1)
-    dt_1 %<>% mutate(from = observations$from,
-                     to = observations$to,
-                     distance = observations$distance,
-                     direction = observations$direction,
-                     standard_dir = observations$standard_dir,
-                     standard_dist = observations$standard_dist
-    )
-    dt_1 <- dt_1 %>% sf::st_set_crs(dest_crs)
-    observations <- dt_1
-
-  }else if(obs == TRUE){
-
-    dt <- as.data.table(observations)
-    dt$id <- c(1:length(dt$from))
-    dt_1 <- dt[
-      , {
-        geometry <- sf::st_linestring(x = matrix(c(x_station, x_obs.point, y_station, y_obs.point), ncol = 2))
-        geometry <- sf::st_sfc(geometry)
-        geometry <- sf::st_sf(geometry = geometry)
-      }
-      , by = id
-      ]
-    dt_1 <- sf::st_as_sf(dt_1)
-    dt_1 %<>% mutate(From = observations$from,
-                     To = observations$to,
-                     HzD = observations$HzD,
-                     HzM = observations$HzM,
-                     HzS = round(observations$HzS, 2),
-                     SD = round(observations$SD, 3),
-                     VzD = observations$VzD,
-                     VzM = observations$VzM,
-                     VzS = round(observations$VzS, 2)
-    )
-    dt_1 <- dt_1 %>% sf::st_set_crs(dest_crs)
-    observations <- dt_1
-
-  } else {
-    message("Incomplete number of parameters. Take a look at parameter 'obs'.")
-  }
-  # Creating list
-  survey_net <- list(points,observations)
-
-  return(survey_net)
-}
+#surveynet.xlsx_1 <- function(points = points, observations = observations, dest_crs = NA, obs = FALSE){
+#
+#  # Check function for point names, that can not be just numbers -> must contain letter
+#  points$Name <- as.character(points$Name)
+#  vec <- c(1:99999)
+#  j = 1
+#  for(i in points$Name){
+#    if(i %in% vec){
+#      points$Name[j] <- paste("T",i, sep = "")
+#      j = j +1
+#
+#    }
+#  }
+#
+#  observations$from <- as.character(observations$from)
+#  vec <- c(1:99999)
+#  j = 1
+#  for(i in observations$from){
+#    if(i %in% vec){
+#      observations$from[j] <- paste("T",i, sep = "")
+#      j = j +1
+#
+#    }
+#  }
+#
+#  observations$to <- as.character(observations$to)
+#  vec <- c(1:99999)
+#  j = 1
+#  for(i in observations$to){
+#    if(i %in% vec){
+#      observations$to[j] <- paste("T",i, sep = "")
+#      j = j +1
+#
+#    }
+#  }
+#
+#  # Create geometry columns for points
+#  if (is.na(dest_crs)){
+#    dest_crs <- 3857
+#  } else{
+#    dest_crs <- dest_crs
+#  }
+#
+#  observations$x_station <- points$x[match(observations$from, points$Name)]
+#  observations$y_station <- points$y[match(observations$from, points$Name)]
+#  observations$x_obs.point <- points$x[match(observations$to, points$Name)]
+#  observations$y_obs.point <- points$y[match(observations$to, points$Name)]
+#
+#  points <- points %>% as.data.frame %>% sf::st_as_sf(coords = c("x","y")) %>% sf::st_set_crs(dest_crs)
+#
+#  if(obs == FALSE){
+#
+#    dt <- as.data.table(observations)
+#    dt_1 <- dt[
+#      , {
+#        geometry <- sf::st_linestring(x = matrix(c(x_station, x_obs.point, y_station, y_obs.point), ncol = 2))
+#        geometry <- sf::st_sfc(geometry)
+#        geometry <- sf::st_sf(geometry = geometry)
+#      }
+#      , by = id
+#      ]
+#    dt_1 <- sf::st_as_sf(dt_1)
+#    dt_1 %<>% mutate(from = observations$from,
+#                     to = observations$to,
+#                     distance = observations$distance,
+#                     direction = observations$direction,
+#                     standard_dir = observations$standard_dir,
+#                     standard_dist = observations$standard_dist
+#    )
+#    dt_1 <- dt_1 %>% sf::st_set_crs(dest_crs)
+#    observations <- dt_1
+#
+#  }else if(obs == TRUE){
+#
+#    dt <- as.data.table(observations)
+#    dt$id <- c(1:length(dt$from))
+#    dt_1 <- dt[
+#      , {
+#        geometry <- sf::st_linestring(x = matrix(c(x_station, x_obs.point, y_station, y_obs.point), ncol = 2))
+#        geometry <- sf::st_sfc(geometry)
+#        geometry <- sf::st_sf(geometry = geometry)
+#      }
+#      , by = id
+#      ]
+#    dt_1 <- sf::st_as_sf(dt_1)
+#    dt_1 %<>% mutate(From = observations$from,
+#                     To = observations$to,
+#                     HzD = observations$HzD,
+#                     HzM = observations$HzM,
+#                     HzS = round(observations$HzS, 2),
+#                     SD = round(observations$SD, 3),
+#                     VzD = observations$VzD,
+#                     VzM = observations$VzM,
+#                     VzS = round(observations$VzS, 2)
+#    )
+#    dt_1 <- dt_1 %>% sf::st_set_crs(dest_crs)
+#    observations <- dt_1
+#
+#  } else {
+#    message("Incomplete number of parameters. Take a look at parameter 'obs'.")
+#  }
+#  # Creating list
+#  survey_net <- list(points,observations)
+#
+#  return(survey_net)
+#}
 
 # ============================================================================
 # 1D design functions

@@ -39,13 +39,13 @@ shinyServer(function(input, output){
   # XLSX INPUT DATA
   xlsx_points <- reactive({
     req(input$fileXLSX)
-    map_xlsx_points <- readxl::read_xlsx(path = input$fileXLSX$datapath, sheet = "Points", col_types = c("text", "numeric", "numeric", "logical", "logical", "logical"))
+    map_xlsx_points <- readxl::read_xlsx(path = input$fileXLSX$datapath, sheet = "Points")#, col_types = c("numeric", "text", "numeric", "numeric", "logical", "logical", "logical"))
     map_xlsx_points
   })
 
   xlsx_observations <- reactive({
     req(input$fileXLSX)
-    map_xlsx_observations <- readxl::read_xlsx(path = input$fileXLSX$datapath, sheet = "Observations", col_types = c("numeric", "text", "text", "logical", "logical", "numeric", "numeric"))
+    map_xlsx_observations <- readxl::read_xlsx(path = input$fileXLSX$datapath, sheet = "Observations")#, col_types = c("text", "text", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric"))
     map_xlsx_observations
   })
 
@@ -53,7 +53,7 @@ shinyServer(function(input, output){
     p_xlsx <- xlsx_points()
     o_xlsx <- xlsx_observations()
     dest_crs_xlsx = as.numeric(input$epsg_xlsx)
-    output_xlsx <- surveynet.xlsx(points = p_xlsx, observations = o_xlsx, dest_crs = dest_crs_xlsx)
+    output_xlsx <- import_surveynet2D(points = p_xlsx, observations = o_xlsx, dest_crs = dest_crs_xlsx)
     output_xlsx
   })
 
@@ -77,7 +77,7 @@ shinyServer(function(input, output){
     o_df <- as.data.frame(values_o$data)
     dest_crs_xlsx = as.numeric(input$epsg_xlsx)
     p_xlsx <- xlsx_points()
-    output_xlsx <- surveynet.xlsx_updated(points = p_df, observations = o_df, dest_crs = dest_crs_xlsx, raw_points = p_xlsx)
+    output_xlsx <- import_surveynet2D_updated(points = p_df, observations = o_df, dest_crs = dest_crs_xlsx, raw_points = p_xlsx)
     output_xlsx
   })
 
@@ -209,13 +209,13 @@ shinyServer(function(input, output){
 
   xlsx_points_wO <- reactive({
     req(input$fileXLSX_adj)
-    map_xlsx_points_wO <- readxl::read_xlsx(path = input$fileXLSX_adj$datapath, sheet = "Points", col_types = c("numeric", "text", "numeric", "numeric", "logical", "logical", "logical"))
+    map_xlsx_points_wO <- readxl::read_xlsx(path = input$fileXLSX_adj$datapath, sheet = "Points")#, col_types = c("numeric", "text", "numeric", "numeric", "logical", "logical", "logical"))
     map_xlsx_points_wO
   })
 
   xlsx_observations_wO <- reactive({
     req(input$fileXLSX_adj)
-    map_xlsx_observations_wO <- readxl::read_xlsx(path = input$fileXLSX_adj$datapath, sheet = "Observations", col_types = c("text", "text", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric"))
+    map_xlsx_observations_wO <- readxl::read_xlsx(path = input$fileXLSX_adj$datapath, sheet = "Observations")#, col_types = c("text", "text", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric"))
     map_xlsx_observations_wO
   })
 
@@ -223,7 +223,7 @@ shinyServer(function(input, output){
     p_xlsx_wO <- xlsx_points_wO()
     o_xlsx_wO <- xlsx_observations_wO()
     dest_crs_xlsx_wO = as.numeric(input$epsg_xlsx_adj)
-    output_xlsx_wO <- surveynet2DAdjustment_Import_fun.xlsx(points = p_xlsx_wO, observations = o_xlsx_wO, dest_crs = dest_crs_xlsx_wO)
+    output_xlsx_wO <- import_surveynet2D(points = p_xlsx_wO, observations = o_xlsx_wO, dest_crs = dest_crs_xlsx_wO)
     output_xlsx_wO
   })
 
@@ -268,7 +268,7 @@ shinyServer(function(input, output){
     out_points_xlsx_wO <- surveynet.wO()[[1]]
     out_observations_xlsx_wO <- surveynet.wO()[[2]]
     edited_observations_xlsx_wO <- edited_wO()$measurments
-    edited_observations_xlsx_wO$geometry <- out_observations_xlsx_wO$geometry[match(edited_observations_xlsx_wO$id, out_observations_xlsx_wO$id )]
+    edited_observations_xlsx_wO$geometry <- out_observations_xlsx_wO$geometry[match(edited_observations_xlsx_wO$ID, out_observations_xlsx_wO$ID )]
     edited_observations_xlsx_wO <- st_as_sf(edited_observations_xlsx_wO)
     output_view_xlsx_wO <- net_spatial_view_2DAdjustment_Import(points = out_points_xlsx_wO, observations = edited_observations_xlsx_wO)
     output_view_xlsx_wO

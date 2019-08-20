@@ -87,8 +87,14 @@ avala_1 <- surveynet.xlsx_1(points = avala_points, observations = avala_obs, des
 net_spatial_view_2DAdjustment_Import(points = avala_1[[1]], observations = avala[[2]])
 
 
+# :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+# UPDATED
+# :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+avala_points <- readxl::read_xlsx(path = here::here("Data/Input/With_observations/Avala/Avala_observations.xlsx"), sheet = "Points")
+avala_obs <- readxl::read_xlsx(path = here::here("Data/Input/With_observations/Avala/Avala_observations.xlsx"), sheet = "Observations")
 
-
+net_2d_AVALA <- import_surveynet2D(points = avala_points, observations = avala_obs, dest_crs = 3857)
+net_spatial_view_2DAdjustment_Import(points = net_2d_AVALA[[1]], observations = net_2d_AVALA[[2]])
 
 
 

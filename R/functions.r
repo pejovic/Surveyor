@@ -350,18 +350,18 @@ adjust.snet <- function(adjust = TRUE, survey.net, sd.apriori = 1, prob = 0.95, 
     }else{
       F.estimated <- sd.apriori^2/sd.estimated^2
       F.quantile <- qf(p = prob, df1 = 10^1000, df2 = df)
-<<<<<<< HEAD
+
     }
-=======
+
       }
->>>>>>> 0872a4fff5cced8a1605fa604a3cc1d19de64534
+
     if(F.estimated > F.quantile){
       F.test.conclusion <- paste("Model nije adekvatan")
       # Data snooping and others have to be put in the list
     }else{
       F.test.conclusion <- paste("Model je adekvatan")
     }
-<<<<<<< HEAD
+
     if(use.sd.estimated){sd.apriori <- sd.estimated}
     coords.inc <- as.data.frame(matrix(x.mat[1:(2*length(used.points)),], length(used.points), 2, byrow = TRUE)) %>%
       dplyr::mutate_if(is.numeric, round, disp.unit.lookup[units])
@@ -371,19 +371,10 @@ adjust.snet <- function(adjust = TRUE, survey.net, sd.apriori = 1, prob = 0.95, 
       cbind(Name = used.points, coords.inc, .) %>%
       dplyr::rename(X = V1, Y = V2)
     point.adj.results <- coords.estimation %>% sf::st_as_sf(coords = c("X","Y"), remove = FALSE)
-=======
-      if(use.sd.estimated){sd.apriori <- sd.estimated}
-      coords.inc <- as.data.frame(matrix(x.mat[1:(2*length(used.points)),], length(used.points), 2, byrow = TRUE)) %>%
-        dplyr::mutate_if(is.numeric, round, disp.unit.lookup[units])
-      names(coords.inc) <- c(paste("dx", paste("[",units,"]", sep = ""), sep = " "), paste("dy", paste("[",units,"]", sep = ""), sep = " "))
-      coords.estimation <- as.vector(t(st_coordinates(survey.net[[1]]))) + x.mat[1:(2*length(used.points)),]/res.unit.lookup[units]
-      coords.estimation <- as.data.frame(matrix(coords.estimation, ncol = 2, byrow = TRUE)) %>%
-        cbind(Name = used.points, coords.inc, .) %>%
-        dplyr::rename(X = V1, Y = V2)
-      point.adj.results <- coords.estimation %>% sf::st_as_sf(coords = c("X","Y"), remove = FALSE)
->>>>>>> 0872a4fff5cced8a1605fa604a3cc1d19de64534
+
+
     ############################ OVDE SAM STAO ###############################################################
-  }
+  #}
   # Computing error ellipses
   Qxy.list <- Qxy(Qx.mat, n = lenght(used.points), fixd = fix.mat*1)
   ellipses <- lapply(Qxy.list, function(x) error.ellipse(x, prob = prob, sd.apriori = sd.apriori, teta.unit = teta.unit[[1]]))
@@ -415,19 +406,18 @@ adjust.snet <- function(adjust = TRUE, survey.net, sd.apriori = 1, prob = 0.95, 
   }else{
     return(design[-1])
   }
+
 }
-
-
-
-
 
 
 import_surveynet2D <- function(points = points, observations = observations, dest_crs = NA, axes = c("Easting", "Northing")){
 
   # Create geometry columns for points
-  # if (is.na(dest_crs)){
-  #   dest_crs <- 3857
-  # }
+  if (is.na(dest_crs)){
+    dest_crs <- 3857
+  } else{
+    dest_crs <- dest_crs
+  }
 
   if(which(axes == "Easting") == 2){points <- points %>% dplyr::rename(x = y,  y = x)}
 
@@ -452,8 +442,10 @@ import_surveynet2D <- function(points = points, observations = observations, des
     sf::st_sfc() %>%
     sf::st_sf('ID' = seq.int(nrow(observations)), observations, 'geometry' = .)
 
+  observations <- observations %>% sf::st_set_crs(dest_crs)
+
   # Creating list
-  survey_net <- list(points, observations = observations)
+  survey_net <- list(points, observations)
   return(survey_net)
 }
 
