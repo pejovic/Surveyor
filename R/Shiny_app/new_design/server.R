@@ -29,7 +29,8 @@ library(mapedit)
 library(DT)
 library(leaflet.extras)
 library(rhandsontable)
-
+library(shinyBS)
+library(shinyWidgets)
 
 shinyServer(function(input, output){
   # ==================================================================
@@ -584,6 +585,191 @@ shinyServer(function(input, output){
     observations <- adjusted_net_design_me()$observations
     points <- mapEdit_list()[[1]]
     adj.net_map <- adj.net_spatial_view_web(ellipses = ellipses, observations = observations, points = points, sp_bound = input$sp_map, rii_bound = input$rii_map)
+    adj.net_map@map
+  })
+
+
+  ###########################
+  # 2D NET ADJUSTMENT RESULTS
+  ###########################
+
+  # 2D net adjustment - xlsx input data
+
+  adjusted_net_adj <- eventReactive(input$adj_2d_adjust_xlsx,{
+    data <- surveynet.wO()
+
+    out_points_xlsx_wO <- surveynet.wO()[[1]]
+    out_observations_xlsx_wO <- surveynet.wO()[[2]]
+    edited_observations_xlsx_wO <- edited_wO()$measurments
+    edited_observations_xlsx_wO$geometry <- out_observations_xlsx_wO$geometry[match(edited_observations_xlsx_wO$ID, out_observations_xlsx_wO$ID )]
+    edited_observations_xlsx_wO <- st_as_sf(edited_observations_xlsx_wO)
+
+    data_up <- surveynet.wO()
+    data_up[[2]] <- edited_observations_xlsx_wO
+
+    result_units <- input$adjust_2_units
+    ellipse_scale <- input$adjust_2_ell_scale
+
+
+    adjusted_net_out <- adjust.snet(survey.net = data, result.units = input$adjust_2_units, ellipse.scale = input$adjust_2_ell_scale, sd.apriori = input$st_apriori_adj_xlsx)
+
+    #if(length(data_up) == 0){
+    #  design_net_out <- design.snet(survey.net = data, result.units = result_units, ellipse.scale = ellipse_scale, all = FALSE)
+    #  design_net_out
+    #} else{
+    #  design_net_out <- design.snet(survey.net = data_up, result.units = result_units, ellipse.scale = ellipse_scale, all = FALSE)
+    #  design_net_out
+    #}
+  })
+
+  output$ellipse_error_2d_adj <- DT::renderDataTable({
+    #data <- adjusted_net_design()[[1]]
+    #data %<>%
+    #  st_drop_geometry() %>%
+    #  as.data.frame() %>%
+    #  mutate(
+    #    A = round(A, 4),
+    #    B = round(B, 4),
+    #    teta = round(teta, 4),
+    #    sx = round(sx, 4),
+    #    sy = round(sy, 4),
+    #    sp = round(sp, 4)
+    #  )
+    DT::datatable(adjusted_net_adj()[[1]] %>%
+                    st_drop_geometry() %>%
+                    as.data.frame() %>%
+                    mutate(
+                      A = round(A, 4),
+                      B = round(B, 4),
+                      teta = round(teta, 4),
+                      sx = round(sx, 4),
+                      sy = round(sy, 4),
+                      sp = round(sp, 4)
+                    ),escape=F,
+                  extensions = list('Buttons', 'Scroller'),
+                  options = list(dom = 'Bfrtip', buttons = I('colvis'),
+                                 deferRender = TRUE,
+                                 scrollY = 500,
+                                 scrollX = 300,
+                                 scroller = TRUE)) %>%
+      formatStyle(
+        'sx',
+        color = styleInterval(c(input$sx_xlsx_adj), c('black', 'red'))#,
+        #backgroundColor = styleInterval(input$sx_xlsx, c('lightGray', 'tomato'))
+      ) %>%
+      formatStyle(
+        'sy',
+        color = styleInterval(c(input$sy_xlsx_adj), c('black', 'red'))#,
+        #backgroundColor = styleInterval(input$sy_xlsx, c('lightGray', 'tomato'))
+      ) %>%
+      formatStyle(
+        'sp',
+        color = styleInterval(c(input$sp_xlsx_adj), c('black', 'red'))#,
+        #backgroundColor = styleInterval(input$sp_xlsx, c('lightGray', 'tomato'))
+      )
+  })
+
+  output$netSpatialView_ell_2d_adj <- renderPlot({
+    ellipses_1 <- adjusted_net_adj()[[1]]
+    observations_1 <- adjusted_net_adj()[[3]]
+    adj_output_view <- adj_net_spatial_view(ellipses_1, observations_1)
+    adj_output_view
+  })
+
+  plotInput <- function(){
+    adj_net_spatial_view(adjusted_net_adj()[[1]], adjusted_net_adj()[[3]])
+  }
+
+  output$netSpatialView_ell11_2d_adj <- renderPlot({
+    ellipses_1 <- adjusted_net_adj()[[1]]
+    observations_1 <- adjusted_net_adj()[[3]]
+    adj_output_view <- adj_net_spatial_view(ellipses_1, observations_1)
+    adj_output_view
+  })
+
+  output$downloadPlot_2d_adj <- downloadHandler(
+    filename = "plot.png",
+    content = function(file) {
+      ggsave(file, plotInput())
+    })
+
+  output$net_points_adj_2d_adj <- DT::renderDataTable({
+    DT::datatable(
+      adjusted_net_adj()[[2]] %>%
+        st_drop_geometry() %>%
+        as.data.frame() %>%
+        mutate(
+          A = round(A, 4),
+          B = round(B, 4),
+          teta = round(teta, 4),
+          sx = round(sx, 4),
+          sy = round(sy, 4),
+          sp = round(sp, 4),
+          `dx [mm]` = round(`dx [mm]`, 2),
+          `dy [mm]` = round(`dy [mm]`, 2),
+          X = round(X, 2),
+          Y = round(Y, 2)
+        ) %>%
+        dplyr:: select(Name, `dx [mm]`, `dy [mm]`, X, Y, sx, sy, sp),
+      escape=F,
+      extensions = list('Buttons', 'Scroller'),
+      options = list(dom = 'Bfrtip', buttons = I('colvis'),
+                     deferRender = TRUE,
+                     scrollY = 500,
+                     scrollX = 300,
+                     scroller = TRUE)
+    ) %>%
+      formatStyle(
+        'sx',
+        color = styleInterval(c(input$sx_xlsx_adj), c('black', 'red'))#,
+        #backgroundColor = styleInterval(input$sx_xlsx, c('lightGray', 'tomato'))
+      ) %>%
+      formatStyle(
+        'sy',
+        color = styleInterval(c(input$sy_xlsx_adj), c('black', 'red'))#,
+        #backgroundColor = styleInterval(input$sy_xlsx, c('lightGray', 'tomato'))
+      ) %>%
+      formatStyle(
+        'sp',
+        color = styleInterval(c(input$sp_xlsx_adj), c('black', 'red'))#,
+        #backgroundColor = styleInterval(input$sp_xlsx, c('lightGray', 'tomato'))
+      )
+  })
+
+  output$net_observations_adj_2d_adj <- DT::renderDataTable({
+    DT::datatable(
+      adjusted_net_adj()[[3]] %>%
+        st_drop_geometry() %>%
+        as.data.frame() %>%
+        mutate(
+          Ql = round(Ql.mat, 4),
+          Qv = round(Qv.mat, 4),
+          rii = round(rii, 4)
+        ) %>%
+        dplyr::select(from, to, type, Ql, Qv, rii, used),
+      escape=F,
+      extensions = list('Buttons', 'Scroller'),
+      options = list(dom = 'Bfrtip', buttons = I('colvis'),
+                     deferRender = TRUE,
+                     scrollY = 500,
+                     scrollX = 300,
+                     scroller = TRUE)
+    )%>%
+      formatStyle(
+        'rii',
+        color = styleInterval(c(input$rii_xlsx_adj), c('red', 'black')),
+        background = styleColorBar(adjusted_net_adj()[[3]]$rii, 'steelblue'),
+        backgroundSize = '100% 90%',
+        backgroundRepeat = 'no-repeat',
+        backgroundPosition = 'center'
+      )
+  })
+
+  output$map_ellipses_2d_adj <- renderLeaflet({
+    ellipses <- adjusted_net_adj()$ellipse.net
+    observations <- adjusted_net_adj()$observations
+    points <- surveynet.wO()[[1]]
+    adj.net_map <- adj.net_spatial_view_web(ellipses = ellipses, observations = observations, points = points, sp_bound = input$sp_xlsx_adj, rii_bound = input$rii_xlsx_adj)
     adj.net_map@map
   })
 

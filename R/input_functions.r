@@ -881,7 +881,7 @@ adj_net_spatial_view <- function(adj.ellipses, adj.observations){
   adj.net_view <- ggplot() +
     geom_sf(data = adj.observations)+
     geom_sf(data=adj.ellipses, aes(fill = sp))+
-    geom_sf_text(data=adj.ellipses, aes(label=Name,hjust = 2.5, vjust =2.5))+
+    geom_sf_text(data=adj.ellipses, aes(label=Name,hjust = 1.5, vjust = 1.5))+
     xlab("\nLongitude [deg]") +
     ylab("Latitude [deg]\n") +
     ggtitle("Adjusted observational plan - net quality")+

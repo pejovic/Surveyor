@@ -399,8 +399,9 @@ adjust.snet <- function(adjust = TRUE, survey.net, sd.apriori = 1, prob = 0.95, 
     dplyr::mutate_if(is.numeric, round, disp.unit.lookup[units]*2)
   ellipse.net <- do.call(rbind, lapply(split(survey.net[[1]], survey.net[[1]]$Name), function(x) sf.ellipse(x, scale = ellipse.scale)))
   ellipse.net <- merge(ellipse.net, sigmas)
-  ellipse.net <- ellipse.net %>% sf::st_set_crs(st_crs(survey.net[[1]]))
+  ellipse.net <- sf::st_set_crs(ellipse.net, value = st_crs(survey.net[[2]]))
   design <- list(design.matrices = list(A = A.mat, W = W.mat, Qx = Qx.mat, Ql = Ql.mat, Qv = Qv.mat), ellipse.net = ellipse.net, net.points = survey.net[[1]], observations = observations)
+  design$net.points <- sf::st_set_crs(design$net.points, value = st_crs(survey.net[[2]]))
   if(all){
     return(design)
   }else{
