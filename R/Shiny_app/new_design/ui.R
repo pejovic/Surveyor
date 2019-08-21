@@ -479,19 +479,20 @@ shinyUI(
                                                                        column(width = 6, "ADJUSTMENT RESULTS",
                                                                               tabsetPanel(
                                                                                 tabPanel("MAP RESULTS",
-                                                                                         p("")#,
-                                                                                         #leafletOutput("map_ellipses_2d_adj", height = 550) %>% withSpinner(color="#0dc5c1")
+                                                                                         p(""),
+                                                                                         leafletOutput("map_ellipses_2d_adj", height = 550) %>% withSpinner(color="#0dc5c1")
+
                                                                                 ),
                                                                                 tabPanel("TAB RESULTS",
                                                                                          p(""),
                                                                                          navlistPanel(
-                                                                                           tabPanel("Error ellipse"#, DT::dataTableOutput("ellipse_error_2d_adj") %>% withSpinner(color="#0dc5c1")
+                                                                                           tabPanel("Error ellipse", DT::dataTableOutput("ellipse_error_2d_adj") %>% withSpinner(color="#0dc5c1")
                                                                                                     ),
-                                                                                           tabPanel("Net points"#, DT::dataTableOutput('net_points_adj_2d_adj') %>% withSpinner(color="#0dc5c1")
+                                                                                           tabPanel("Net points", DT::dataTableOutput('net_points_adj_2d_adj') %>% withSpinner(color="#0dc5c1")
                                                                                                     ),
-                                                                                           tabPanel("Obseravtions"#, DT::dataTableOutput('net_observations_adj_2d_adj') %>% withSpinner(color="#0dc5c1")
+                                                                                           tabPanel("Obseravtions", DT::dataTableOutput('net_observations_adj_2d_adj') %>% withSpinner(color="#0dc5c1")
                                                                                                     ),
-                                                                                           tabPanel("Plot error ellipses"#, plotOutput("netSpatialView_ell_2d_adj") %>% withSpinner(color="#0dc5c1")
+                                                                                           tabPanel("Plot error ellipses", plotOutput("netSpatialView_ell_2d_adj") %>% withSpinner(color="#0dc5c1")
                                                                                                     )
                                                                                          )
 

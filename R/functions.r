@@ -34,7 +34,7 @@ ni <- function(pt1_coords, pt2_coords, type = list("dec", "dms", "rad")){
   if(type == "rad"){
     ang <- ang*pi/180
   }
- return(ang)
+  return(ang)
 }
 
 ### coeficients for distances #####################################################
@@ -118,7 +118,7 @@ coef_p <- function (pt1, pt2, pts, units) {
 
 
 fix.params <- function(net.points){
-    as.logical(c(apply(cbind(net.points$FIX_X, net.points$FIX_Y), 1, as.numeric)))
+  as.logical(c(apply(cbind(net.points$FIX_X, net.points$FIX_Y), 1, as.numeric)))
 }
 
 
@@ -181,7 +181,7 @@ Qxy <- function(Qx, n, fixd = fix){
     k = fixd[i, 1] + fixd[i, 2] + k
     if(fixd[i, 3] == 1){
       Qxxx[[i]] <- diag(fixd[i, c(1, 2)])*Qx[k, k]
-      }
+    }
     else if (fixd[i, 3] == 2){
       Qxxx[[i]] <- cbind(c(Qx[k-1, k-1], Qx[k-1, k]), c(Qx[k, k-1], Qx[k, k]))
     } else {
@@ -193,9 +193,9 @@ Qxy <- function(Qx, n, fixd = fix){
 #
 
 error.ellipse <- function(Qxy, prob = NA, sd.apriori = 1, teta.unit = list("deg", "rad")) {
-    Qee <- Qxy[1, 1]
-    Qnn <- Qxy[2, 2]
-    Qen <- Qxy[1, 2]
+  Qee <- Qxy[1, 1]
+  Qnn <- Qxy[2, 2]
+  Qen <- Qxy[1, 2]
   if(any(c(Qee, Qnn) == 0)){
     A <- 0
     B <- 0
@@ -247,7 +247,7 @@ design.snet <- function(survey.net, sd.apriori = 1, prob = NA, result.units = li
   used.points <- survey.net[[1]]$Name[used.points.ind]
   survey.net[[1]] <- survey.net[[1]][used.points.ind, ]
   observations <- tidyr::gather(survey.net[[2]] %>%
-    dplyr::select(from, to, direction, distance, geometry), key = type, value = used, -c(from, to, geometry)) %>%
+                                  dplyr::select(from, to, direction, distance, geometry), key = type, value = used, -c(from, to, geometry)) %>%
     dplyr::filter(used == TRUE) %>%
     dplyr::mutate(from_to = str_c(.$from, .$to, sep = "_"))
   # =======
@@ -310,7 +310,7 @@ adjust.snet <- function(adjust = TRUE, survey.net, sd.apriori = 1, prob = 0.95, 
   used.points <- survey.net[[1]]$Name[used.points.ind]
   survey.net[[1]] <- survey.net[[1]][used.points.ind, ]
   observations <- tidyr::gather(survey.net[[2]] %>%
-    dplyr::select(from, to, direction, distance, geometry), key = type, value = used, -c(from, to, geometry)) %>%
+                                  dplyr::select(from, to, direction, distance, geometry), key = type, value = used, -c(from, to, geometry)) %>%
     dplyr::filter(used == TRUE) %>%
     dplyr::mutate(from_to = str_c(.$from, .$to, sep = "_"))
   # =
@@ -347,27 +347,34 @@ adjust.snet <- function(adjust = TRUE, survey.net, sd.apriori = 1, prob = 0.95, 
     if(sd.estimated > sd.apriori){
       F.estimated <- sd.estimated^2/sd.apriori^2
       F.quantile <- qf(p = prob, df1 = df, df2 = 10^1000)
-      }else{
+    }else{
       F.estimated <- sd.apriori^2/sd.estimated^2
       F.quantile <- qf(p = prob, df1 = 10^1000, df2 = df)
+
+    }
+
       }
+
     if(F.estimated > F.quantile){
       F.test.conclusion <- paste("Model nije adekvatan")
       # Data snooping and others have to be put in the list
     }else{
       F.test.conclusion <- paste("Model je adekvatan")
     }
-      if(use.sd.estimated){sd.apriori <- sd.estimated}
-      coords.inc <- as.data.frame(matrix(x.mat[1:(2*length(used.points)),], length(used.points), 2, byrow = TRUE)) %>%
-        dplyr::mutate_if(is.numeric, round, disp.unit.lookup[units])
-      names(coords.inc) <- c(paste("dx", paste("[",units,"]", sep = ""), sep = " "), paste("dy", paste("[",units,"]", sep = ""), sep = " "))
-      coords.estimation <- as.vector(t(st_coordinates(survey.net[[1]]))) + x.mat[1:(2*length(used.points)),]/res.unit.lookup[units]
-      coords.estimation <- as.data.frame(matrix(coords.estimation, ncol = 2, byrow = TRUE)) %>%
-        cbind(Name = used.points, coords.inc, .) %>%
-        dplyr::rename(X = V1, Y = V2)
-      point.adj.results <- coords.estimation %>% sf::st_as_sf(coords = c("X","Y"), remove = FALSE)
+
+    if(use.sd.estimated){sd.apriori <- sd.estimated}
+    coords.inc <- as.data.frame(matrix(x.mat[1:(2*length(used.points)),], length(used.points), 2, byrow = TRUE)) %>%
+      dplyr::mutate_if(is.numeric, round, disp.unit.lookup[units])
+    names(coords.inc) <- c(paste("dx", paste("[",units,"]", sep = ""), sep = " "), paste("dy", paste("[",units,"]", sep = ""), sep = " "))
+    coords.estimation <- as.vector(t(st_coordinates(survey.net[[1]]))) + x.mat[1:(2*length(used.points)),]/res.unit.lookup[units]
+    coords.estimation <- as.data.frame(matrix(coords.estimation, ncol = 2, byrow = TRUE)) %>%
+      cbind(Name = used.points, coords.inc, .) %>%
+      dplyr::rename(X = V1, Y = V2)
+    point.adj.results <- coords.estimation %>% sf::st_as_sf(coords = c("X","Y"), remove = FALSE)
+
+
     ############################ OVDE SAM STAO ###############################################################
-  }
+  #}
   # Computing error ellipses
   Qxy.list <- Qxy(Qx.mat, n = lenght(used.points), fixd = fix.mat*1)
   ellipses <- lapply(Qxy.list, function(x) error.ellipse(x, prob = prob, sd.apriori = sd.apriori, teta.unit = teta.unit[[1]]))
@@ -392,26 +399,26 @@ adjust.snet <- function(adjust = TRUE, survey.net, sd.apriori = 1, prob = 0.95, 
     dplyr::mutate_if(is.numeric, round, disp.unit.lookup[units]*2)
   ellipse.net <- do.call(rbind, lapply(split(survey.net[[1]], survey.net[[1]]$Name), function(x) sf.ellipse(x, scale = ellipse.scale)))
   ellipse.net <- merge(ellipse.net, sigmas)
-  ellipse.net <- ellipse.net %>% sf::st_set_crs(st_crs(survey.net[[1]]))
+  ellipse.net <- sf::st_set_crs(ellipse.net, value = st_crs(survey.net[[2]]))
   design <- list(design.matrices = list(A = A.mat, W = W.mat, Qx = Qx.mat, Ql = Ql.mat, Qv = Qv.mat), ellipse.net = ellipse.net, net.points = survey.net[[1]], observations = observations)
+  design$net.points <- sf::st_set_crs(design$net.points, value = st_crs(survey.net[[2]]))
   if(all){
     return(design)
   }else{
     return(design[-1])
   }
+
 }
-
-
-
-
 
 
 import_surveynet2D <- function(points = points, observations = observations, dest_crs = NA, axes = c("Easting", "Northing")){
 
   # Create geometry columns for points
-  # if (is.na(dest_crs)){
-  #   dest_crs <- 3857
-  # }
+  if (is.na(dest_crs)){
+    dest_crs <- 3857
+  } else{
+    dest_crs <- dest_crs
+  }
 
   if(which(axes == "Easting") == 2){points <- points %>% dplyr::rename(x = y,  y = x)}
 
@@ -436,8 +443,10 @@ import_surveynet2D <- function(points = points, observations = observations, des
     sf::st_sfc() %>%
     sf::st_sf('ID' = seq.int(nrow(observations)), observations, 'geometry' = .)
 
+  observations <- observations %>% sf::st_set_crs(dest_crs)
+
   # Creating list
-  survey_net <- list(points, observations = observations)
+  survey_net <- list(points, observations)
   return(survey_net)
 }
 

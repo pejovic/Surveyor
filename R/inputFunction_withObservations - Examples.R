@@ -87,7 +87,38 @@ avala_1 <- surveynet.xlsx_1(points = avala_points, observations = avala_obs, des
 net_spatial_view_2DAdjustment_Import(points = avala_1[[1]], observations = avala[[2]])
 
 
+# :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+# UPDATED
+# :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
+# 1. AVALA
+avala_points <- readxl::read_xlsx(path = here::here("Data/Input/With_observations/Avala/Avala_observations.xlsx"), sheet = "Points")
+avala_obs <- readxl::read_xlsx(path = here::here("Data/Input/With_observations/Avala/Avala_observations.xlsx"), sheet = "Observations")
+
+net_2d_AVALA <- import_surveynet2D(points = avala_points, observations = avala_obs, dest_crs = 3857)
+net_spatial_view_2DAdjustment_Import(points = net_2d_AVALA[[1]], observations = net_2d_AVALA[[2]])
+
+
+# 2. BRANA
+brana_points <- readxl::read_xlsx(path = here::here("Data/Input/With_observations/Brana/Brana.xlsx"), sheet = "Points")
+brana_obs <- readxl::read_xlsx(path = here::here("Data/Input/With_observations/Brana/Brana.xlsx"), sheet = "Observations")
+
+net_2d_BRANA <- import_surveynet2D(points = brana_points, observations = brana_obs, dest_crs = 3857)
+net_spatial_view_2DAdjustment_Import(points = net_2d_BRANA[[1]], observations = net_2d_BRANA[[2]])
+
+brana.adjust <- adjust.snet(all = TRUE, survey.net = net_2d_BRANA, result.units = "mm")
+
+# if all = TRUE, design matrices are returned also
+brana.adjust$design.matrices
+brana.adjust$ellipse.net
+brana.adjust$net.points
+brana.adjust$observations
+
+brana.adjust$ellipse.net <- sf::st_set_crs(brana.adjust$ellipse.net, value = st_crs(net_2d_BRANA[[1]]))
+plot(brana.adjust[[1]]$geometry)
+adj_net_spatial_view(adj.ellipses = brana.adjust$ellipse.net, adj.observations = brana.adjust$observations)
+
+adj.net_spatial_view_web(ellipses = brana.adjust$ellipse.net, observations = brana.adjust$observations, points = brana.adjust$net.points, sp_bound = 0.5, rii_bound = 0.3)
 
 
 

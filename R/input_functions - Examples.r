@@ -209,3 +209,37 @@ observations <- surveynet.mapedit_observations(points = points)
 
 # Working with at Shiny app, beacuse of some additional parameteres and reactive expressions
 # me <- surveynet.mapedit(points = points, observations = observations, fix_x = list(), fix_y = list(), dest_crs = NA, points_object = list())
+
+
+# :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+# UPDATED
+# :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+# 1. TETO
+points_xlsx <- readxl::read_xlsx(path = here::here("Data/Input/Without_observations/xlsx/TETO_plan opazanja.xlsx"), sheet = "Points")
+observations_xlsx <- readxl::read_xlsx(path = here::here("Data/Input/Without_observations/xlsx/TETO_plan opazanja.xlsx"), sheet = "Observations")
+
+net_2d_TETO <- import_surveynet2D(points = points_xlsx, observations = observations_xlsx, dest_crs = 3909)
+
+net_spatial_view(points = net_2d_TETO[[1]], observations = net_2d_TETO[[2]])
+net_spatial_view_web(points = net_2d_TETO[[1]], observations = net_2d_TETO[[2]])
+
+# 2. VB
+points_xlsx_vb <- readxl::read_xlsx(path = here::here("Data/Input/Without_observations/xlsx/VB.xlsx"), sheet = "Points")
+observations_xlsx_vb <- readxl::read_xlsx(path = here::here("Data/Input/Without_observations/xlsx/VB.xlsx"), sheet = "Observations")
+
+net_2d_VB <- import_surveynet2D(points = points_xlsx_vb, observations = observations_xlsx_vb)
+
+net_spatial_view(points = net_2d_VB[[1]], observations = net_2d_VB[[2]])
+net_spatial_view_web(points = net_2d_VB[[1]], observations = net_2d_VB[[2]])
+
+# 3. IB
+points_xlsx_ib <- readxl::read_xlsx(path = here::here("Data/Input/Without_observations/xlsx/IB.xlsx"), sheet = "Points")
+observations_xlsx_ib <- readxl::read_xlsx(path = here::here("Data/Input/Without_observations/xlsx/IB.xlsx"), sheet = "Observations")
+
+net_2d_IB <- import_surveynet2D(points = points_xlsx_ib, observations = observations_xlsx_ib)
+
+net_spatial_view(points = net_2d_IB[[1]], observations = net_2d_IB[[2]])
+net_spatial_view_web(points = net_2d_IB[[1]], observations = net_2d_IB[[2]])
+
+
