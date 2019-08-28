@@ -62,7 +62,10 @@ shinyServer(function(input, output){
   values_o <- reactiveValues()
 
   output$p_des_xlsx <- renderRHandsontable({
-    rhandsontable(as.data.frame(xlsx_list()[[1]] %>% st_drop_geometry()), width = 650, height = 650)
+    rhandsontable(as.data.frame(xlsx_list()[[1]] %>%
+                                  st_drop_geometry() %>%
+                                  mutate(id = as.numeric(round(id, 1)))),
+                  width = 650, height = 650)
   })
 
   output$o_des_xlsx <- renderRHandsontable({
@@ -235,7 +238,8 @@ shinyServer(function(input, output){
     rhandsontable({
       surveynet.wO()[[1]] %>%
       st_drop_geometry() %>%
-      as.data.frame()
+      as.data.frame() %>%
+      mutate(id = round(id, 0))
       },
       width = 650,
       height = 650)
@@ -276,6 +280,16 @@ shinyServer(function(input, output){
   }, width = 600, height = 600
   )
 
+  output$web_map_xlsx_2d_adj <- renderLeaflet({
+    out_points_xlsx_wO <- surveynet.wO()[[1]]
+    out_observations_xlsx_wO <- surveynet.wO()[[2]]
+    edited_observations_xlsx_wO <- edited_wO()$measurments
+    edited_observations_xlsx_wO$geometry <- out_observations_xlsx_wO$geometry[match(edited_observations_xlsx_wO$ID, out_observations_xlsx_wO$ID )]
+    edited_observations_xlsx_wO <- st_as_sf(edited_observations_xlsx_wO)
+    web_map_xlsx <- net_spatial_view_web(points =  out_points_xlsx_wO, observations = edited_observations_xlsx_wO)
+    web_map_xlsx@map
+  })
+
   #######################
   # 2D NET DESIGN RESULTS
   #######################
@@ -314,12 +328,12 @@ shinyServer(function(input, output){
                     st_drop_geometry() %>%
                     as.data.frame() %>%
                     mutate(
-                      A = round(A, 4),
-                      B = round(B, 4),
-                      teta = round(teta, 4),
-                      sx = round(sx, 4),
-                      sy = round(sy, 4),
-                      sp = round(sp, 4)
+                      A = round(A, 1),
+                      B = round(B, 1),
+                      teta = round(teta, 1),
+                      sx = round(sx, 1),
+                      sy = round(sy, 1),
+                      sp = round(sp, 1)
                     ),escape=F,
                   extensions = list('Buttons', 'Scroller'),
                   options = list(dom = 'Bfrtip', buttons = I('colvis'),
@@ -374,12 +388,12 @@ shinyServer(function(input, output){
         st_drop_geometry() %>%
         as.data.frame() %>%
         mutate(
-          A = round(A, 4),
-          B = round(B, 4),
-          teta = round(teta, 4),
-          sx = round(sx, 4),
-          sy = round(sy, 4),
-          sp = round(sp, 4)
+          A = round(A, 1),
+          B = round(B, 1),
+          teta = round(teta, 1),
+          sx = round(sx, 1),
+          sy = round(sy, 1),
+          sp = round(sp, 1)
         ) %>%
           dplyr:: select(Name, FIX_X, FIX_Y, Point_object, sx, sy, sp),
         escape=F,
@@ -413,9 +427,9 @@ shinyServer(function(input, output){
         st_drop_geometry() %>%
         as.data.frame() %>%
         mutate(
-          Ql = round(Ql, 4),
-          Qv = round(Qv, 4),
-          rii = round(rii, 4)
+          Ql = round(Ql, 2),
+          Qv = round(Qv, 2),
+          rii = round(rii, 2)
         ) %>%
         dplyr::select(from, to, type, Ql, Qv, rii),
       escape=F,
@@ -460,12 +474,12 @@ shinyServer(function(input, output){
         st_drop_geometry() %>%
         as.data.frame() %>%
         mutate(
-          A = round(A, 4),
-          B = round(B, 4),
-          teta = round(teta, 4),
-          sx = round(sx, 4),
-          sy = round(sy, 4),
-          sp = round(sp, 4)
+          A = round(A, 1),
+          B = round(B, 1),
+          teta = round(teta, 1),
+          sx = round(sx, 1),
+          sy = round(sy, 1),
+          sp = round(sp, 1)
         ), escape = FALSE,
         extensions = list('Buttons', 'Scroller'),
         options = list(dom = 'Bfrtip', buttons = I('colvis'),
@@ -520,12 +534,12 @@ shinyServer(function(input, output){
         st_drop_geometry() %>%
         as.data.frame() %>%
         mutate(
-          A = round(A, 4),
-          B = round(B, 4),
-          teta = round(teta, 4),
-          sx = round(sx, 4),
-          sy = round(sy, 4),
-          sp = round(sp, 4)
+          A = round(A, 1),
+          B = round(B, 1),
+          teta = round(teta, 1),
+          sx = round(sx, 1),
+          sy = round(sy, 1),
+          sp = round(sp, 1)
         ) %>%
           dplyr:: select(Name, FIX_X, FIX_Y, Point_object, sx, sy, sp),
         escape = FALSE,
@@ -558,9 +572,9 @@ shinyServer(function(input, output){
         st_drop_geometry() %>%
         as.data.frame() %>%
         mutate(
-          Ql = round(Ql, 4),
-          Qv = round(Qv, 4),
-          rii = round(rii, 4)
+          Ql = round(Ql, 2),
+          Qv = round(Qv, 2),
+          rii = round(rii, 2)
         ) %>%
           dplyr::select(from, to, type, Ql, Qv, rii),
         escape = FALSE,
@@ -639,12 +653,12 @@ shinyServer(function(input, output){
                     st_drop_geometry() %>%
                     as.data.frame() %>%
                     mutate(
-                      A = round(A, 4),
-                      B = round(B, 4),
-                      teta = round(teta, 4),
-                      sx = round(sx, 4),
-                      sy = round(sy, 4),
-                      sp = round(sp, 4)
+                      A = round(A, 1),
+                      B = round(B, 1),
+                      teta = round(teta, 1),
+                      sx = round(sx, 1),
+                      sy = round(sy, 1),
+                      sp = round(sp, 1)
                     ),escape=F,
                   extensions = list('Buttons', 'Scroller'),
                   options = list(dom = 'Bfrtip', buttons = I('colvis'),
@@ -699,12 +713,12 @@ shinyServer(function(input, output){
         st_drop_geometry() %>%
         as.data.frame() %>%
         mutate(
-          A = round(A, 4),
-          B = round(B, 4),
-          teta = round(teta, 4),
-          sx = round(sx, 4),
-          sy = round(sy, 4),
-          sp = round(sp, 4),
+          A = round(A, 1),
+          B = round(B, 1),
+          teta = round(teta, 1),
+          sx = round(sx, 1),
+          sy = round(sy, 1),
+          sp = round(sp, 1),
           `dx [mm]` = round(`dx [mm]`, 2),
           `dy [mm]` = round(`dy [mm]`, 2),
           X = round(X, 2),
@@ -742,9 +756,9 @@ shinyServer(function(input, output){
         st_drop_geometry() %>%
         as.data.frame() %>%
         mutate(
-          Ql = round(Ql.mat, 4),
-          Qv = round(Qv.mat, 4),
-          rii = round(rii, 4)
+          Ql = round(Ql.mat, 2),
+          Qv = round(Qv.mat, 2),
+          rii = round(rii, 2)
         ) %>%
         dplyr::select(from, to, type, Ql, Qv, rii, used),
       escape=F,

@@ -466,8 +466,8 @@ shinyUI(
                                                                                 ),
                                                                                 tabPanel("MAP",
                                                                                          tabsetPanel(
-                                                                                           tabPanel("WEB MAP"#,
-                                                                                                    #leafletOutput("web_map_xlsx_2d_adj", height = 550) %>% withSpinner(color="#0dc5c1")
+                                                                                           tabPanel("WEB MAP",
+                                                                                                    leafletOutput("web_map_xlsx_2d_adj", height = 550) %>% withSpinner(color="#0dc5c1")
                                                                                            ),
                                                                                            tabPanel("PLOT",
                                                                                                     plotOutput("netSpatialView_xlsx_2d_adj")%>% withSpinner(color="#0dc5c1")
