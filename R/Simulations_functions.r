@@ -17,8 +17,8 @@ sim_Hz <- function(st_coords, target_coords, Hz_orient = NULL, Hz0 = 0, sd_cent 
   if(!any(type %in% list("dms", "dec", "rad"))){ stop(paste(type, "method not available.")) }
 
 
-  d <- dist(pt1_coords = st_coords, pt2_coords = target_coords, axes = axes)
-  ni1 <- ni(pt1_coords = st_coords, pt2_coords = target_coords, type = "dec", axes = axes)
+  d <- dist(pt1_coords = st_coords, pt2_coords = target_coords)
+  ni1 <- ni(pt1_coords = st_coords, pt2_coords = target_coords, type = "dec")
   z <- 360-Hz0
   ro <- 180/pi*3600
   twoc = 2*c
@@ -100,7 +100,7 @@ sim_dist <- function(st_coords, target_coords, sd_cent_station = NULL, sd_cent_t
   if(length(axes) < 2) stop("axes must be defined with Easting and Northing")
   if(!any(axes %in% list("Northing", "Easting"))){ stop(paste(type, "axes must be Northing and Easting.")) }
 
-  distance = dist(pt1_coords = st_coords, pt2_coords = target_coords, axes = axes)
+  distance = dist(pt1_coords = st_coords, pt2_coords = target_coords)
 
   if(!is.null(sd_cent_station)){
     set.seed(seed)
@@ -201,7 +201,7 @@ sim_dist_all <- function(obs_d, points, sd_cent_station = c(1, 1, 1, 1), sd_cent
   if(length(sd_cent_target) != length(unique(obs_d$station))) stop("sd_cent_target must be of length either 1 or the number of stations")
 
   if(length(sd_dist) == 1) sd_dist <- rep(sd_dist, length(unique(obs_d$station)))
-  if(length(sd_dist) != length(unique(obs_d$station))) stop("sd_dist must be of length either 1 or the number of stations")
+  #if(length(sd_dist) != length(unique(obs_d$station))) stop("sd_dist must be of length either 1 or the number of stations")
 
   if(!is.null(seed)){
     if(length(seed) == 1) seed <- rep(seed, length(unique(obs_d$station)))
@@ -227,11 +227,11 @@ sim_dist_all <- function(obs_d, points, sd_cent_station = c(1, 1, 1, 1), sd_cent
   meas.d.list <- as.list(rep(NA, length(obs.d.list)))
   if(!is.null(seed)){
     for(i in 1:length(obs.d.list)){
-      meas.d.list[[i]] <- data.frame(dist = (apply(obs.d.list[[i]], 1, function(x) sim_dist(st_coords = as.numeric(x[c(3:4)]), target_coords = as.numeric(x[c(5:6)]), sd_cent = as.numeric(x[7]), sd_cent_target = as.numeric(x[8]), sd_dist = as.numeric(x[9]), seed = as.numeric(x[10]), axes = c("Northing", "Easting")))))
+      meas.d.list[[i]] <- data.frame(dist = (apply(obs.d.list[[i]], 1, function(x) sim_dist(st_coords = as.numeric(x[c(3:4)]), target_coords = as.numeric(x[c(5:6)]), sd_cent = as.numeric(x[7]), sd_cent_target = as.numeric(x[8]), sd_dist = as.numeric(x[9]), seed = as.numeric(x[10])))))
     }
   }else{
     for(i in 1:length(obs.d.list)){
-      meas.d.list[[i]] <- data.frame(dist = (apply(obs.d.list[[i]], 1, function(x) sim_dist(st_coords = as.numeric(x[c(3:4)]), target_coords = as.numeric(x[c(5:6)]), sd_cent = as.numeric(x[7]), sd_cent_target = as.numeric(x[8]), sd_dist = as.numeric(x[9]), axes = c("Northing", "Easting")))))
+      meas.d.list[[i]] <- data.frame(dist = (apply(obs.d.list[[i]], 1, function(x) sim_dist(st_coords = as.numeric(x[c(3:4)]), target_coords = as.numeric(x[c(5:6)]), sd_cent = as.numeric(x[7]), sd_cent_target = as.numeric(x[8]), sd_dist = as.numeric(x[9])))))
     }
   }
 

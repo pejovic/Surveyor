@@ -40,6 +40,8 @@ obs_plan <- data.frame(station = rep(c("A", "A", "A", "B", "B", "B", "C", "C", "
                        type = c(rep("p", 12), rep("d", 12)), stringsAsFactors = FALSE)
 obs_plan <- obs_plan[-which(obs_plan$obs.point %in% c("A", "B", "C", "D") & obs_plan$type == "d"), ]
 
+points = A_points; obs.plan = A_sim_obs
+Hz0 = NA; red = TRUE; sd_Hz = 5; sd_dist = 3; sd_cent_station = 1; sd_cent_target = 1; seed = NULL
 
 sim.obs <- function(points, obs.plan, Hz0 = NA, red = TRUE, sd_Hz = 10, sd_dist = 3, sd_cent_station = 2, sd_cent_target = 3, seed = NULL){
   obs.dist <- filter(obs.plan, type == "d") %>% select(1,2) # Selekcija merenih duzina
@@ -135,7 +137,7 @@ brana_obs <- readxl::read_xlsx(path = here::here("Data/Input/With_observations/B
 brana <- import_surveynet2D(points = brana_points, observations = brana_obs)
 
 
-brana.adjust <- adjust.snet(survey.net = brana, result.units = "cm")
+brana.adjust <- adjust.snet(survey.net = brana, result.units = "mm")
 
 brana.adjust$net.points
 
@@ -145,12 +147,53 @@ plot(brana[[1]]$geometry)
 # TETO
 
 
-TETO_points <- readxl::read_xlsx(path = ("C:/R_projects/Surveyer/Data/Input/Without_observations/xlsx/TETO_plan opazanja.xlsx"), sheet = "Points", col_types = c("numeric", "text", "numeric", "numeric", "logical", "logical", "logical"))
-TETO_obs <- readxl::read_xlsx(path = ("C:/R_projects/Surveyer/Data/Input/Without_observations/xlsx/TETO_plan opazanja.xlsx"), sheet = "Observations", col_types = c("text", "text", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric","numeric","numeric", "numeric", "numeric"))
+TETO_points <- readxl::read_xlsx(path = ("D:/R_projects/Surveyer/Data/Input/Without_observations/xlsx/TETO_plan opazanja.xlsx"), sheet = "Points", col_types = c("numeric", "text", "numeric", "numeric", "logical", "logical", "logical"))
+TETO_obs <- readxl::read_xlsx(path = ("D:/R_projects/Surveyer/Data/Input/Without_observations/xlsx/TETO_plan opazanja.xlsx"), sheet = "Observations", col_types = c("text", "text", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric","numeric","numeric", "numeric", "numeric"))
 TETO.survey.net <- import_surveynet2D(points = TETO_points, observations = TETO_obs, axes = c("Easting", "Northing"))
+
+TETO_sim_obs <- rbind(dplyr::filter(TETO.survey.net$observations, direction), dplyr::filter(TETO.survey.net$observations, direction)) %>%
+  dplyr::select(from = station, to = obs.point) %>% sf::st_drop_geometry() %>%
+  dplyr::mutate(type = c(rep("p", 50), rep("d", 50)))
+
 
 
 TETO.adjust <- adjust.snet(survey.net = TETO.survey.net, adjust = FALSE, result.units = "mm")
 
 writexl::write_xlsx(TETO.adjust$observations %>% select(-geometry), "TETO_obs.xlsx")
 writexl::write_xlsx(TETO.adjust$net.points %>% select(-geometry), "TETO_points.xlsx")
+
+#TETO Simulation
+
+sim.survey.net.raw <- sim.obs(points = TETO_points, obs.plan = TETO_sim_obs)
+
+
+# Zadatak
+
+
+A_points <- readxl::read_xlsx(path = ("B:/_Bechelor/_Ispiti/Projektovanje/30.8.2019/A_plan.xlsx"), sheet = "Points", col_types = c("numeric", "text", "numeric", "numeric", "logical", "logical", "logical"))
+A_obs <- readxl::read_xlsx(path = ("B:/_Bechelor/_Ispiti/Projektovanje/30.8.2019/A_plan.xlsx"), sheet = "Observations", col_types = c("text", "text", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric","numeric","numeric", "numeric", "numeric"))
+A.survey.net <- import_surveynet2D(points = A_points, observations = A_obs)
+
+B_points <- readxl::read_xlsx(path = ("B:/_Bechelor/_Ispiti/Projektovanje/30.8.2019/B_plan.xlsx"), sheet = "Points", col_types = c("numeric", "text", "numeric", "numeric", "logical", "logical", "logical"))
+B_obs <- readxl::read_xlsx(path = ("B:/_Bechelor/_Ispiti/Projektovanje/30.8.2019/B_plan.xlsx"), sheet = "Observations", col_types = c("text", "text", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric","numeric","numeric", "numeric", "numeric"))
+B.survey.net <- import_surveynet2D(points = B_points, observations = B_obs)
+
+
+
+
+A.design <- design.snet(survey.net = A.survey.net, sd.apriori = 1, prob = NA, result.units = "mm", ellipse.scale = 1, teta.unit = list("deg", "rad"), all = TRUE)
+B.design <- design.snet(survey.net = B.survey.net, sd.apriori = 1, prob = NA, result.units = "mm", ellipse.scale = 1, teta.unit = list("deg", "rad"), all = TRUE)
+
+#A.design$design.matrices
+A.design$net.points
+B.design$net.points
+
+
+# Simulation
+
+A_sim_obs <- rbind(dplyr::filter(A.survey.net[[2]], direction), dplyr::filter(A.survey.net[[2]], distance)) %>%
+  dplyr::select(station = from, obs.point = to) %>% sf::st_drop_geometry() %>%
+  dplyr::mutate(type = c(rep("p", dim(dplyr::filter(A.survey.net[[2]], direction))[1]), rep("d", dim(dplyr::filter(A.survey.net[[2]], distance))[1])))
+
+
+sim.survey.net.raw <- sim.obs(points = A_points, obs.plan = A_sim_obs)
