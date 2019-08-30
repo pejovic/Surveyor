@@ -121,30 +121,45 @@ fix.params <- function(net.points){
   as.logical(c(apply(cbind(net.points$FIX_X, net.points$FIX_Y), 1, as.numeric)))
 }
 
-
+survey.net <- Gorica.survey.net
 Amat <- function(survey.net, units){
 
-  A_dir <- survey.net[[2]] %>% dplyr::filter(direction) %>% st_coordinates() %>% as.data.frame() %>% mutate_at(vars(L1), as.factor) %>%
-    split(., .$L1) %>%
-    lapply(., function(x) coef_p(pt1 = x[1, 1:2], pt2 = x[2, 1:2], pts = st_coordinates(survey.net[[1]][, 1:2]), units = units)) %>%
-    do.call(rbind, .)
+  if(!all(is.na(survey.net[[2]]$sd_Hz))){
+    A_dir <- survey.net[[2]] %>% dplyr::filter(direction) %>% st_coordinates() %>% as.data.frame() %>% mutate_at(vars(L1), as.factor) %>%
+      split(., .$L1) %>%
+      lapply(., function(x) coef_p(pt1 = x[1, 1:2], pt2 = x[2, 1:2], pts = st_coordinates(survey.net[[1]][, 1:2]), units = units)) %>%
+      do.call(rbind, .)
+  }else{
+    A_dir <- NULL
+  }
 
-  A_dist <- survey.net[[2]] %>% dplyr::filter(distance) %>% st_coordinates() %>% as.data.frame() %>% mutate_at(vars(L1), as.factor) %>%
-    split(., .$L1) %>%
-    lapply(., function(x) coef_d(pt1 = x[1, 1:2], pt2 = x[2, 1:2], pts = st_coordinates(survey.net[[1]][, 1:2]), units = units)) %>%
-    do.call(rbind, .)
+  if(!all(is.na(survey.net[[2]]$sd_dist))){
+    A_dist <- survey.net[[2]] %>% dplyr::filter(distance) %>% st_coordinates() %>% as.data.frame() %>% mutate_at(vars(L1), as.factor) %>%
+      split(., .$L1) %>%
+      lapply(., function(x) coef_d(pt1 = x[1, 1:2], pt2 = x[2, 1:2], pts = st_coordinates(survey.net[[1]][, 1:2]), units = units)) %>%
+      do.call(rbind, .)
+  }else{
+    A_dist <- NULL
+  }
 
   station.names <- survey.net[[2]] %>% dplyr::filter(direction) %>% dplyr::select(from) %>% st_drop_geometry() %>% unique() %>% unlist(use.names = FALSE)
 
-  Z_mat <- survey.net[[2]] %>% dplyr::filter(direction) %>%
-    tidyr::spread(key = from, value = direction, fill = FALSE) %>%
-    dplyr::select(station.names) %>%
-    st_drop_geometry() %>%
-    as.matrix()*1
+  if(!all(is.na(survey.net[[2]]$sd_Hz))){
+    Z_mat <- survey.net[[2]] %>% dplyr::filter(direction) %>%
+      tidyr::spread(key = from, value = direction, fill = FALSE) %>%
+      dplyr::select(station.names) %>%
+      st_drop_geometry() %>%
+      as.matrix()*1
+  }else{
+    Z_mat <- NULL
+  }
 
   fix <- fix.params(net.points = survey.net[[1]])
-
-  rest_mat <- matrix(0, nrow = dim(A_dist)[1], ncol = dim(Z_mat)[2])
+  if(!is.null(A_dir) & !is.null(A_dist)){
+    rest_mat <- matrix(0, nrow = dim(A_dist)[1], ncol = dim(Z_mat)[2])
+  }else{
+    rest_mat <- NULL
+  }
 
   A <- cbind(rbind(A_dir, A_dist)[, !fix], rbind(Z_mat, rest_mat))
 
@@ -295,7 +310,7 @@ design.snet <- function(survey.net, sd.apriori = 1, prob = NA, result.units = li
   }
 }
 
- #adjust = TRUE; survey.net = A.survey.net; sd.apriori = 3; prob = 0.95; result.units = list("mm", "cm", "m"); ellipse.scale = 1; teta.unit = list("deg", "rad"); all = FALSE; units.dir = "sec"; units.dist = "mm"
+ adjust = TRUE; survey.net = Gorica.survey.net; sd.apriori = 3; prob = 0.95; result.units = list("mm", "cm", "m"); ellipse.scale = 1; teta.unit = list("deg", "rad"); all = FALSE; units.dir = "sec"; units.dist = "mm"
 adjust.snet <- function(adjust = TRUE, survey.net, sd.apriori = 1, prob = 0.95, result.units = list("mm", "cm", "m"), ellipse.scale = 1, teta.unit = list("deg", "rad"), units.dir = "sec", units.dist = "mm", use.sd.estimated = TRUE, all = FALSE){
   # TODO: Set warning if there are different or not used points in two elements of survey.net list.
   # TODO: Check if any point has no sufficient measurements to be adjusted.
