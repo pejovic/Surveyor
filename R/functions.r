@@ -295,7 +295,7 @@ design.snet <- function(survey.net, sd.apriori = 1, prob = NA, result.units = li
   }
 }
 
-# adjust = TRUE; survey.net = brana; sd.apriori = 3; prob = 0.95; result.units = list("mm", "cm", "m"); ellipse.scale = 1; teta.unit = list("deg", "rad"); all = FALSE; units.dir = "sec"; units.dist = "mm"
+ #adjust = TRUE; survey.net = A.survey.net; sd.apriori = 3; prob = 0.95; result.units = list("mm", "cm", "m"); ellipse.scale = 1; teta.unit = list("deg", "rad"); all = FALSE; units.dir = "sec"; units.dist = "mm"
 adjust.snet <- function(adjust = TRUE, survey.net, sd.apriori = 1, prob = 0.95, result.units = list("mm", "cm", "m"), ellipse.scale = 1, teta.unit = list("deg", "rad"), units.dir = "sec", units.dist = "mm", use.sd.estimated = TRUE, all = FALSE){
   # TODO: Set warning if there are different or not used points in two elements of survey.net list.
   # TODO: Check if any point has no sufficient measurements to be adjusted.
@@ -363,10 +363,10 @@ adjust.snet <- function(adjust = TRUE, survey.net, sd.apriori = 1, prob = 0.95, 
     }
 
     if(use.sd.estimated){sd.apriori <- sd.estimated}
-    coords.inc <- as.data.frame(matrix(x.mat[1:(2*length(used.points)),], length(used.points), 2, byrow = TRUE)) %>%
+    coords.inc <- as.data.frame(matrix(x.mat[1:sum(fix.mat),], sum(fix.mat), 2, byrow = TRUE)) %>%
       dplyr::mutate_if(is.numeric, round, disp.unit.lookup[units])
     names(coords.inc) <- c(paste("dx", paste("[",units,"]", sep = ""), sep = " "), paste("dy", paste("[",units,"]", sep = ""), sep = " "))
-    coords.estimation <- as.vector(t(st_coordinates(survey.net[[1]]))) + x.mat[1:(2*length(used.points)),]/res.unit.lookup[units]
+    coords.estimation <- as.vector(t(st_coordinates(survey.net[[1]]))) + x.mat[1:sum(fix.mat),]/res.unit.lookup[units]
     coords.estimation <- as.data.frame(matrix(coords.estimation, ncol = 2, byrow = TRUE)) %>%
       cbind(Name = used.points, coords.inc, .) %>%
       dplyr::rename(X = V1, Y = V2)
@@ -453,6 +453,7 @@ import_surveynet2D <- function(points = points, observations = observations, des
 #st.survey.net <- Makis.survey.net[[2]] %>% dplyr::filter(from == "OM1")
 #st.survey.net <- brana[[2]] %>% dplyr::filter(from == "T1")
 #st.survey.net <- avala[[2]] %>% dplyr::filter(from == "S2")
+# st.survey.net <- A.survey.net[[2]] %>% dplyr::filter(from == "C")
 
 fdir_st <- function(st.survey.net, units.dir = "sec"){
   units.table <- c("sec" = 3600, "min" = 60, "deg" = 1)
@@ -461,12 +462,13 @@ fdir_st <- function(st.survey.net, units.dir = "sec"){
     do.call(rbind,.) %>%
     dplyr::mutate(z = Hz-ni) %>%
     dplyr::arrange(ID)
-  #st.survey.net$z <- ifelse(st.survey.net$z < 0 & abs(st.survey.net$z) > 1, st.survey.net$z + 360, st.survey.net$z)
   st.survey.net$z <- ifelse(st.survey.net$z < 1, st.survey.net$z + 360, st.survey.net$z)
   z0_mean <- mean(st.survey.net$z)
   st.survey.net$Hz0 <- z0_mean + st.survey.net$ni
+  st.survey.net$Hz0 <- ifelse(st.survey.net$Hz0 > 360 | st.survey.net$Hz0 > 359.9, st.survey.net$Hz0 - 360, st.survey.net$Hz0)
   st.survey.net$Hz <- ifelse(st.survey.net$Hz < 1, st.survey.net$Hz + 360, st.survey.net$Hz)
-  st.survey.net$Hz0 <- ifelse(st.survey.net$Hz0 > 360, st.survey.net$Hz0 - 360, st.survey.net$Hz0)
+  st.survey.net$Hz <- ifelse(st.survey.net$Hz >= 360, st.survey.net$Hz - 360, st.survey.net$Hz)
+
   f <- (st.survey.net$Hz0 - st.survey.net$Hz)*units.table[units.dir]
   return(f)
 }
