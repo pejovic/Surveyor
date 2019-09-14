@@ -203,8 +203,8 @@ sim.A.net <- import_surveynet2D(points = sim.A.net$Points, observations = sim.A.
 
 
 #Izravnanje
-A_points <- readxl::read_xlsx(path = ("B:/_Bechelor/_Ispiti/Inzenjerska2/Redovni/30.8.3019/simAobs.xlsx"), sheet = "Points", col_types = c("numeric", "text", "numeric", "numeric", "logical", "logical", "logical"))
-A_obs <- readxl::read_xlsx(path = ("B:/_Bechelor/_Ispiti/Inzenjerska2/Redovni/30.8.3019/simAobs.xlsx"), sheet = "Observations", col_types = c("text", "text", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric","numeric","numeric", "numeric", "numeric"))
+A_points <- readxl::read_xlsx(path = ("E:/_Bechelor/_Ispiti/Inzenjerska2/Redovni/30.8.3019/simAobs.xlsx"), sheet = "Points", col_types = c("numeric", "text", "numeric", "numeric", "logical", "logical", "logical"))
+A_obs <- readxl::read_xlsx(path = ("E:/_Bechelor/_Ispiti/Inzenjerska2/Redovni/30.8.3019/simAobs.xlsx"), sheet = "Observations", col_types = c("text", "text", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric","numeric","numeric", "numeric", "numeric"))
 A.survey.net <- import_surveynet2D(points = A_points, observations = A_obs)
 
 A.net.adjust <- adjust.snet(survey.net = A.survey.net, result.units = "mm", sd.apriori = 3)
@@ -212,7 +212,14 @@ A.net.adjust <- adjust.snet(survey.net = A.survey.net, result.units = "mm", sd.a
 
 writexl::write_xlsx(sim.A.net, path = "simAobs.xlsx")
 
+# GORICA
 
+# Makis
 
+Gorica_points <- readxl::read_xlsx(path = ("./Data/Input/With_observations/Brana_Gorica/Brana_Gorica_nulta_serija.xlsx"), sheet = "Points")#, col_types = c("numeric", "text", "numeric", "numeric", "logical", "logical", "logical"))
+Gorica_obs <- readxl::read_xlsx(path = ("./Data/Input/With_observations/Brana_Gorica/Brana_Gorica_nulta_serija.xlsx"), sheet = "Observations")#, col_types = c("text", "text", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric","numeric","numeric", "numeric", "numeric"))
+Gorica.survey.net <- import_surveynet2D(points = Gorica_points, observations = Gorica_obs)
+
+Gorica.net.adjust <- adjust.snet(survey.net = Gorica.survey.net, result.units = "mm", sd.apriori = 3)
 
 
