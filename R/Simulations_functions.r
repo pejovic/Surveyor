@@ -240,3 +240,17 @@ sim_dist_all <- function(obs_d, points, sd_cent_station = c(1, 1, 1, 1), sd_cent
   return(d_meas)
 }
 
+
+sim.obs <- function(points, obs.plan, Hz0 = NA, red = TRUE, sd_Hz = 10, sd_dist = 3, sd_cent_station = 2, sd_cent_target = 3, seed = NULL){
+  obs.dist <- filter(obs.plan, type == "d") %>% select(1,2) # Selekcija merenih duzina
+  sim.dist <- sim_dist_all(obs_d = obs.dist, points = points, sd_cent_station = sd_cent_station, sd_cent_target = sd_cent_target, seed = seed)
+
+  obs.Hz <- filter(obs.plan, type == "p") %>% select(1,2) # Selekcija merenih pravaca
+  sim.Hz <- sim_Hz_all(obs_Hz = obs.Hz, points = points, Hz0 = Hz0, red = red, sd_cent_station = sd_cent_station, sd_cent_target = sd_cent_target, sd_Hz = sd_Hz, seed = seed)
+
+  obs <- dplyr::full_join(sim.Hz, sim.dist) %>%
+    mutate(sd_Hz = sd_Hz, sd_dist = sd_dist, SD = NA, VzD = NA, VzM = NA, VzS = NA, sd_Vz = NA) %>%
+    dplyr::select(from = station, to = obs.point, HzD = deg, HzM = minut, HzS = sec, HD = dist, SD, VzD, VzM, VzS, sd_Hz, sd_dist, sd_Vz)
+  obs.list <- list(Points = points, Observations = obs)
+  return(obs.list)
+}

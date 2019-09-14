@@ -121,7 +121,7 @@ fix.params <- function(net.points){
   as.logical(c(apply(cbind(net.points$FIX_X, net.points$FIX_Y), 1, as.numeric)))
 }
 
-# survey.net <- Gorica.survey.net
+# survey.net <- B.survey.net
 Amat <- function(survey.net, units){
 
   if(!all(is.na(survey.net[[2]]$sd_Hz))){
@@ -310,7 +310,7 @@ design.snet <- function(survey.net, sd.apriori = 1, prob = NA, result.units = li
   }
 }
 
-# adjust = TRUE; survey.net = Gorica.survey.net; sd.apriori = 3; prob = 0.95; result.units = list("mm", "cm", "m"); ellipse.scale = 1; teta.unit = list("deg", "rad"); all = FALSE; units.dir = "sec"; units.dist = "mm"
+adjust = TRUE; survey.net = B.survey.net; sd.apriori = 3; prob = 0.95; result.units = list("mm", "cm", "m"); ellipse.scale = 1; teta.unit = list("deg", "rad"); all = FALSE; units.dir = "sec"; units.dist = "mm"
 adjust.snet <- function(adjust = TRUE, survey.net, sd.apriori = 1, prob = 0.95, result.units = list("mm", "cm", "m"), ellipse.scale = 1, teta.unit = list("deg", "rad"), units.dir = "sec", units.dist = "mm", use.sd.estimated = TRUE, all = FALSE){
   # TODO: Set warning if there are different or not used points in two elements of survey.net list.
   # TODO: Check if any point has no sufficient measurements to be adjusted.
@@ -425,7 +425,7 @@ adjust.snet <- function(adjust = TRUE, survey.net, sd.apriori = 1, prob = 0.95, 
 
 }
 
-
+# TODO Treba resiti da u points idu samo tacke koje ucestvuju u merenjima.
 import_surveynet2D <- function(points = points, observations = observations, dest_crs = NA, axes = c("Easting", "Northing")){
 
   # Create geometry columns for points
@@ -449,8 +449,12 @@ import_surveynet2D <- function(points = points, observations = observations, des
                                                  distance = (!is.na(.$HD) | !is.na(.$SD)),
                                                  direction = !is.na(Hz))
 
-  observations$distance[!is.na(observations$sd_dist)] <- TRUE
-  observations$direction[!is.na(observations$sd_Hz)] <- TRUE
+  if(dplyr::select(observations, HzD, HzM, HzS) %>% is.na() %>% all()){
+    observations$direction[!is.na(observations$sd_Hz)] <- TRUE
+  }
+  if(dplyr::select(observations, HD, SD) %>% is.na() %>% all()){
+    observations$distance[!is.na(observations$sd_dist)] <- TRUE
+  }
 
   observations <- as.data.table(observations) %>% dplyr::mutate(id = seq.int(nrow(.))) %>% split(., f = as.factor(.$id)) %>%
     lapply(., function(row) {lmat <- matrix(unlist(row[14:17]), ncol = 2, byrow = TRUE)
