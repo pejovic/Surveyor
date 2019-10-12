@@ -310,7 +310,7 @@ design.snet <- function(survey.net, sd.apriori = 1, prob = NA, result.units = li
   }
 }
 
-adjust = TRUE; survey.net = B.survey.net; sd.apriori = 3; prob = 0.95; result.units = list("mm", "cm", "m"); ellipse.scale = 1; teta.unit = list("deg", "rad"); all = FALSE; units.dir = "sec"; units.dist = "mm"
+# adjust = TRUE; survey.net = B.survey.net; sd.apriori = 3; prob = 0.95; result.units = list("mm", "cm", "m"); ellipse.scale = 1; teta.unit = list("deg", "rad"); all = FALSE; units.dir = "sec"; units.dist = "mm"
 adjust.snet <- function(adjust = TRUE, survey.net, sd.apriori = 1, prob = 0.95, result.units = list("mm", "cm", "m"), ellipse.scale = 1, teta.unit = list("deg", "rad"), units.dir = "sec", units.dist = "mm", use.sd.estimated = TRUE, all = FALSE){
   # TODO: Set warning if there are different or not used points in two elements of survey.net list.
   # TODO: Check if any point has no sufficient measurements to be adjusted.
@@ -365,23 +365,27 @@ adjust.snet <- function(adjust = TRUE, survey.net, sd.apriori = 1, prob = 0.95, 
     }else{
       F.estimated <- sd.apriori^2/sd.estimated^2
       F.quantile <- qf(p = prob, df1 = 10^1000, df2 = df)
-
     }
-
-      }
-
+  }
     if(F.estimated > F.quantile){
       F.test.conclusion <- paste("Model nije adekvatan")
       # Data snooping and others have to be put in the list
     }else{
       F.test.conclusion <- paste("Model je adekvatan")
     }
+  if(use.sd.estimated){sd.apriori <- sd.estimated}
+  coords.inc <- x.mat %>% as.data.frame() %>% tibble::rownames_to_column(var = "parameter")
+  coords.inc <- coords.inc[1:sum(fix.mat),] %>% dplyr::mutate_if(is.numeric, round, disp.unit.lookup[units]) %>%
+                dplyr::rename(coords.inc = V1)
+  coords.estimation <- (as.vector(t(st_coordinates(survey.net[[1]]))[t(fix.mat)]) + x.mat[1:sum(fix.mat),]/res.unit.lookup[units]) %>%
+                       as.data.frame() %>% tibble::rownames_to_column(var = "parameter") %>% dplyr::rename(coords = ".")
+  point.results <- dplyr::inner_join(coords.inc, coords.estimation) %>%
+    tidyr::separate(.,col = parameter, into = c("Name", "inc.name"), sep = "_")
 
-    if(use.sd.estimated){sd.apriori <- sd.estimated}
-    coords.inc <- as.data.frame(matrix(x.mat[1:sum(fix.mat),], sum(fix.mat), 2, byrow = TRUE)) %>%
+    coords.inc <- as.data.frame(matrix(x.mat[1:sum(fix.mat),], ncol = 2, byrow = TRUE)) %>%
       dplyr::mutate_if(is.numeric, round, disp.unit.lookup[units])
     names(coords.inc) <- c(paste("dx", paste("[",units,"]", sep = ""), sep = " "), paste("dy", paste("[",units,"]", sep = ""), sep = " "))
-    coords.estimation <- as.vector(t(st_coordinates(survey.net[[1]]))) + x.mat[1:sum(fix.mat),]/res.unit.lookup[units]
+    coords.estimation <- as.vector(t(st_coordinates(survey.net[[1]]))[t(fix.mat)]) + x.mat[1:sum(fix.mat),]/res.unit.lookup[units]
     coords.estimation <- as.data.frame(matrix(coords.estimation, ncol = 2, byrow = TRUE)) %>%
       cbind(Name = used.points, coords.inc, .) %>%
       dplyr::rename(X = V1, Y = V2)

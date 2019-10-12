@@ -156,12 +156,12 @@ sim.survey.net.raw <- sim.obs(points = TETO_points, obs.plan = TETO_sim_obs)
 # Zadatak
 
 
-A_points <- readxl::read_xlsx(path = ("E:/_Bechelor/_Ispiti/Projektovanje/17.9.2019/A_plan.xlsx"), sheet = "Points", col_types = c("numeric", "text", "numeric", "numeric", "logical", "logical", "logical"))
-A_obs <- readxl::read_xlsx(path = ("E:/_Bechelor/_Ispiti/Projektovanje/17.9.2019/A_plan.xlsx"), sheet = "Observations", col_types = c("text", "text", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric","numeric","numeric", "numeric", "numeric"))
+A_points <- readxl::read_xlsx(path = ("B:/_Bechelor/_Ispiti/Projektovanje/17.9.2019/A_plan.xlsx"), sheet = "Points", col_types = c("numeric", "text", "numeric", "numeric", "logical", "logical", "logical"))
+A_obs <- readxl::read_xlsx(path = ("B:/_Bechelor/_Ispiti/Projektovanje/17.9.2019/A_plan.xlsx"), sheet = "Observations", col_types = c("text", "text", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric","numeric","numeric", "numeric", "numeric"))
 A.survey.net <- import_surveynet2D(points = A_points, observations = A_obs)
 
-B_points <- readxl::read_xlsx(path = ("E:/_Bechelor/_Ispiti/Projektovanje/17.9.2019/B_plan.xlsx"), sheet = "Points", col_types = c("numeric", "text", "numeric", "numeric", "logical", "logical", "logical"))
-B_obs <- readxl::read_xlsx(path = ("E:/_Bechelor/_Ispiti/Projektovanje/17.9.2019/B_plan.xlsx"), sheet = "Observations", col_types = c("text", "text", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric","numeric","numeric", "numeric", "numeric"))
+B_points <- readxl::read_xlsx(path = ("B:/_Bechelor/_Ispiti/Projektovanje/17.9.2019/B_plan.xlsx"), sheet = "Points", col_types = c("numeric", "text", "numeric", "numeric", "logical", "logical", "logical"))
+B_obs <- readxl::read_xlsx(path = ("B:/_Bechelor/_Ispiti/Projektovanje/17.9.2019/B_plan.xlsx"), sheet = "Observations", col_types = c("text", "text", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric","numeric","numeric", "numeric", "numeric"))
 B.survey.net <- import_surveynet2D(points = B_points, observations = B_obs)
 
 
@@ -188,8 +188,8 @@ sim.B.net <- import_surveynet2D(points = sim.B.net$Points, observations = sim.B.
 writexl::write_xlsx(sim.B.net, path = "E:/_Bechelor/_Ispiti/Inzenjerska2/Redovni/17.9.2019/simBobs.xlsx")
 
 #Izravnanje
-B_points <- readxl::read_xlsx(path = ("E:/_Bechelor/_Ispiti/Inzenjerska2/Redovni/17.9.2019/simBobs.xlsx"), sheet = "Points", col_types = c("numeric", "text", "numeric", "numeric", "logical", "logical", "logical"))
-B_obs <- readxl::read_xlsx(path = ("E:/_Bechelor/_Ispiti/Inzenjerska2/Redovni/17.9.2019/simBobs.xlsx"), sheet = "Observations", col_types = c("text", "text", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric","numeric","numeric", "numeric", "numeric"))
+B_points <- readxl::read_xlsx(path = ("B:/_Bechelor/_Ispiti/Inzenjerska2/Redovni/17.9.2019/simBobs.xlsx"), sheet = "Points", col_types = c("numeric", "text", "numeric", "numeric", "logical", "logical", "logical"))
+B_obs <- readxl::read_xlsx(path = ("B:/_Bechelor/_Ispiti/Inzenjerska2/Redovni/17.9.2019/simBobs.xlsx"), sheet = "Observations", col_types = c("text", "text", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric","numeric","numeric", "numeric", "numeric"))
 B.survey.net <- import_surveynet2D(points = B_points, observations = B_obs)
 
 B.net.adjust <- adjust.snet(survey.net = B.survey.net, result.units = "mm", sd.apriori = 3)
