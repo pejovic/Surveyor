@@ -121,7 +121,7 @@ fix.params <- function(net.points){
   as.logical(c(apply(cbind(net.points$FIX_X, net.points$FIX_Y), 1, as.numeric)))
 }
 
-# survey.net <- B.survey.net
+# survey.net <- Gorica.survey.net
 Amat <- function(survey.net, units){
 
   if(!all(is.na(survey.net[[2]]$sd_Hz))){
@@ -147,7 +147,7 @@ Amat <- function(survey.net, units){
   if(!all(is.na(survey.net[[2]]$sd_Hz))){
     Z_mat <- survey.net[[2]] %>% dplyr::filter(direction) %>%
       tidyr::spread(key = from, value = direction, fill = FALSE) %>%
-      dplyr::select(station.names) %>%
+      dplyr::select(as.character(station.names)) %>%
       st_drop_geometry() %>%
       as.matrix()*1
   }else{
@@ -162,6 +162,9 @@ Amat <- function(survey.net, units){
   }
 
   A <- cbind(rbind(A_dir, A_dist)[, !fix], rbind(Z_mat, rest_mat))
+
+  # Removing zero rows (measured distances between the fixed points)
+  A <- A[apply(A !=0, 1, any), , drop=FALSE]
 
   sufix <- c("dx", "dy")
   colnames(A) <- c(paste(rep(survey.net[[1]]$Name, each = 2), rep(sufix, length(survey.net[[1]]$Name)), sep = "_")[!fix], paste(colnames(Z_mat), "z", sep = "_"))
@@ -310,7 +313,7 @@ design.snet <- function(survey.net, sd.apriori = 1, prob = NA, result.units = li
   }
 }
 
-# adjust = TRUE; survey.net = B.survey.net; sd.apriori = 3; prob = 0.95; result.units = list("mm", "cm", "m"); ellipse.scale = 1; teta.unit = list("deg", "rad"); all = FALSE; units.dir = "sec"; units.dist = "mm"
+# adjust = TRUE; survey.net = Gorica.survey.net; sd.apriori = 3; prob = 0.95; result.units = list("mm", "cm", "m"); ellipse.scale = 1; teta.unit = list("deg", "rad"); all = FALSE; units.dir = "sec"; units.dist = "mm"
 adjust.snet <- function(adjust = TRUE, survey.net, sd.apriori = 1, prob = 0.95, result.units = list("mm", "cm", "m"), ellipse.scale = 1, teta.unit = list("deg", "rad"), units.dir = "sec", units.dist = "mm", use.sd.estimated = TRUE, all = FALSE){
   # TODO: Set warning if there are different or not used points in two elements of survey.net list.
   # TODO: Check if any point has no sufficient measurements to be adjusted.
@@ -366,34 +369,36 @@ adjust.snet <- function(adjust = TRUE, survey.net, sd.apriori = 1, prob = 0.95, 
       F.estimated <- sd.apriori^2/sd.estimated^2
       F.quantile <- qf(p = prob, df1 = 10^1000, df2 = df)
     }
-  }
     if(F.estimated > F.quantile){
       F.test.conclusion <- paste("Model nije adekvatan")
       # Data snooping and others have to be put in the list
     }else{
       F.test.conclusion <- paste("Model je adekvatan")
     }
+  }
   if(use.sd.estimated){sd.apriori <- sd.estimated}
-  coords.inc <- x.mat %>% as.data.frame() %>% tibble::rownames_to_column(var = "parameter")
-  coords.inc <- coords.inc[1:sum(fix.mat),] %>% dplyr::mutate_if(is.numeric, round, disp.unit.lookup[units]) %>%
-                dplyr::rename(coords.inc = V1)
-  coords.estimation <- (as.vector(t(st_coordinates(survey.net[[1]]))[t(fix.mat)]) + x.mat[1:sum(fix.mat),]/res.unit.lookup[units]) %>%
-                       as.data.frame() %>% tibble::rownames_to_column(var = "parameter") %>% dplyr::rename(coords = ".")
-  point.results <- dplyr::inner_join(coords.inc, coords.estimation) %>%
-    tidyr::separate(.,col = parameter, into = c("Name", "inc.name"), sep = "_")
+  # Results
+  #TODO Resiti problem dodeljivanja prirastaja i ocenjenih koordinata u Survey.net[[1]].
+  # Problem nastaje kada je samo jedna koordinata neke tacke fiksna.
+  # Resiti sa pivot i left_join.
+  coords.inc <- x.mat %>%
+    as.data.frame() %>%
+    tibble::rownames_to_column(var = "parameter")
+  coords.inc <- coords.inc[1:sum(fix.mat),] %>%
+    dplyr::rename(coords.inc = V1) %>%
+    tidyr::separate(.,col = parameter, into = c("Name", "inc.name"), sep = "_") %>%
+    tidyr::pivot_wider(., names_from = c(inc.name), values_from = c(coords.inc)) %>%
+    dplyr::mutate_all(., ~replace(., is.na(.), 0))
 
-    coords.inc <- as.data.frame(matrix(x.mat[1:sum(fix.mat),], ncol = 2, byrow = TRUE)) %>%
-      dplyr::mutate_if(is.numeric, round, disp.unit.lookup[units])
-    names(coords.inc) <- c(paste("dx", paste("[",units,"]", sep = ""), sep = " "), paste("dy", paste("[",units,"]", sep = ""), sep = " "))
-    coords.estimation <- as.vector(t(st_coordinates(survey.net[[1]]))[t(fix.mat)]) + x.mat[1:sum(fix.mat),]/res.unit.lookup[units]
-    coords.estimation <- as.data.frame(matrix(coords.estimation, ncol = 2, byrow = TRUE)) %>%
-      cbind(Name = used.points, coords.inc, .) %>%
-      dplyr::rename(X = V1, Y = V2)
-    point.adj.results <- coords.estimation %>% sf::st_as_sf(coords = c("X","Y"), remove = FALSE)
+  point.adj.results <- dplyr::left_join(survey.net[[1]], coords.inc, by = "Name") %>%
+    dplyr::mutate_at(., .vars = c("dx", "dy"), ~replace(., is.na(.), 0)) %>%
+    cbind(., st_coordinates(.)) %>%
+    sf::st_drop_geometry() %>%
+    dplyr::mutate(X = X + dx/res.unit.lookup[units], Y = Y + dy/res.unit.lookup[units]) %>%
+    dplyr::mutate_at(., .vars = c("dx", "dy"), round, disp.unit.lookup[units]) %>%
+    sf::st_as_sf(coords = c("X","Y"), remove = FALSE)
+    # TODO: Gubi se projekcija!!!!
 
-
-    ############################ OVDE SAM STAO ###############################################################
-  #}
   # Computing error ellipses
   Qxy.list <- Qxy(Qx.mat, n = lenght(used.points), fixd = fix.mat*1)
   ellipses <- lapply(Qxy.list, function(x) error.ellipse(x, prob = prob, sd.apriori = sd.apriori, teta.unit = teta.unit[[1]]))
