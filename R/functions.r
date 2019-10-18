@@ -121,7 +121,7 @@ fix.params <- function(net.points){
   as.logical(c(apply(cbind(net.points$FIX_X, net.points$FIX_Y), 1, as.numeric)))
 }
 
-# survey.net <- Gorica.survey.net
+# survey.net <- brana
 Amat <- function(survey.net, units){
 
   if(!all(is.na(survey.net[[2]]$sd_Hz))){
@@ -164,7 +164,7 @@ Amat <- function(survey.net, units){
   A <- cbind(rbind(A_dir, A_dist)[, !fix], rbind(Z_mat, rest_mat))
 
   # Removing zero rows (measured distances between the fixed points)
-  A <- A[apply(A !=0, 1, any), , drop=FALSE]
+  # A <- A[apply(A !=0, 1, any), , drop=FALSE]
 
   sufix <- c("dx", "dy")
   colnames(A) <- c(paste(rep(survey.net[[1]]$Name, each = 2), rep(sufix, length(survey.net[[1]]$Name)), sep = "_")[!fix], paste(colnames(Z_mat), "z", sep = "_"))
@@ -232,6 +232,7 @@ error.ellipse <- function(Qxy, prob = NA, sd.apriori = 1, teta.unit = list("deg"
     }
     teta <- ifelse((Qnn - Qee) == 0, 0, 0.5*atan(2*Qen/(Qnn - Qee)))
     teta <- ifelse(teta >= 0, teta, teta + 2*pi)
+    teta <- ifelse(teta >= pi, teta - pi, teta)
     if(teta.unit[[1]] == "deg"){
       ellipse <- c(A, B, teta*180/pi)
     }else{
@@ -257,63 +258,8 @@ sigma.xy <- function(Qxy.mat, sd.apriori){
   sigma <- diag(diag(as.numeric(sd.apriori), 2, 2)%*%diag(sqrt(diag(Qxy.mat)), 2, 2))
 }
 
-design.snet <- function(survey.net, sd.apriori = 1, prob = NA, result.units = list("mm", "cm", "m"), ellipse.scale = 1, teta.unit = list("deg", "rad"), all = FALSE){
-  # TODO: Set warning if there are different or not used points in two elements of survey.net list.
-  # Check which points are used for measurements, if not
-  used.points <- unique(do.call(c, survey.net[[2]][, c("from", "to")] %>% st_drop_geometry()))
-  used.points.ind <- which(survey.net[[1]]$Name %in% used.points)
-  used.points <- survey.net[[1]]$Name[used.points.ind]
-  survey.net[[1]] <- survey.net[[1]][used.points.ind, ]
-  observations <- tidyr::gather(survey.net[[2]] %>%
-                                  dplyr::select(from, to, direction, distance, geometry), key = type, value = used, -c(from, to, geometry)) %>%
-    dplyr::filter(used == TRUE) %>%
-    dplyr::mutate(from_to = str_c(.$from, .$to, sep = "_"))
-  # =======
-  units <- result.units[[1]]
-  A <- Amat(survey.net, units = units)
-  rownames(A) <- observations$from_to
-  W <- Wmat(survey.net, sd.apriori = sd.apriori)
-  colnames(W) <- observations$from_to
-  rownames(W) <- observations$from_to
-  N <- crossprod(A, W) %*% A
-  Qx <- tryCatch(
-    {
-      x = Qx = solve(N)
-    },
-    error = function(e) {
-      x = Qx = MASS::ginv(N)
-    })
-  colnames(Qx) <- colnames(N)
-  rownames(Qx) <- rownames(N)
-  Ql <- A %*% tcrossprod(Qx, A)
-  Qv <- solve(W) - Ql
-  r <- Qv%*%W
-  fix.mat <- survey.net[[1]] %>% st_drop_geometry() %>%  dplyr::select(FIX_X, FIX_Y) == FALSE
-  Qxy.list <- Qxy(Qx, n = lenght(used.points), fixd = fix.mat*1)
-  ellipses <- lapply(Qxy.list, function(x) error.ellipse(x, prob = 0.95, sd.apriori = sd.apriori, teta.unit = teta.unit[[1]]))
-  ellipses <- do.call(rbind, ellipses) %>%
-    as.data.frame() %>%
-    dplyr::select(A = V1, B = V2, teta = V3) %>%
-    mutate(Name = used.points)
-  sigmas <- lapply(Qxy.list, function(x) sigma.xy(x, sd.apriori = sd.apriori)) %>%
-    do.call(rbind,.) %>%
-    as.data.frame() %>%
-    dplyr::select(sx = V1, sy = V2) %>% #TODO: proveriti da li ovde treba voditi racuna o redosledu sx i sy.
-    dplyr::mutate(sp = sqrt(sx^2 + sy^2), Name = used.points)
-  survey.net[[1]] <- merge(survey.net[[1]], ellipses, by = "Name") %>% merge(., sigmas)
-  observations <- observations %>% dplyr::mutate(Ql = diag(Ql), Qv = diag(Qv), rii = diag(r))
-  ellipse.net <- do.call(rbind, lapply(split(survey.net[[1]], survey.net[[1]]$Name), function(x) sf.ellipse(x, scale = ellipse.scale)))
-  ellipse.net <- merge(ellipse.net, sigmas)
-  ellipse.net %<>% sf::st_set_crs(st_crs(survey.net[[1]]))
-  design <- list(design.matrices = list(A = A, W = W, Qx = Qx, Ql = Ql, Qv = Qv), ellipse.net = ellipse.net, net.points = survey.net[[1]], observations = observations)
-  if(all){
-    return(design)
-  }else{
-    return(design[-1])
-  }
-}
 
-# adjust = TRUE; survey.net = Gorica.survey.net; sd.apriori = 3; prob = 0.95; result.units = list("mm", "cm", "m"); ellipse.scale = 1; teta.unit = list("deg", "rad"); all = FALSE; units.dir = "sec"; units.dist = "mm"
+# adjust = TRUE; survey.net = brana; sd.apriori = 3; prob = 0.95; result.units = list("mm", "cm", "m"); ellipse.scale = 1; teta.unit = list("deg", "rad"); all = FALSE; units.dir = "sec"; units.dist = "mm"
 adjust.snet <- function(adjust = TRUE, survey.net, sd.apriori = 1, prob = 0.95, result.units = list("mm", "cm", "m"), ellipse.scale = 1, teta.unit = list("deg", "rad"), units.dir = "sec", units.dist = "mm", use.sd.estimated = TRUE, all = FALSE){
   # TODO: Set warning if there are different or not used points in two elements of survey.net list.
   # TODO: Check if any point has no sufficient measurements to be adjusted.
@@ -327,16 +273,17 @@ adjust.snet <- function(adjust = TRUE, survey.net, sd.apriori = 1, prob = 0.95, 
   used.points.ind <- which(survey.net[[1]]$Name %in% used.points)
   used.points <- survey.net[[1]]$Name[used.points.ind]
   survey.net[[1]] <- survey.net[[1]][used.points.ind, ]
+  fix.mat <- survey.net[[1]] %>% st_drop_geometry() %>%  dplyr::select(FIX_X, FIX_Y) == FALSE
   observations <- tidyr::gather(survey.net[[2]] %>%
                                   dplyr::select(from, to, direction, distance, geometry), key = type, value = used, -c(from, to, geometry)) %>%
     dplyr::filter(used == TRUE) %>%
     dplyr::mutate(from_to = str_c(.$from, .$to, sep = "_"))
   # =
   A.mat <- Amat(survey.net, units = units)
-  rownames(A.mat) <- observations$from_to
+  rownames(A.mat) <- observations$from_to # Javlja se problem kada su merene duzine izmedju fiksnih tacaka, a A.mat ih iskljucujemo.
   W.mat <- Wmat(survey.net, sd.apriori = sd.apriori) #TODO: Check if each observations has its own standard.
   colnames(W.mat) <- observations$from_to
-  rownames(W.mat) <- observations$from_to
+  rownames(W.mat) <- observations$from_to # Javlja se problem kada su merene duzine izmedju fiksnih tacaka, a A.mat ih iskljucujemo.
   N.mat <- crossprod(A.mat, W.mat) %*% A.mat
   Qx.mat <- tryCatch(
     {
@@ -350,7 +297,6 @@ adjust.snet <- function(adjust = TRUE, survey.net, sd.apriori = 1, prob = 0.95, 
   Ql.mat <- A.mat %*% tcrossprod(Qx.mat, A.mat)
   Qv.mat <- solve(W.mat) - Ql.mat
   r <- Qv.mat%*%W.mat
-  fix.mat <- survey.net[[1]] %>% st_drop_geometry() %>%  dplyr::select(FIX_X, FIX_Y) == FALSE
   if(length(fix.mat) != sum(fix.mat)){
     df <- abs(diff(dim(A.mat)))
   }else{
@@ -419,13 +365,38 @@ adjust.snet <- function(adjust = TRUE, survey.net, sd.apriori = 1, prob = 0.95, 
   }else{
     survey.net[[1]] <- merge(survey.net[[1]], ellipses, by = "Name") %>% merge(., sigmas)
   }
+
   observations <- observations %>% dplyr::mutate(Ql.mat = diag(Ql.mat), Qv.mat = diag(Qv.mat), rii = diag(r)) %>%
     dplyr::mutate_if(is.numeric, round, disp.unit.lookup[units]*2)
+
+  if(adjust){
+    observations <- observations %>%
+      dplyr::mutate(x_from = point.adj.results$X[match(observations$from, point.adj.results$Name)],
+                    y_from = point.adj.results$Y[match(observations$from, point.adj.results$Name)],
+                    x_to = point.adj.results$X[match(observations$to, point.adj.results$Name)],
+                    y_to = point.adj.results$Y[match(observations$to, point.adj.results$Name)]) %>%
+      sf::st_drop_geometry()
+
+    observations <- observations %>%
+      as.data.table(.) %>%
+      dplyr::mutate(id = seq.int(nrow(.))) %>%
+      split(., f = as.factor(.$id)) %>%
+      lapply(., function(row) {lmat <- matrix(unlist(row[c("x_from", "y_from", "x_to", "y_to")]), ncol = 2, byrow = TRUE)
+      st_linestring(lmat)}) %>%
+      sf::st_sfc() %>%
+      sf::st_sf('ID' = seq.int(nrow(observations)), observations, 'geometry' = .) %>%
+      dplyr::select(-c(x_from, y_from, x_to, y_to))
+  }
+
+
+  # Preparing ellipses as separate sf outcome
   ellipse.net <- do.call(rbind, lapply(split(survey.net[[1]], survey.net[[1]]$Name), function(x) sf.ellipse(x, scale = ellipse.scale)))
   ellipse.net <- merge(ellipse.net, sigmas)
   ellipse.net <- sf::st_set_crs(ellipse.net, value = st_crs(survey.net[[2]]))
+
   design <- list(design.matrices = list(A = A.mat, W = W.mat, Qx = Qx.mat, Ql = Ql.mat, Qv = Qv.mat), ellipse.net = ellipse.net, net.points = survey.net[[1]], observations = observations)
   design$net.points <- sf::st_set_crs(design$net.points, value = st_crs(survey.net[[2]]))
+
   if(all){
     return(design)
   }else{
@@ -437,6 +408,11 @@ adjust.snet <- function(adjust = TRUE, survey.net, sd.apriori = 1, prob = 0.95, 
 # TODO Treba resiti da u points idu samo tacke koje ucestvuju u merenjima.
 import_surveynet2D <- function(points = points, observations = observations, dest_crs = NA, axes = c("Easting", "Northing")){
 
+  observations <- mutate_at(observations, .vars = c("from", "to"), as.character)
+  points <- mutate_at(points, .vars = c("Name"), as.character)
+
+  fixed.points <- points[apply(points[, c("FIX_X", "FIX_Y")], 1, all), , drop=FALSE]$Name
+
   # Create geometry columns for points
   if (is.na(dest_crs)){
     dest_crs <- 3857
@@ -446,10 +422,10 @@ import_surveynet2D <- function(points = points, observations = observations, des
 
   if(which(axes == "Easting") == 2){points <- points %>% dplyr::rename(x = y,  y = x)}
 
-  observations$x_station <- points$x[match(observations$from, points$Name)]
-  observations$y_station <- points$y[match(observations$from, points$Name)]
-  observations$x_obs.point <- points$x[match(observations$to, points$Name)]
-  observations$y_obs.point <- points$y[match(observations$to, points$Name)]
+  observations$x_from <- points$x[match(observations$from, points$Name)]
+  observations$y_from <- points$y[match(observations$from, points$Name)]
+  observations$x_to <- points$x[match(observations$to, points$Name)]
+  observations$y_to <- points$y[match(observations$to, points$Name)]
 
   points <- points %>% as.data.frame() %>% sf::st_as_sf(coords = c("x","y")) %>% sf::st_set_crs(dest_crs)
 
@@ -464,9 +440,16 @@ import_surveynet2D <- function(points = points, observations = observations, des
   if(dplyr::select(observations, HD, SD) %>% is.na() %>% all()){
     observations$distance[!is.na(observations$sd_dist)] <- TRUE
   }
+  # Eliminacija merenih duzina izmedju fiksnih tacaka duzina izmedju
+  if(length(fixed.points) > 0){
+    fixed.distances <- which(observations$distance & observations$from %in% fixed.points & observations$to %in% fixed.points)
+    observations[fixed.distances, "distance"] <- FALSE
+    observations[fixed.distances, "sd_dist"] <- NA
+  }
+
 
   observations <- as.data.table(observations) %>% dplyr::mutate(id = seq.int(nrow(.))) %>% split(., f = as.factor(.$id)) %>%
-    lapply(., function(row) {lmat <- matrix(unlist(row[14:17]), ncol = 2, byrow = TRUE)
+    lapply(., function(row) {lmat <- matrix(unlist(row[c("x_from", "y_from", "x_to", "y_to")]), ncol = 2, byrow = TRUE)
     st_linestring(lmat)}) %>%
     sf::st_sfc() %>%
     sf::st_sf('ID' = seq.int(nrow(observations)), observations, 'geometry' = .)
@@ -482,11 +465,12 @@ import_surveynet2D <- function(points = points, observations = observations, des
 #st.survey.net <- brana[[2]] %>% dplyr::filter(from == "T1")
 #st.survey.net <- avala[[2]] %>% dplyr::filter(from == "S2")
 # st.survey.net <- A.survey.net[[2]] %>% dplyr::filter(from == "C")
+# st.survey.net <- Gorica.survey.net[[2]] %>% dplyr::filter(from == "1")
 
 fdir_st <- function(st.survey.net, units.dir = "sec"){
   units.table <- c("sec" = 3600, "min" = 60, "deg" = 1)
   st.survey.net <- st.survey.net %>% split(., f = as.factor(.$to)) %>%
-    lapply(., function(x) {x$ni = ni(pt1_coords = as.numeric(x[, c("x_station", "y_station")]), pt2_coords = as.numeric(x[, c("x_obs.point", "y_obs.point")]), type = "dec"); return(x)}) %>%
+    lapply(., function(x) {x$ni = ni(pt1_coords = as.numeric(x[, c("x_from", "y_from")]), pt2_coords = as.numeric(x[, c("x_to", "y_to")]), type = "dec"); return(x)}) %>%
     do.call(rbind,.) %>%
     dplyr::mutate(z = Hz-ni) %>%
     dplyr::arrange(ID)
@@ -508,7 +492,7 @@ fmat <- function(survey.net, units.dir = "sec", units.dist = "mm"){
     do.call(c, .) %>% as.numeric()
   dist.units.table <- c("mm" = 1000, "cm" = 100, "m" = 1)
   survey.net[[2]] <- survey.net[[2]] %>% dplyr::filter(distance) %>% st_drop_geometry() %>%
-    dplyr::mutate(dist0 = sqrt((x_station-x_obs.point)^2+(y_station-y_obs.point)^2))
+    dplyr::mutate(dist0 = sqrt((x_from-x_to)^2+(y_from-y_to)^2))
   f_dist <- (survey.net[[2]]$dist0 - survey.net[[2]]$HD)*dist.units.table[units.dist]
   return(c(f_dir, f_dist))
 }

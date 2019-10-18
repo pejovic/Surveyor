@@ -123,7 +123,7 @@ brana_obs <- readxl::read_xlsx(path = here::here("Data/Input/With_observations/B
 brana <- import_surveynet2D(points = brana_points, observations = brana_obs)
 
 
-brana.adjust <- adjust.snet(survey.net = brana, result.units = "mm")
+brana.adjust <- adjust.snet(survey.net = brana, result.units = "mm", adjust = FALSE)
 
 brana.adjust$net.points
 
@@ -205,6 +205,6 @@ Gorica_points <- readxl::read_xlsx(path = ("./Data/Input/With_observations/Brana
 Gorica_obs <- readxl::read_xlsx(path = ("./Data/Input/With_observations/Brana_Gorica/Brana_Gorica_nulta_serija.xlsx"), sheet = "Observations")#, col_types = c("text", "text", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric","numeric","numeric", "numeric", "numeric"))
 Gorica.survey.net <- import_surveynet2D(points = Gorica_points, observations = Gorica_obs)
 
-Gorica.net.adjust <- adjust.snet(survey.net = Gorica.survey.net, result.units = "mm", sd.apriori = 3)
+Gorica.net.adjust <- adjust.snet(survey.net = Gorica.survey.net, result.units = "mm", sd.apriori = 10)
 
 
