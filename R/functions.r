@@ -390,6 +390,7 @@ adjust.snet <- function(adjust = TRUE, survey.net, sd.apriori = 1, prob = 0.95, 
 
 
   # Preparing ellipses as separate sf outcome
+  # TODO Proveriti da li elipse uzimaju definitivne koordinate ili priblizne!
   ellipse.net <- do.call(rbind, lapply(split(survey.net[[1]], survey.net[[1]]$Name), function(x) sf.ellipse(x, scale = ellipse.scale)))
   ellipse.net <- merge(ellipse.net, sigmas)
   ellipse.net <- sf::st_set_crs(ellipse.net, value = st_crs(survey.net[[2]]))
