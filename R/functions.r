@@ -366,7 +366,7 @@ adjust.snet <- function(adjust = TRUE, survey.net, sd.apriori = 1, prob = 0.95, 
     survey.net[[1]] <- merge(survey.net[[1]], ellipses, by = "Name") %>% merge(., sigmas)
   }
 
-  observations <- observations %>% dplyr::mutate(Ql.mat = diag(Ql.mat), Qv.mat = diag(Qv.mat), rii = diag(r)) %>%
+  observations <- observations %>% dplyr::mutate(v = v.mat, Ql.mat = diag(Ql.mat), Qv.mat = diag(Qv.mat), rii = diag(r)) %>%
     dplyr::mutate_if(is.numeric, round, disp.unit.lookup[units]*2)
 
   if(adjust){
@@ -477,7 +477,7 @@ fdir_st <- function(st.survey.net, units.dir = "sec"){
   st.survey.net$z <- ifelse(st.survey.net$z < 1, st.survey.net$z + 360, st.survey.net$z)
   z0_mean <- mean(st.survey.net$z)
   st.survey.net$Hz0 <- z0_mean + st.survey.net$ni
-  st.survey.net$Hz0 <- ifelse(st.survey.net$Hz0 > 360 | st.survey.net$Hz0 > 359.9, st.survey.net$Hz0 - 360, st.survey.net$Hz0)
+  st.survey.net$Hz0 <- ifelse(st.survey.net$Hz0 > 359, st.survey.net$Hz0 - 360, st.survey.net$Hz0)
   st.survey.net$Hz <- ifelse(st.survey.net$Hz < 1, st.survey.net$Hz + 360, st.survey.net$Hz)
   st.survey.net$Hz <- ifelse(st.survey.net$Hz >= 360, st.survey.net$Hz - 360, st.survey.net$Hz)
 
