@@ -258,12 +258,12 @@ sigma.xy <- function(Qxy.mat, sd.apriori){
   sigma <- diag(diag(as.numeric(sd.apriori), 2, 2)%*%diag(sqrt(diag(Qxy.mat)), 2, 2))
 }
 
-
+# adjust = FALSE; survey.net = A.survey.net; sd.apriori = 3; prob = NA; result.units = "mm"; ellipse.scale = 1; teta.unit = list("deg", "rad"); all = TRUE
 # adjust = TRUE; survey.net = brana; sd.apriori = 3; prob = 0.95; result.units = list("mm", "cm", "m"); ellipse.scale = 1; teta.unit = list("deg", "rad"); all = FALSE; units.dir = "sec"; units.dist = "mm"
 adjust.snet <- function(adjust = TRUE, survey.net, sd.apriori = 1, prob = 0.95, result.units = list("mm", "cm", "m"), ellipse.scale = 1, teta.unit = list("deg", "rad"), units.dir = "sec", units.dist = "mm", use.sd.estimated = TRUE, all = FALSE){
   # TODO: Set warning if there are different or not used points in two elements of survey.net list.
   # TODO: Check if any point has no sufficient measurements to be adjusted.
-
+  if(!adjust){use.sd.estimated <- FALSE}
   "%!in%" <- Negate("%in%")
   units <- result.units[[1]]
   res.unit.lookup <- c("mm" = 1000, "cm" = 100, "m" = 1)
@@ -321,29 +321,31 @@ adjust.snet <- function(adjust = TRUE, survey.net, sd.apriori = 1, prob = 0.95, 
     }else{
       F.test.conclusion <- paste("Model je adekvatan")
     }
-  }
-  if(use.sd.estimated){sd.apriori <- sd.estimated}
-  # Results
-  #TODO Resiti problem dodeljivanja prirastaja i ocenjenih koordinata u Survey.net[[1]].
-  # Problem nastaje kada je samo jedna koordinata neke tacke fiksna.
-  # Resiti sa pivot i left_join.
-  coords.inc <- x.mat %>%
-    as.data.frame() %>%
-    tibble::rownames_to_column(var = "parameter")
-  coords.inc <- coords.inc[1:sum(fix.mat),] %>%
-    dplyr::rename(coords.inc = V1) %>%
-    tidyr::separate(.,col = parameter, into = c("Name", "inc.name"), sep = "_") %>%
-    tidyr::pivot_wider(., names_from = c(inc.name), values_from = c(coords.inc)) %>%
-    dplyr::mutate_all(., ~replace(., is.na(.), 0))
 
-  point.adj.results <- dplyr::left_join(survey.net[[1]], coords.inc, by = "Name") %>%
-    dplyr::mutate_at(., .vars = c("dx", "dy"), ~replace(., is.na(.), 0)) %>%
-    cbind(., st_coordinates(.)) %>%
-    sf::st_drop_geometry() %>%
-    dplyr::mutate(X = X + dx/res.unit.lookup[units], Y = Y + dy/res.unit.lookup[units]) %>%
-    dplyr::mutate_at(., .vars = c("dx", "dy"), round, disp.unit.lookup[units]) %>%
-    sf::st_as_sf(coords = c("X","Y"), remove = FALSE)
+    if(use.sd.estimated){sd.apriori <- sd.estimated}
+    # Results
+    #TODO Resiti problem dodeljivanja prirastaja i ocenjenih koordinata u Survey.net[[1]].
+    # Problem nastaje kada je samo jedna koordinata neke tacke fiksna.
+    # Resiti sa pivot i left_join.
+    coords.inc <- x.mat %>%
+      as.data.frame() %>%
+      tibble::rownames_to_column(var = "parameter")
+    coords.inc <- coords.inc[1:sum(fix.mat),] %>%
+      dplyr::rename(coords.inc = V1) %>%
+      tidyr::separate(.,col = parameter, into = c("Name", "inc.name"), sep = "_") %>%
+      tidyr::pivot_wider(., names_from = c(inc.name), values_from = c(coords.inc)) %>%
+      dplyr::mutate_all(., ~replace(., is.na(.), 0))
+
+    point.adj.results <- dplyr::left_join(survey.net[[1]], coords.inc, by = "Name") %>%
+      dplyr::mutate_at(., .vars = c("dx", "dy"), ~replace(., is.na(.), 0)) %>%
+      cbind(., st_coordinates(.)) %>%
+      sf::st_drop_geometry() %>%
+      dplyr::mutate(X = X + dx/res.unit.lookup[units], Y = Y + dy/res.unit.lookup[units]) %>%
+      dplyr::mutate_at(., .vars = c("dx", "dy"), round, disp.unit.lookup[units]) %>%
+      sf::st_as_sf(coords = c("X","Y"), remove = FALSE)
     # TODO: Gubi se projekcija!!!!
+
+  }
 
   # Computing error ellipses
   Qxy.list <- Qxy(Qx.mat, n = lenght(used.points), fixd = fix.mat*1)
@@ -360,14 +362,21 @@ adjust.snet <- function(adjust = TRUE, survey.net, sd.apriori = 1, prob = 0.95, 
     dplyr::select(sx = V1, sy = V2) %>% #TODO: proveriti da li ovde treba voditi racuna o redosledu sx i sy.
     dplyr::mutate(sp = sqrt(sx^2 + sy^2), Name = used.points) %>%
     dplyr::mutate_if(is.numeric, round, disp.unit.lookup[units])
+
   if(adjust){
     survey.net[[1]] <- merge(point.adj.results, ellipses, by = "Name") %>% merge(., sigmas)
   }else{
     survey.net[[1]] <- merge(survey.net[[1]], ellipses, by = "Name") %>% merge(., sigmas)
   }
 
-  observations <- observations %>% dplyr::mutate(v = v.mat, Ql.mat = diag(Ql.mat), Qv.mat = diag(Qv.mat), rii = diag(r)) %>%
-    dplyr::mutate_if(is.numeric, round, disp.unit.lookup[units]*2)
+  if(adjust){
+    observations <- observations %>% dplyr::mutate(v = v.mat, Ql.mat = diag(Ql.mat), Qv.mat = diag(Qv.mat), rii = diag(r)) %>%
+      dplyr::mutate_if(is.numeric, round, disp.unit.lookup[units]*2)
+  }else{
+    observations <- observations %>% dplyr::mutate(Ql.mat = diag(Ql.mat), rii = diag(r)) %>%
+      dplyr::mutate_if(is.numeric, round, disp.unit.lookup[units]*2)
+  }
+
 
   if(adjust){
     observations <- observations %>%
