@@ -1,6 +1,6 @@
-source(here("R/input_functions.r"))
-source(here("R/inputFunction_withObservations.R"))
-source(here("R/functions.r"))
+source(here::here("R/deprecated/input_functions.r"))
+source(here::here("R/deprecated/inputFunction_withObservations.R"))
+source(here::here("R/functions.r"))
 
 library(shiny)
 library(shinythemes)
@@ -303,10 +303,10 @@ shinyServer(function(input, output){
     ellipse_scale <- input$adjust_1_ell_scale
 
     if(length(data_up) == 0){
-      design_net_out <- design.snet(survey.net = data, result.units = result_units, ellipse.scale = ellipse_scale, all = FALSE)
+      design_net_out <- adjust.snet(adjust = FALSE, survey.net = data, result.units = result_units, ellipse.scale = ellipse_scale, all = FALSE)
       design_net_out
     } else{
-      design_net_out <- design.snet(survey.net = data_up, result.units = result_units, ellipse.scale = ellipse_scale, all = FALSE)
+      design_net_out <- adjust.snet(adjust = FALSE, survey.net = data_up, result.units = result_units, ellipse.scale = ellipse_scale, all = FALSE)
       design_net_out
     }
   })
@@ -464,7 +464,7 @@ shinyServer(function(input, output){
     data <- mapEdit_list()
     result_units <- input$adjust_1_units_me
     ellipse_scale <- input$adjust_1_ell_scale_me
-    design_net_out <- design.snet(survey.net = data, result.units = result_units, ellipse.scale = ellipse_scale, all = FALSE)
+    design_net_out <- adjust.snet(adjust = TRUE, survey.net = data, result.units = result_units, ellipse.scale = ellipse_scale, all = FALSE)
     design_net_out
   })
 
