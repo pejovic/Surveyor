@@ -370,10 +370,10 @@ adjust.snet <- function(adjust = TRUE, survey.net, sd.apriori = 1, prob = 0.95, 
   }
 
   if(adjust){
-    observations <- observations %>% dplyr::mutate(v = v.mat, Ql.mat = diag(Ql.mat), Qv.mat = diag(Qv.mat), rii = diag(r)) %>%
+    observations <- observations %>% dplyr::mutate(v = v.mat, Ql = diag(Ql.mat), Qv = diag(Qv.mat), rii = diag(r)) %>%
       dplyr::mutate_if(is.numeric, round, disp.unit.lookup[units]*2)
   }else{
-    observations <- observations %>% dplyr::mutate(Ql.mat = diag(Ql.mat), rii = diag(r)) %>%
+    observations <- observations %>% dplyr::mutate(Ql = diag(Ql.mat), Qv = diag(Qv.mat), rii = diag(r)) %>%
       dplyr::mutate_if(is.numeric, round, disp.unit.lookup[units]*2)
   }
 
@@ -397,6 +397,7 @@ adjust.snet <- function(adjust = TRUE, survey.net, sd.apriori = 1, prob = 0.95, 
       dplyr::select(-c(x_from, y_from, x_to, y_to))
   }
 
+  observations %<>% sf::st_set_crs(value = st_crs(survey.net[[2]]))
 
   # Preparing ellipses as separate sf outcome
   # TODO Proveriti da li elipse uzimaju definitivne koordinate ili priblizne!

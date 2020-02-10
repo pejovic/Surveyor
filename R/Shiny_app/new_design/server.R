@@ -465,7 +465,7 @@ shinyServer(function(input, output){
     data <- mapEdit_list()
     result_units <- input$adjust_1_units_me
     ellipse_scale <- input$adjust_1_ell_scale_me
-    design_net_out <- adjust.snet(adjust = TRUE, survey.net = data, result.units = result_units, ellipse.scale = ellipse_scale, all = FALSE)
+    design_net_out <- adjust.snet(adjust = FALSE, survey.net = data, result.units = result_units, ellipse.scale = ellipse_scale, use.sd.estimated = FALSE, all = FALSE)
     design_net_out
   })
 
@@ -720,8 +720,8 @@ shinyServer(function(input, output){
           sx = round(sx, 1),
           sy = round(sy, 1),
           sp = round(sp, 1),
-          `dx [mm]` = round(`dx [mm]`, 2),
-          `dy [mm]` = round(`dy [mm]`, 2),
+          `dx [mm]` = round(dx, 2),
+          `dy [mm]` = round(dy, 2),
           X = round(X, 2),
           Y = round(Y, 2)
         ) %>%
@@ -757,8 +757,8 @@ shinyServer(function(input, output){
         st_drop_geometry() %>%
         as.data.frame() %>%
         mutate(
-          Ql = round(Ql.mat, 2),
-          Qv = round(Qv.mat, 2),
+          Ql = round(Ql, 2),
+          Qv = round(Qv, 2),
           rii = round(rii, 2)
         ) %>%
         dplyr::select(from, to, type, Ql, Qv, rii, used),
