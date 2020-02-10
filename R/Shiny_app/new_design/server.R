@@ -2,6 +2,7 @@ source(here::here("R/deprecated/input_functions.r"))
 source(here::here("R/deprecated/inputFunction_withObservations.R"))
 source(here::here("R/functions.r"))
 
+
 library(shiny)
 library(shinythemes)
 library(leaflet)
@@ -303,10 +304,10 @@ shinyServer(function(input, output){
     ellipse_scale <- input$adjust_1_ell_scale
 
     if(length(data_up) == 0){
-      design_net_out <- adjust.snet(adjust = FALSE, survey.net = data, result.units = result_units, ellipse.scale = ellipse_scale, all = FALSE)
+      design_net_out <- adjust.snet(adjust = FALSE, survey.net = data, result.units = result_units, ellipse.scale = ellipse_scale,use.sd.estimated = FALSE, all = FALSE)
       design_net_out
     } else{
-      design_net_out <- adjust.snet(adjust = FALSE, survey.net = data_up, result.units = result_units, ellipse.scale = ellipse_scale, all = FALSE)
+      design_net_out <- adjust.snet(adjust = FALSE, survey.net = data_up, result.units = result_units, ellipse.scale = ellipse_scale,use.sd.estimated = FALSE, all = FALSE)
       design_net_out
     }
   })
