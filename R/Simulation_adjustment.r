@@ -167,12 +167,39 @@ B.survey.net <- import_surveynet2D(points = B_points, observations = B_obs)
 
 
 
-A.design <- design.snet(survey.net = A.survey.net, sd.apriori = 3, prob = NA, result.units = "mm", ellipse.scale = 1, teta.unit = list("deg", "rad"), all = TRUE)
-B.design <- design.snet(survey.net = B.survey.net, sd.apriori = 3, prob = NA, result.units = "mm", ellipse.scale = 1, teta.unit = list("deg", "rad"), all = TRUE)
+A.design <- adjust.snet(adjust = FALSE, survey.net = A.survey.net, sd.apriori = 3, prob = NA, result.units = "mm", ellipse.scale = 1, teta.unit = list("deg", "rad"), all = TRUE)
+B.design <- adjust.snet(adjust = FALSE,survey.net = B.survey.net, sd.apriori = 3, prob = NA, result.units = "mm", ellipse.scale = 1, teta.unit = list("deg", "rad"), all = TRUE)
 
 #A.design$design.matrices
 A.design$net.points
 B.design$net.points
+
+
+
+# Zadatak 06.02.2020
+
+# Zadatak
+
+
+A_points <- readxl::read_xlsx(path = ("B:/_Bechelor/_Ispiti/Projektovanje/06.02.2020/A_plan.xlsx"), sheet = "Points", col_types = c("numeric", "text", "numeric", "numeric", "logical", "logical", "logical"))
+A_obs <- readxl::read_xlsx(path = ("B:/_Bechelor/_Ispiti/Projektovanje/06.02.2020/A_plan.xlsx"), sheet = "Observations", col_types = c("text", "text", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric","numeric","numeric", "numeric", "numeric"))
+A.survey.net <- import_surveynet2D(points = A_points, observations = A_obs)
+
+B_points <- readxl::read_xlsx(path = ("B:/_Bechelor/_Ispiti/Projektovanje/06.02.2020/B_plan.xlsx"), sheet = "Points", col_types = c("numeric", "text", "numeric", "numeric", "logical", "logical", "logical"))
+B_obs <- readxl::read_xlsx(path = ("B:/_Bechelor/_Ispiti/Projektovanje/06.02.2020/B_plan.xlsx"), sheet = "Observations", col_types = c("text", "text", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric","numeric","numeric", "numeric", "numeric"))
+B.survey.net <- import_surveynet2D(points = B_points, observations = B_obs)
+
+
+
+
+A.design <- adjust.snet(adjust = FALSE, survey.net = A.survey.net, sd.apriori = 3, prob = NA, result.units = "mm", ellipse.scale = 1, teta.unit = list("deg", "rad"), all = TRUE)
+B.design <- adjust.snet(adjust = FALSE,survey.net = B.survey.net, sd.apriori = 3, prob = NA, result.units = "mm", ellipse.scale = 1, teta.unit = list("deg", "rad"), all = TRUE)
+
+#A.design$design.matrices
+A.design$net.points
+B.design$net.points
+
+
 
 
 # Simulation

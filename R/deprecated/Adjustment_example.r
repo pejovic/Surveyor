@@ -202,19 +202,24 @@ write_xlsx(zadatak3.list, path = "zadatak3_design.xlsx")
 #############################################################################################
 
 
-z_points <- readxl::read_xlsx(path = here::here("Data/Input/With_observations/Zadatak 1/Zadatak_1.xlsx"), sheet = "Points", col_types = c("numeric", "text", "numeric", "numeric", "logical", "logical", "logical"))
-z_obs <- readxl::read_xlsx(path = here::here("Data/Input/With_observations/Zadatak 1/Zadatak_1.xlsx"), sheet = "Observations", col_types = c("text", "text", "numeric", "numeric", "numeric", "numeric","numeric","numeric", "numeric", "numeric","numeric", "numeric", "numeric"))
-zadatak1 <- import_surveynet2D(points = z_points, observations = z_obs, dest_crs = NA)
+z_points <- readxl::read_xlsx(path = here::here("Data/Input/With_observations/Zadatak 5/Zadatak_20012020.xlsx"), sheet = "Points", col_types = c("numeric", "text", "numeric", "numeric", "logical", "logical", "logical"))
+z_obs <- readxl::read_xlsx(path = here::here("Data/Input/With_observations/Zadatak 5/Zadatak_20012020.xlsx"), sheet = "Observations", col_types = c("text", "text", "numeric", "numeric", "numeric", "numeric","numeric","numeric", "numeric", "numeric","numeric", "numeric", "numeric"))
+zadatak5 <- import_surveynet2D(points = z_points, observations = z_obs, dest_crs = NA)
 
+results <- adjust.snet(adjust = TRUE, survey.net = zadatak5, sd.apriori = 1, prob = 0.95, result.units = "mm", ellipse.scale = 1, teta.unit = "deg", units.dir = "sec", units.dist = "mm", use.sd.estimated = TRUE, all = TRUE)
+
+# adjust = TRUE; survey.net = zadatak5; sd.apriori = 5; prob = 0.95; result.units = "mm"; ellipse.scale = 1; teta.unit = "deg"; units.dir = "sec"; units.dist = "mm"; use.sd.estimated = TRUE; all = TRUE
+
+results$observations$
 
 z_points <- readxl::read_xlsx(path = here::here("Data/Input/With_observations/Zadatak 2/Zadatak_22.xlsx"), sheet = "Points", col_types = c("numeric", "text", "numeric", "numeric", "logical", "logical", "logical"))
 z_obs <- readxl::read_xlsx(path = here::here("Data/Input/With_observations/Zadatak 2/Zadatak_22.xlsx"), sheet = "Observations", col_types = c("text", "text", "numeric", "numeric", "numeric", "numeric","numeric","numeric", "numeric", "numeric","numeric", "numeric", "numeric"))
 zadatak2 <- import_surveynet2D(points = z_points, observations = z_obs, dest_crs = NA)
 
 
-A <- Amat(survey.net = zadatak2, units = "mm")
-f <- data.frame(f = fmat(survey.net = zadatak2))
-P <- data.frame(Wmat(survey.net = zadatak2, apriori = 5))
+A <- Amat(survey.net = zadatak5, units = "mm")
+f <- data.frame(f = fmat(survey.net = zadatak5))
+P <- data.frame(Wmat(survey.net = zadatak5, sd.apriori = 5))
 
 zadatak1.list <- list("A" = A, "f" = f, "P" = P)
 
