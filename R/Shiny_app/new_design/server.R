@@ -32,6 +32,8 @@ library(leaflet.extras)
 library(rhandsontable)
 library(shinyBS)
 library(shinyWidgets)
+library(knitr)
+library(rmarkdown)
 
 shinyServer(function(input, output){
   # ==================================================================
@@ -602,6 +604,39 @@ shinyServer(function(input, output){
     adj.net_map <- adj.net_spatial_view_web(ellipses = ellipses, observations = observations, points = points, sp_bound = input$sp_map, rii_bound = input$rii_map)
     adj.net_map@map
   })
+
+
+  ########################################
+  # REPORT 2D design - mapedit inuput data
+  ########################################
+
+  output$report2Ddesign_me_input <- downloadHandler(
+    filename = "report2D_design.html",
+    content = function(file) {
+      # Copy the report file to a temporary directory before processing it, in
+      # case we don't have write permissions to the current working dir (which
+      # can happen when deployed).
+      tempReport <- file.path("D:/R_projects/Surveyer/R/Shiny_app/new_design/Reports/Report_2D_design.R")
+      #file.copy("report.Rmd", tempReport, overwrite = TRUE)
+
+      # Set up parameters to pass to Rmd document
+      ellipses <- adjusted_net_design_me()$ellipse.net
+      observations <- adjusted_net_design_me()$observations
+      sp_bound = input$sp_map
+      rii_bound = input$rii_map
+      points <- mapEdit_list()[[1]]
+
+      params <- list(ellipses = ellipses, observations = observations, sp_bound = sp_bound, rii_bound = rii_bound, points = points)
+
+      # Knit the document, passing in the `params` list, and eval it in a
+      # child of the global environment (this isolates the code in the document
+      # from the code in this app).
+      rmarkdown::render(tempReport, output_file = file,
+                        params = params,
+                        envir = new.env(parent = globalenv())
+      )
+    }
+  )
 
 
   ###########################

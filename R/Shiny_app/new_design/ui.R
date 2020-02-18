@@ -269,7 +269,8 @@ shinyUI(
                                                                                           ),
                                                                                  tabPanel("EXPORT RESULTS",
                                                                                           actionButton(inputId ='modal_plot', label='PLOT', class = "btn-danger"),
-                                                                                          bsModal("modalExample", "Plot error ellipses - 2D net design", "modal_plot", size = "large", plotOutput("netSpatialView_ell11"), downloadButton('downloadPlot', 'Download'))
+                                                                                          bsModal("modalExample", "Plot error ellipses - 2D net design", "modal_plot", size = "large", plotOutput("netSpatialView_ell11"), downloadButton('downloadPlot', 'Download')),
+                                                                                          downloadButton("report2Ddesign", "Generate report")
                                                                                           )
                                                                                )
 
@@ -371,7 +372,8 @@ shinyUI(
                                                                                  ),
                                                                                  tabPanel("EXPORT RESULTS",
                                                                                           actionButton(inputId ='modal_plot1', label='PLOT', class = "btn-danger"),
-                                                                                          bsModal("modalExample1", "Plot error ellipses - 2D net design", "modal_plot1", size = "large", plotOutput("netSpatialView_ell_me11"), downloadButton('downloadPlot1', 'Download'))
+                                                                                          bsModal("modalExample1", "Plot error ellipses - 2D net design", "modal_plot1", size = "large", plotOutput("netSpatialView_ell_me11"), downloadButton('downloadPlot1', 'Download')),
+                                                                                          downloadButton("report2Ddesign_me_input", "Generate report")
                                                                                  )
                                                                                )
 
