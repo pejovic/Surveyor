@@ -42,7 +42,7 @@ shinyUI(
     tags$script(HTML(
       "document.body.style.fontFamily = 'Verdana';"
     )),
-    navbarPage(fluid = TRUE,"Surveyer|R",
+    navbarPage(fluid = TRUE,"Surveyor|R",
       theme = shinytheme("flatly"),
                            tabPanel("MAIN",
                                  fluidRow(
@@ -50,7 +50,7 @@ shinyUI(
                                           div(img(src ="Grb_Gradjevinski.png", height = 370, width = 297), style="text-align: center;")
                                             ),
                                    column(width = 6,
-                                          h3("Project: Surveyer"),
+                                          h3("Project: Surveyor"),
                                           p("Description: Package of Land and Engineering Surveying utilities"),
                                           p("Authors: Milutin Pejovic, Petar Bursac, Milan Kilibarda, Branislav Bajat and Aleksandar Sekulic"),
                                           p("University of Belgrade, Faculty of Civil Engineering, Department of geodesy and geoinformatics")
