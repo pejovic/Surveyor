@@ -624,9 +624,19 @@ shinyServer(function(input, output){
       observations <- adjusted_net_design_me()$observations
       sp_bound = input$sp_map
       rii_bound = input$rii_map
+      sx_bound <- input$sx_map
+      sy_bound <- input$sy_map
       points <- mapEdit_list()[[1]]
+      adjusted_net_design_me <- adjusted_net_design_me()
 
-      params <- list(ellipses = ellipses, observations = observations, sp_bound = sp_bound, rii_bound = rii_bound, points = points)
+      params <- list(ellipses = ellipses,
+                     observations = observations,
+                     sp_bound = sp_bound,
+                     rii_bound = rii_bound,
+                     sx_bound = sx_bound,
+                     sy_bound = sy_bound,
+                     points = points,
+                     adjusted_net_design_me = adjusted_net_design_me)
 
       # Knit the document, passing in the `params` list, and eval it in a
       # child of the global environment (this isolates the code in the document

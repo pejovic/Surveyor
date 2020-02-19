@@ -19,9 +19,12 @@
 #'   points: NA,
 #'   sp_bound: NA,
 #'   rii_bound: NA
+#'   sx_bound: NA
+#'   sy_bound: NA
+#'   adjusted_net_design_me: NA
 #' ---
 #'
-#'<img src="Grb_Gradjevinski.png" align="center" alt="logo" width="200" height = "200" style = "border: none; fixed: right;">
+#'<img src="Grb_Gradjevinski.png" align="center" alt="logo" width="180" height = "200" style = "border: none; fixed: right;">
 #'
 #'
 #+ include = TRUE, echo = FALSE, results = 'hide', warning = FALSE, message = FALSE
@@ -64,6 +67,7 @@ library(rmarkdown)
 library(knitr)
 library(kableExtra)
 
+
 #'
 #'
 #+ include = FALSE
@@ -88,13 +92,118 @@ my_theme <- function(base_size = 10, base_family = "sans"){
 
 theme_set(my_theme())
 mycolors=c("#f32440","#2185ef","#d421ef")
-
-
+#+ echo = FALSE, message = FALSE, warning = FALSE
+#' This report provides the main results regarding the design of 2D geodetic network.
+#'
 #+ echo = FALSE, message = FALSE, warning = FALSE
 adj.net_map <- adj.net_spatial_view_web(ellipses = params$ellipses, observations = params$observations, points = params$points, sp_bound = params$sp_bound, rii_bound = params$rii_bound)
 
 #'
-#' # Result - web map
+#' # Map results
 #+ echo = FALSE, result = TRUE, eval = TRUE, out.width="100%"
 adj.net_map
+
+
+#'
+#' # Tab results
+#' ## Error ellipse
+#'
+#+ echo = FALSE, result = TRUE, eval = TRUE, out.width="100%"
+  DT::datatable(
+    params$adjusted_net_design_me[[1]] %>%
+      st_drop_geometry() %>%
+      as.data.frame() %>%
+      mutate(
+        A = round(A, 1),
+        B = round(B, 1),
+        teta = round(teta, 1),
+        sx = round(sx, 1),
+        sy = round(sy, 1),
+        sp = round(sp, 1)
+      ), escape = FALSE,
+    extensions = list('Buttons', 'Responsive'),
+    options = list(dom = 'Bfrtip', pageLength = 5, lengthMenu = c(5, 10, 15, 20))) %>%
+    formatStyle(
+      'sx',
+      color = styleInterval(c(params$sx_bound), c('black', 'red'))#,
+      #backgroundColor = styleInterval(input$sx_map, c('lightGray', 'tomato'))
+    ) %>%
+    formatStyle(
+      'sy',
+      color = styleInterval(c(params$sy_bound), c('black', 'red'))#,
+      #backgroundColor = styleInterval(input$sy_map, c('lightGray', 'tomato'))
+    ) %>%
+    formatStyle(
+      'sp',
+      color = styleInterval(c(params$sp_bound), c('black', 'red'))#,
+      #backgroundColor = styleInterval(input$sp_map, c('lightGray', 'tomato'))
+    )
+
+#'
+#' ## Net points
+#'
+#+ echo = FALSE, result = TRUE, eval = TRUE, out.width="100%"
+  DT::datatable(
+    params$adjusted_net_design_me[[2]] %>%
+      st_drop_geometry() %>%
+      as.data.frame() %>%
+      mutate(
+        A = round(A, 1),
+        B = round(B, 1),
+        teta = round(teta, 1),
+        sx = round(sx, 1),
+        sy = round(sy, 1),
+        sp = round(sp, 1)
+      ) %>%
+      dplyr:: select(Name, FIX_X, FIX_Y, Point_object, sx, sy, sp),
+    escape = FALSE,
+    extensions = list('Buttons', 'Responsive'),
+    options = list(dom = 'Bfrtip', pageLength = 5, lengthMenu = c(5, 10, 15, 20)))%>%
+    formatStyle(
+      'sx',
+      color = styleInterval(c(params$sx_bound), c('black', 'red'))#,
+      #backgroundColor = styleInterval(input$sx_map, c('lightGray', 'tomato'))
+    ) %>%
+    formatStyle(
+      'sy',
+      color = styleInterval(c(params$sy_bound), c('black', 'red'))#,
+      #backgroundColor = styleInterval(input$sy_map, c('lightGray', 'tomato'))
+    ) %>%
+    formatStyle(
+      'sp',
+      color = styleInterval(c(params$sp_bound), c('black', 'red'))#,
+      #backgroundColor = styleInterval(input$sp_map, c('lightGray', 'tomato'))
+    )
+
+#'
+#' ## Obseravtions
+#'
+#+ echo = FALSE, result = TRUE, eval = TRUE, out.width="100%"
+  DT::datatable(
+    params$adjusted_net_design_me[[3]] %>%
+      st_drop_geometry() %>%
+      as.data.frame() %>%
+      mutate(
+        Ql = round(Ql, 2),
+        Qv = round(Qv, 2),
+        rii = round(rii, 2)
+      ) %>%
+      dplyr::select(from, to, type, Ql, Qv, rii),
+    escape = FALSE,
+    extensions = list('Buttons', 'Responsive'),
+    options = list(dom = 'Bfrtip', pageLength = 10, lengthMenu = c(5, 10, 15, 20, 50)))%>%
+    formatStyle(
+      'rii',
+      color = styleInterval(c(params$rii_bound), c('red', 'black')),
+      background = styleColorBar(params$adjusted_net_design_me[[3]]$rii, 'steelblue'),
+      backgroundSize = '100% 90%',
+      backgroundRepeat = 'no-repeat',
+      backgroundPosition = 'center'
+    )
+
+
+
+
+
+
 
