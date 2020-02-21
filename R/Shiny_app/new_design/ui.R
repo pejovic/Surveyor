@@ -52,7 +52,7 @@ shinyUI(
                                    column(width = 6,
                                           h3("Project: Surveyor"),
                                           p("Description: Package of Land and Engineering Surveying utilities"),
-                                          p("Authors: Milutin Pejovic, Petar Bursac, Milan Kilibarda, Branislav Bajat and Aleksandar Sekulic"),
+                                          p("Authors: Milutin Pejovic, Petar Bursac, Milan Kilibarda, Aleksandar Sekulic and Branislav Bajat"),
                                           p("University of Belgrade, Faculty of Civil Engineering, Department of geodesy and geoinformatics")
                                    )
 
@@ -270,7 +270,7 @@ shinyUI(
                                                                                  tabPanel("EXPORT RESULTS",
                                                                                           actionButton(inputId ='modal_plot', label='PLOT', class = "btn-danger"),
                                                                                           bsModal("modalExample", "Plot error ellipses - 2D net design", "modal_plot", size = "large", plotOutput("netSpatialView_ell11"), downloadButton('downloadPlot', 'Download')),
-                                                                                          downloadButton("report2Ddesign", "Generate report")
+                                                                                          downloadButton("report2Ddesign_xlsx", "Generate report")
                                                                                           )
                                                                                )
 

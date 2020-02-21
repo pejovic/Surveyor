@@ -627,7 +627,7 @@ shinyServer(function(input, output){
       sx_bound <- input$sx_map
       sy_bound <- input$sy_map
       points <- mapEdit_list()[[1]]
-      adjusted_net_design_me <- adjusted_net_design_me()
+      adjusted_net_design <- adjusted_net_design_me()
 
       params <- list(ellipses = ellipses,
                      observations = observations,
@@ -636,7 +636,51 @@ shinyServer(function(input, output){
                      sx_bound = sx_bound,
                      sy_bound = sy_bound,
                      points = points,
-                     adjusted_net_design_me = adjusted_net_design_me)
+                     adjusted_net_design = adjusted_net_design)
+
+      # Knit the document, passing in the `params` list, and eval it in a
+      # child of the global environment (this isolates the code in the document
+      # from the code in this app).
+      rmarkdown::render(tempReport, output_file = file,
+                        params = params,
+                        envir = new.env(parent = globalenv())
+      )
+    }
+  )
+
+
+
+  ########################################
+  # REPORT 2D design - xlsx inuput data
+  ########################################
+
+  output$report2Ddesign_xlsx <- downloadHandler(
+    filename = "report2D_design.html",
+    content = function(file) {
+      # Copy the report file to a temporary directory before processing it, in
+      # case we don't have write permissions to the current working dir (which
+      # can happen when deployed).
+      tempReport <- file.path("D:/R_projects/Surveyer/R/Shiny_app/new_design/Reports/Report_2D_design.R")
+      #file.copy("report.Rmd", tempReport, overwrite = TRUE)
+
+      # Set up parameters to pass to Rmd document
+      ellipses <- adjusted_net_design()$ellipse.net
+      observations <- adjusted_net_design()$observations
+      sp_bound = input$sp_xlsx
+      rii_bound = input$rii_xlsx
+      sx_bound <- input$sx_xlsx
+      sy_bound <- input$sy_xlsx
+      points <- updated_xlsx_list()[[1]]
+      adjusted_net_design <- adjusted_net_design()
+
+      params <- list(ellipses = ellipses,
+                     observations = observations,
+                     sp_bound = sp_bound,
+                     rii_bound = rii_bound,
+                     sx_bound = sx_bound,
+                     sy_bound = sy_bound,
+                     points = points,
+                     adjusted_net_design = adjusted_net_design)
 
       # Knit the document, passing in the `params` list, and eval it in a
       # child of the global environment (this isolates the code in the document

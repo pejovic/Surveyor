@@ -21,7 +21,7 @@
 #'   rii_bound: NA
 #'   sx_bound: NA
 #'   sy_bound: NA
-#'   adjusted_net_design_me: NA
+#'   adjusted_net_design: NA
 #' ---
 #'
 #'<img src="Grb_Gradjevinski.png" align="center" alt="logo" width="180" height = "200" style = "border: none; fixed: right;">
@@ -110,7 +110,7 @@ adj.net_map
 #'
 #+ echo = FALSE, result = TRUE, eval = TRUE, out.width="100%"
   DT::datatable(
-    params$adjusted_net_design_me[[1]] %>%
+    params$adjusted_net_design[[1]] %>%
       st_drop_geometry() %>%
       as.data.frame() %>%
       mutate(
@@ -144,7 +144,7 @@ adj.net_map
 #'
 #+ echo = FALSE, result = TRUE, eval = TRUE, out.width="100%"
   DT::datatable(
-    params$adjusted_net_design_me[[2]] %>%
+    params$adjusted_net_design[[2]] %>%
       st_drop_geometry() %>%
       as.data.frame() %>%
       mutate(
@@ -180,7 +180,7 @@ adj.net_map
 #'
 #+ echo = FALSE, result = TRUE, eval = TRUE, out.width="100%"
   DT::datatable(
-    params$adjusted_net_design_me[[3]] %>%
+    params$adjusted_net_design[[3]] %>%
       st_drop_geometry() %>%
       as.data.frame() %>%
       mutate(
@@ -195,7 +195,7 @@ adj.net_map
     formatStyle(
       'rii',
       color = styleInterval(c(params$rii_bound), c('red', 'black')),
-      background = styleColorBar(params$adjusted_net_design_me[[3]]$rii, 'steelblue'),
+      background = styleColorBar(params$adjusted_net_design[[3]]$rii, 'steelblue'),
       backgroundSize = '100% 90%',
       backgroundRepeat = 'no-repeat',
       backgroundPosition = 'center'
