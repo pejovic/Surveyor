@@ -502,7 +502,8 @@ shinyUI(
                                                                                 ),
                                                                                 tabPanel("EXPORT RESULTS",
                                                                                          actionButton(inputId ='modal_plot_2d_adj', label='PLOT', class = "btn-danger"),
-                                                                                         bsModal("modalExample_2d_adj", "Plot error ellipses - 2D net design", "modal_plot_2d_adj", size = "large", plotOutput("netSpatialView_ell11_2d_adj"), downloadButton('downloadPlot_2d_adj', 'Download'))
+                                                                                         bsModal("modalExample_2d_adj", "Plot error ellipses - 2D net design", "modal_plot_2d_adj", size = "large", plotOutput("netSpatialView_ell11_2d_adj"), downloadButton('downloadPlot_2d_adj', 'Download')),
+                                                                                         downloadButton("report2Dadjust_xlsx", "Generate report")
                                                                                 )
                                                                               )
 
