@@ -1,4 +1,36 @@
+library(shiny)
+library(shinythemes)
+library(leaflet)
+library(tidyverse)
+library(magrittr)
+library(ggplot2)
+#library(geomnet)
+#library(ggnetwork)
+library(sf)
+library(ggmap)
+library(sp)
+library(rgdal)
+library(leaflet)
+#library(xlsx)
+library(readxl)
+library(data.table)
+library(plotly)
+library(mapview)
+library(shinycssloaders)
+library(here)
+library(matlib)
+library(nngeo)
 library(dplyr)
+library(mapedit)
+library(DT)
+library(leaflet.extras)
+library(rhandsontable)
+library(shinyBS)
+library(shinyWidgets)
+library(knitr)
+library(rmarkdown)
+library(knitr)
+library(kableExtra)
 library(readxl)
 library(MASS)
 library(matlib)
@@ -12,6 +44,50 @@ sistemB <- read.csv(file = 'Data/Input_Transformations/WGS84 .csv', sep = ",") %
 
 sistem_A = sistemA
 sistem_B = sistemB
+
+
+
+
+
+# ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+# Function (x,y,h) ---> (B,L,h)
+# Transformation of the coordinates in projection to geodetic on the same ellipsoid
+# ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+data.xy = sistem_A
+a = 6377397.155
+b = 6356078.96325
+m0 = 0.9999
+yo = 7500000
+
+
+xyh2BLh <- function(data.xy = data.xy, a = a, b = b, mo = mo, yo = yo){
+
+  # 1 step: Unmodulated coordinates
+  data.xy %<>% dplyr::mutate(Yun = Y / m0,
+                             Xun = (X - yo)/m0)
+
+  # 2 step: Calculation od additional variables
+  e = sqrt(1-((b^2) / (a^2)))
+  e0 = sqrt(((a^2) / (b^2))-1)
+  e1 = (1-sqrt(1-e^2)) / (1+sqrt(1-e^2))
+
+  data.xy %<>% dplyr::mutate(
+    mi1 = Yun / (a * (1 - (e^2/4) - (3*e^4/64) - (5*e^6/256))),
+    B1 = mi1 + ((3/2) * e1 - (27/32)*e1^3) * sin(2*mi1) + ((21/16)*e1^2 - (55/32)*e1^4) * sin(4*mi1) + (151/96)*e1^3 * sin(6*mi1) + (1097/512)*e1^4*sin(8*mi1),
+    V1 = a / sqrt(1 - e^2*2*sin(B1)*cos(B1)),
+    M1 = (a * (1-e^2)) / (1 - e^2*2*sin(B1)*cos(B1))^(3/2),
+    T1 = (tan(B1))^2,
+    C1 = e0^2 * (cos(B1))^2,
+    D = Xun / V1
+  )
+
+
+
+
+}
+
+
 
 # ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 # Funkcija Helmert_7_parameters::
