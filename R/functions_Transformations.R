@@ -46,7 +46,8 @@ sistem_A = sistemA
 sistem_B = sistemB
 
 
-
+TETO_DKS <- readxl::read_xlsx('Data/Input_Transformations/TETO_DKS.xlsx', col_types = c("text", "numeric", "numeric", "numeric")) %>% as.data.frame()
+TETO_WGS <- readxl::read_xlsx('Data/Input_Transformations/TETO_WGS.xlsx', col_types = c("text", "numeric", "numeric", "numeric")) %>% as.data.frame()
 
 
 # ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -54,14 +55,15 @@ sistem_B = sistemB
 # Transformation of the coordinates in projection to geodetic on the same ellipsoid
 # ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-data.xy = sistem_A
+data.xy = TETO_DKS
 a = 6377397.155
 b = 6356078.96325
 m0 = 0.9999
 yo = 7500000
+L0 = 21
 
 
-xyh2BLh <- function(data.xy = data.xy, a = a, b = b, mo = mo, yo = yo){
+xyh2BLh <- function(data.xy = data.xy, a = a, b = b, m0 = m0, yo = yo, L0 = L0){
 
   # 1 step: Unmodulated coordinates
   data.xy %<>% dplyr::mutate(Yun = Y / m0,
@@ -76,18 +78,45 @@ xyh2BLh <- function(data.xy = data.xy, a = a, b = b, mo = mo, yo = yo){
     mi1 = Yun / (a * (1 - (e^2/4) - (3*e^4/64) - (5*e^6/256))),
     B1 = mi1 + ((3/2) * e1 - (27/32)*e1^3) * sin(2*mi1) + ((21/16)*e1^2 - (55/32)*e1^4) * sin(4*mi1) + (151/96)*e1^3 * sin(6*mi1) + (1097/512)*e1^4*sin(8*mi1),
     V1 = a / sqrt(1 - e^2*2*sin(B1)*cos(B1)),
-    M1 = (a * (1-e^2)) / (1 - e^2*2*sin(B1)*cos(B1))^(3/2),
+    M1 = (a * (1-e^2)) / (1 - e^2*(sin(B1))^2)^(3/2),
     T1 = (tan(B1))^2,
     C1 = e0^2 * (cos(B1))^2,
-    D = Xun / V1
+    D = Xun / V1,
+    B = B1 - (((V1 * tan(B1))/M1) * (D^2/2 - (5 + 3*T1 + 10*C1 - 4*C1^2 - 9*e0^2)*(D^4/24) + (61 + 90*T1 + 298*C1 + 45*T1^2 - 252*e0^2 - 3*C1^2)*(D^6/720))),
+    L = L0 + (1/cos(B1) * (D - (1 - 2*T1 + C1)*(D^3/6) + (5 - 2*C1 + 28*T1 - 3*C1^2 + 8*e0^2 + 24*T1^2)*(D^5/120)))
   )
 
-
-
-
+  return(data.xy)
 }
 
+xyh2BLh(data.xy = sistem_A, a = a, b = b, m0 = m0, yo = yo, L0 = L0)
 
+
+
+
+
+
+sistem_A
+# Create sf object
+sistem_A.sf <- st_as_sf(sistem_A, coords = c("X", "Y", "Z"), crs = 3909)
+# Transformation from (x, y, h) ---> (B, L, h)
+sistem_A.sf_BL <- st_transform(sistem_A.sf, crs = "+proj=longlat +ellps=bessel +datum=hermannskogel")
+# Transformation from (B, L, h) ---> (X, Y, Z)
+sistem_A.sf_XYZ <- st_transform(sistem_A.sf_BL, crs = "+proj=geocent +ellps=bessel +datum=hermannskogel +units=m +no_defs")
+
+
+# Create sf object
+TETO.sf <- st_as_sf(TETO_DKS, coords = c("X", "Y", "Z"), crs = 3909)
+# Transformation from (x, y, h) ---> (B, L, h)
+TETO.sf_BL <- st_transform(TETO.sf, crs = "+proj=longlat +ellps=bessel +datum=hermannskogel")
+# Transformation from (B, L, h) ---> (X, Y, Z)
+TETO_DKS.sf_XYZ <- st_transform(TETO.sf_BL, crs = "+proj=geocent +ellps=bessel +datum=hermannskogel +units=m +no_defs")
+
+TETO_DKS_XYZ <- TETO_DKS.sf_XYZ %>%
+  dplyr::mutate(X = sf::st_coordinates(.)[,1],
+                Y = sf::st_coordinates(.)[,2],
+                Z = sf::st_coordinates(.)[,3]) %>%
+  sf::st_drop_geometry()
 
 # ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 # Funkcija Helmert_7_parameters::
@@ -188,5 +217,5 @@ Helmert_7_parameters <- function(sistem_A = sistem_A, sistem_B = sistem_B){
   return(lista)
 }
 
-proba <- Helmert_7_parameters(sistem_A = sistemA, sistem_B = sistemB)
+proba <- Helmert_7_parameters(sistem_A = TETO_DKS_XYZ, sistem_B = TETO_WGS)
 proba[[1]]
