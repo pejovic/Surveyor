@@ -21,7 +21,7 @@
 #'   rii_bound: NA
 #'   sx_bound: NA
 #'   sy_bound: NA
-#'   adjusted_net_design: NA
+#'   adjusted_net_adj: NA
 #' ---
 #'
 #'<img src="Grb_Gradjevinski.png" align="center" alt="logo" width="180" height = "200" style = "border: none; fixed: right;">
@@ -93,7 +93,7 @@ my_theme <- function(base_size = 10, base_family = "sans"){
 theme_set(my_theme())
 mycolors=c("#f32440","#2185ef","#d421ef")
 #+ echo = FALSE, message = FALSE, warning = FALSE
-#' This report provides the main results regarding the design of 2D geodetic network.
+#' This report provides the main results regarding the adjustment of 2D geodetic network.
 #'
 #+ echo = FALSE, message = FALSE, warning = FALSE
 adj.net_map <- adj.net_spatial_view_web(ellipses = params$ellipses, observations = params$observations, points = params$points, sp_bound = params$sp_bound, rii_bound = params$rii_bound)
@@ -110,7 +110,7 @@ adj.net_map
 #'
 #+ echo = FALSE, result = TRUE, eval = TRUE, out.width="100%"
   DT::datatable(
-    params$adjusted_net_design[[1]] %>%
+    params$adjusted_net_adj[[1]] %>%
       st_drop_geometry() %>%
       as.data.frame() %>%
       mutate(
@@ -144,7 +144,7 @@ adj.net_map
 #'
 #+ echo = FALSE, result = TRUE, eval = TRUE, out.width="100%"
   DT::datatable(
-    params$adjusted_net_design[[2]] %>%
+    params$adjusted_net_adj[[2]] %>%
       st_drop_geometry() %>%
       as.data.frame() %>%
       mutate(
@@ -153,9 +153,13 @@ adj.net_map
         teta = round(teta, 1),
         sx = round(sx, 1),
         sy = round(sy, 1),
-        sp = round(sp, 1)
+        sp = round(sp, 1),
+        `dx [mm]` = round(dx, 2),
+        `dy [mm]` = round(dy, 2),
+        X = round(X, 2),
+        Y = round(Y, 2)
       ) %>%
-      dplyr:: select(Name, FIX_X, FIX_Y, Point_object, sx, sy, sp),
+      dplyr:: select(Name, `dx [mm]`, `dy [mm]`, X, Y, sx, sy, sp),
     escape = FALSE,
     extensions = list('Buttons', 'Responsive'),
     options = list(dom = 'Bfrtip', pageLength = 5, lengthMenu = c(5, 10, 15, 20)))%>%
@@ -180,7 +184,7 @@ adj.net_map
 #'
 #+ echo = FALSE, result = TRUE, eval = TRUE, out.width="100%"
   DT::datatable(
-    params$adjusted_net_design[[3]] %>%
+    params$adjusted_net_adj[[3]] %>%
       st_drop_geometry() %>%
       as.data.frame() %>%
       mutate(
@@ -188,14 +192,14 @@ adj.net_map
         Qv = round(Qv, 2),
         rii = round(rii, 2)
       ) %>%
-      dplyr::select(from, to, type, Ql, Qv, rii),
+      dplyr::select(from, to, type, Ql, Qv, rii, used),
     escape = FALSE,
     extensions = list('Buttons', 'Responsive'),
     options = list(dom = 'Bfrtip', pageLength = 10, lengthMenu = c(5, 10, 15, 20, 50)))%>%
     formatStyle(
       'rii',
       color = styleInterval(c(params$rii_bound), c('red', 'black')),
-      background = styleColorBar(params$adjusted_net_design[[3]]$rii, 'steelblue'),
+      background = styleColorBar(params$adjusted_net_adj[[3]]$rii, 'steelblue'),
       backgroundSize = '100% 90%',
       backgroundRepeat = 'no-repeat',
       backgroundPosition = 'center'

@@ -624,13 +624,59 @@ shinyServer(function(input, output){
       observations <- adjusted_net_design_me()$observations
       sp_bound = input$sp_map
       rii_bound = input$rii_map
+      sx_bound <- input$sx_map
+      sy_bound <- input$sy_map
       points <- mapEdit_list()[[1]]
+      adjusted_net_design <- adjusted_net_design_me()
 
-      params <- list(ellipses = ellipses, observations = observations, sp_bound = sp_bound, rii_bound = rii_bound, points = points)
+      params <- list(ellipses = ellipses,
+                     observations = observations,
+                     sp_bound = sp_bound,
+                     rii_bound = rii_bound,
+                     sx_bound = sx_bound,
+                     sy_bound = sy_bound,
+                     points = points,
+                     adjusted_net_design = adjusted_net_design)
 
       # Knit the document, passing in the `params` list, and eval it in a
       # child of the global environment (this isolates the code in the document
       # from the code in this app).
+      rmarkdown::render(tempReport, output_file = file,
+                        params = params,
+                        envir = new.env(parent = globalenv())
+      )
+    }
+  )
+
+
+  ########################################
+  # REPORT 2D design - xlsx inuput data
+  ########################################
+
+  output$report2Ddesign_xlsx <- downloadHandler(
+    filename = "report2D_design.html",
+    content = function(file) {
+      tempReport <- file.path("D:/R_projects/Surveyer/R/Shiny_app/new_design/Reports/Report_2D_design.R")
+
+      # Set up parameters to pass to Rmd document
+      ellipses <- adjusted_net_design()$ellipse.net
+      observations <- adjusted_net_design()$observations
+      sp_bound = input$sp_xlsx
+      rii_bound = input$rii_xlsx
+      sx_bound <- input$sx_xlsx
+      sy_bound <- input$sy_xlsx
+      points <- updated_xlsx_list()[[1]]
+      adjusted_net_design <- adjusted_net_design()
+
+      params <- list(ellipses = ellipses,
+                     observations = observations,
+                     sp_bound = sp_bound,
+                     rii_bound = rii_bound,
+                     sx_bound = sx_bound,
+                     sy_bound = sy_bound,
+                     points = points,
+                     adjusted_net_design = adjusted_net_design)
+
       rmarkdown::render(tempReport, output_file = file,
                         params = params,
                         envir = new.env(parent = globalenv())
@@ -823,6 +869,41 @@ shinyServer(function(input, output){
     adj.net_map@map
   })
 
+
+  ########################################
+  # REPORT 2D ADJUSTMENT - xlsx inuput data
+  ########################################
+
+  output$report2Dadjust_xlsx <- downloadHandler(
+    filename = "report2D_adjustment.html",
+    content = function(file) {
+      tempReport <- file.path("D:/R_projects/Surveyer/R/Shiny_app/new_design/Reports/Report_2D_adjust.R")
+
+      # Set up parameters to pass to Rmd document
+      ellipses <- adjusted_net_adj()[[1]]
+      observations <- adjusted_net_adj()[[3]]
+      sp_bound = input$sp_xlsx_adj
+      rii_bound = input$rii_xlsx_adj
+      sx_bound <- input$sx_xlsx_adj
+      sy_bound <- input$sy_xlsx_adj
+      points <- surveynet.wO()[[1]]
+      adjusted_net_adj <- adjusted_net_adj()
+
+      params <- list(ellipses = ellipses,
+                     observations = observations,
+                     sp_bound = sp_bound,
+                     rii_bound = rii_bound,
+                     sx_bound = sx_bound,
+                     sy_bound = sy_bound,
+                     points = points,
+                     adjusted_net_adj = adjusted_net_adj)
+
+      rmarkdown::render(tempReport, output_file = file,
+                        params = params,
+                        envir = new.env(parent = globalenv())
+      )
+    }
+  )
 
   # ===================================================================
   # 1D DESIGN
