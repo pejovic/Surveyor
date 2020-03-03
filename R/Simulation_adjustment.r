@@ -156,15 +156,16 @@ sim.survey.net.raw <- sim.obs(points = TETO_points, obs.plan = TETO_sim_obs)
 # Zadatak
 
 
-A_points <- readxl::read_xlsx(path = ("B:/_Bechelor/_Ispiti/Projektovanje/17.9.2019/A_plan.xlsx"), sheet = "Points", col_types = c("numeric", "text", "numeric", "numeric", "logical", "logical", "logical"))
-A_obs <- readxl::read_xlsx(path = ("B:/_Bechelor/_Ispiti/Projektovanje/17.9.2019/A_plan.xlsx"), sheet = "Observations", col_types = c("text", "text", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric","numeric","numeric", "numeric", "numeric"))
+A_points <- readxl::read_xlsx(path = ("E:/_Bechelor/_Ispiti/Projektovanje/17.9.2019/A_plan.xlsx"), sheet = "Points", col_types = c("numeric", "text", "numeric", "numeric", "logical", "logical", "logical"))
+A_obs <- readxl::read_xlsx(path = ("E:/_Bechelor/_Ispiti/Projektovanje/17.9.2019/A_plan.xlsx"), sheet = "Observations", col_types = c("text", "text", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric","numeric","numeric", "numeric", "numeric"))
 A.survey.net <- import_surveynet2D(points = A_points, observations = A_obs)
 
-B_points <- readxl::read_xlsx(path = ("B:/_Bechelor/_Ispiti/Projektovanje/17.9.2019/B_plan.xlsx"), sheet = "Points", col_types = c("numeric", "text", "numeric", "numeric", "logical", "logical", "logical"))
-B_obs <- readxl::read_xlsx(path = ("B:/_Bechelor/_Ispiti/Projektovanje/17.9.2019/B_plan.xlsx"), sheet = "Observations", col_types = c("text", "text", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric","numeric","numeric", "numeric", "numeric"))
-B.survey.net <- import_surveynet2D(points = B_points, observations = B_obs)
+B_points <- readxl::read_xlsx(path = ("E:/_Bechelor/_Ispiti/Projektovanje/17.9.2019/B_plan.xlsx"), sheet = "Points", col_types = c("numeric", "text", "numeric", "numeric", "logical", "logical", "logical"))
+B_obs <- readxl::read_xlsx(path = ("E:/_Bechelor/_Ispiti/Projektovanje/17.9.2019/B_plan.xlsx"), sheet = "Observations", col_types = c("text", "text", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric","numeric","numeric", "numeric", "numeric"))
+B.survey.net <- import_surveynet2D(points = B_points, observations = B_obs, axes = c("Northing", "Easting"))
 
-
+plot(A.survey.net[[1]]$geometry)
+plot(A.survey.net[[2]]$geometry,add = TRUE)
 
 
 A.design <- adjust.snet(adjust = FALSE, survey.net = A.survey.net, sd.apriori = 3, prob = NA, result.units = "mm", ellipse.scale = 1, teta.unit = list("deg", "rad"), all = TRUE)
@@ -202,24 +203,53 @@ B.design$net.points
 
 
 
+
+# Zadatak 06.02.2020 - 2
+
+# Zadatak
+
+
+A_points <- readxl::read_xlsx(path = ("E:/_Bechelor/_Ispiti/Projektovanje/17.3.2019/A_plan.xlsx"), sheet = "Points", col_types = c("numeric", "text", "numeric", "numeric", "logical", "logical", "logical"))
+A_obs <- readxl::read_xlsx(path = ("E:/_Bechelor/_Ispiti/Projektovanje/17.3.2019/A_plan.xlsx"), sheet = "Observations", col_types = c("text", "text", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric","numeric","numeric", "numeric", "numeric"))
+A.survey.net <- import_surveynet2D(points = A_points, observations = A_obs)
+
+
+
+
+
+A.design <- adjust.snet(adjust = FALSE, survey.net = A.survey.net, sd.apriori = 3, prob = NA, result.units = "mm", ellipse.scale = 1, teta.unit = list("deg", "rad"), all = TRUE)
+
+
+#A.design$design.matrices
+A.design$net.points
+B.design$net.points
+
+
+
+
+
 # Simulation
 
 B_sim_obs <- rbind(dplyr::filter(B.survey.net[[2]], direction), dplyr::filter(B.survey.net[[2]], distance)) %>%
   dplyr::select(station = from, obs.point = to) %>% sf::st_drop_geometry() %>%
   dplyr::mutate(type = c(rep("p", dim(dplyr::filter(B.survey.net[[2]], direction))[1]), rep("d", dim(dplyr::filter(B.survey.net[[2]], distance))[1])))
 
+coord_sim_res <- matrix(round(rnorm(n = 16, mean = 0, sd = 3)/1000, 3), ncol = 2)
+
+B_points$x <- B_points$x + coord_sim_res[, 1]
+B_points$y <- B_points$y + coord_sim_res[, 2]
 
 sim.B.net <- sim.obs(points = B_points, obs.plan = B_sim_obs, sd_Hz = 5, sd_cent_station = 1, sd_dist = 3, sd_cent_target = 1)
 sim.B.net <- import_surveynet2D(points = sim.B.net$Points, observations = sim.B.net$Observations)
 
-writexl::write_xlsx(sim.B.net, path = "E:/_Bechelor/_Ispiti/Inzenjerska2/Redovni/17.9.2019/simBobs.xlsx")
+writexl::write_xlsx(sim.B.net, path = "E:/_Bechelor/_Ispiti/Projektovanje/17.9.2019/simBobs.xlsx")
 
 #Izravnanje
-B_points <- readxl::read_xlsx(path = ("B:/_Bechelor/_Ispiti/Inzenjerska2/Redovni/17.9.2019/simBobs.xlsx"), sheet = "Points", col_types = c("numeric", "text", "numeric", "numeric", "logical", "logical", "logical"))
-B_obs <- readxl::read_xlsx(path = ("B:/_Bechelor/_Ispiti/Inzenjerska2/Redovni/17.9.2019/simBobs.xlsx"), sheet = "Observations", col_types = c("text", "text", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric","numeric","numeric", "numeric", "numeric"))
+B_points <- readxl::read_xlsx(path = ("E:/_Bechelor/_Ispiti/Projektovanje/17.9.2019/simBobs.xlsx"), sheet = "Points", col_types = c("numeric", "text", "numeric", "numeric", "logical", "logical", "logical"))
+B_obs <- readxl::read_xlsx(path = ("E:/_Bechelor/_Ispiti/Inzenjerska2/Redovni/17.9.2019/simBobs.xlsx"), sheet = "Observations", col_types = c("text", "text", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric","numeric","numeric", "numeric", "numeric"))
 B.survey.net <- import_surveynet2D(points = B_points, observations = B_obs)
 
-B.net.adjust <- adjust.snet(survey.net = B.survey.net, result.units = "mm", sd.apriori = 3)
+B.net.adjust <- adjust.snet(survey.net = sim.B.net, result.units = "mm", sd.apriori = 3)
 
 
 
@@ -233,5 +263,159 @@ Gorica_obs <- readxl::read_xlsx(path = ("./Data/Input/With_observations/Brana_Go
 Gorica.survey.net <- import_surveynet2D(points = Gorica_points, observations = Gorica_obs)
 
 Gorica.net.adjust <- adjust.snet(survey.net = Gorica.survey.net, result.units = "mm", sd.apriori = 10)
+
+
+
+# Simulation IG2
+
+# Zadatak 06.02.2020 - 2
+
+# Zadatak
+
+
+ig_points <- readxl::read_xlsx(path = ("C:/R_projects/Surveyer/Data/Input/Without_observations/xlsx/zadatak_IG2.xlsx"), sheet = "Points", col_types = c("numeric", "text", "numeric", "numeric", "logical", "logical", "logical"))
+ig_obs <- readxl::read_xlsx(path = ("C:/R_projects/Surveyer/Data/Input/Without_observations/xlsx/zadatak_IG2.xlsx"), sheet = "Observations", col_types = c("text", "text", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric","numeric","numeric", "numeric", "numeric"))
+ig.net <- import_surveynet2D(points = ig_points, observations = ig_obs)
+
+
+
+
+
+A.design <- adjust.snet(adjust = FALSE, survey.net = ig.net, sd.apriori = 3, prob = NA, result.units = "mm", ellipse.scale = 1, teta.unit = list("deg", "rad"), all = TRUE)
+
+
+#A.design$design.matrices
+A.design$net.points
+B.design$net.points
+
+
+ig_sim_obs <- rbind(dplyr::filter(ig.net[[2]], direction), dplyr::filter(ig.net[[2]], distance)) %>%
+  dplyr::select(station = from, obs.point = to) %>% sf::st_drop_geometry() %>%
+  dplyr::mutate(type = c(rep("p", dim(dplyr::filter(ig.net[[2]], direction))[1]), rep("d", dim(dplyr::filter(ig.net[[2]], distance))[1])))
+
+coord_sim_res <- matrix(round(rnorm(n = 12, mean = 0, sd = 3)/1000, 3), ncol = 2)
+
+ig_points$x <- ig_points$x + coord_sim_res[, 1]
+ig_points$y <- ig_points$y + coord_sim_res[, 2]
+
+sim.ig.net <- sim.obs(points = ig_points, obs.plan = ig_sim_obs, sd_Hz = 5, sd_cent_station = 1, sd_dist = 3, sd_cent_target = 1)
+sim.B.net <- import_surveynet2D(points = sim.B.net$Points, observations = sim.B.net$Observations)
+
+
+
+########### 1D ############################################
+
+dns_points <- readxl::read_xlsx(path = ("C:/R_projects/Surveyer/Data/Input/With_observations/DNS_1D/DNS_1D_nulta.xlsx"), sheet = "Points", col_types = c("numeric", "text", "numeric", "numeric", "numeric", "logical", "logical", "logical", "logical"))
+dns_obs <- readxl::read_xlsx(path = ("C:/R_projects/Surveyer/Data/Input/With_observations/DNS_1D/DNS_1D_nulta.xlsx"), sheet = "Observations", col_types = c("text", "text", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric","numeric","numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric"))
+
+file_path <- "C:/R_projects/Surveyer/Data/Input/With_observations/DNS_1D/DNS_1D_nulta.xlsx"
+file_path <- here::here("Data/Input/With_observations/Brana/Brana.xlsx")
+
+read_surveynet(file = file_path, dim = c("1D", "2D"), s0, dest_crs = NA, axes = c("Easting", "Northing")){
+  ponts_col_type <- c("numeric", "text", "numeric", "numeric", "numeric", "logical", "logical", "logical")
+  obs_col_type <- c("text", "text", rep("numeric", 15))
+  points <- readxl::read_xlsx(path = file_path, sheet = "Points", col_types = ponts_col_type) %>% mutate_at(., .vars = c("Name"), as.character)
+  observations <- readxl::read_xlsx(path = file_path, sheet = "Observations", col_types = obs_col_type) %>% mutate_at(., .vars = c("from", "to"), as.character)
+
+  fixed.points <- points[apply(points[, c("FIX_2D", "FIX_1D")], 1, any), , ]$Name %>% .[!is.na(.)]
+
+  if(dim == "2D"){
+    if(which(axes == "Easting") == 2){points <- points %>% dplyr::rename(x = y,  y = x)}
+
+    observations$x_from <- points$x[match(observations$from, points$Name)]
+    observations$y_from <- points$y[match(observations$from, points$Name)]
+    observations$x_to <- points$x[match(observations$to, points$Name)]
+    observations$y_to <- points$y[match(observations$to, points$Name)]
+
+    points <- points %>% as.data.frame() %>% sf::st_as_sf(coords = c("x","y")) # %>% sf::st_set_crs(dest_crs) TODO dodaj opciju za dodeljivanje CRS-a
+
+    observations <- observations %>% dplyr::mutate(Hz = HzD + HzM/60 + HzS/3600,
+                                                   Vz = VzD + VzM/60 + VzS/3600,
+                                                   distance = (!is.na(.$HD) | !is.na(.$SD)),
+                                                   direction = !is.na(Hz))
+
+    if(dplyr::select(observations, HzD, HzM, HzS) %>% is.na() %>% all()){
+      observations$direction[!is.na(observations$sd_Hz)] <- TRUE
+    }
+    if(dplyr::select(observations, HD, SD) %>% is.na() %>% all()){
+      observations$distance[!is.na(observations$sd_dist)] <- TRUE
+    }
+    # Eliminacija merenih duzina izmedju fiksnih tacaka duzina izmedju
+    if(length(fixed.points) > 0){
+      fixed.distances <- which(observations$distance & observations$from %in% fixed.points & observations$to %in% fixed.points)
+      observations[fixed.distances, "distance"] <- FALSE
+      observations[fixed.distances, "sd_dist"] <- NA
+    }
+
+    observations <- as.data.table(observations) %>% dplyr::mutate(id = seq.int(nrow(.))) %>% split(., f = as.factor(.$id)) %>%
+      lapply(., function(row) {lmat <- matrix(unlist(row[c("x_from", "y_from", "x_to", "y_to")]), ncol = 2, byrow = TRUE)
+      st_linestring(lmat)}) %>%
+      sf::st_sfc() %>%
+      sf::st_sf('ID' = seq.int(nrow(observations)), observations, 'geometry' = .)
+
+    observations <- observations %>% sf::st_set_crs(dest_crs)
+  }
+
+
+
+}
+
+
+
+import_surveynet2D <- function(points = points, observations = observations, dest_crs = NA, axes = c("Easting", "Northing")){
+
+  observations <- mutate_at(observations, .vars = c("from", "to"), as.character)
+  points <- mutate_at(points, .vars = c("Name"), as.character)
+
+  fixed.points <- points[apply(points[, c("FIX_X", "FIX_Y")], 1, all), , drop=FALSE]$Name
+
+  # Create geometry columns for points
+  if (is.na(dest_crs)){
+    dest_crs <- 3857
+  } else{
+    dest_crs <- dest_crs
+  }
+
+  if(which(axes == "Easting") == 2){points <- points %>% dplyr::rename(x = y,  y = x)}
+
+  observations$x_from <- points$x[match(observations$from, points$Name)]
+  observations$y_from <- points$y[match(observations$from, points$Name)]
+  observations$x_to <- points$x[match(observations$to, points$Name)]
+  observations$y_to <- points$y[match(observations$to, points$Name)]
+
+  points <- points %>% as.data.frame() %>% sf::st_as_sf(coords = c("x","y")) %>% sf::st_set_crs(dest_crs)
+
+  observations <- observations %>% dplyr::mutate(Hz = HzD + HzM/60 + HzS/3600,
+                                                 Vz = VzD + VzM/60 + VzS/3600,
+                                                 distance = (!is.na(.$HD) | !is.na(.$SD)),
+                                                 direction = !is.na(Hz))
+
+  if(dplyr::select(observations, HzD, HzM, HzS) %>% is.na() %>% all()){
+    observations$direction[!is.na(observations$sd_Hz)] <- TRUE
+  }
+  if(dplyr::select(observations, HD, SD) %>% is.na() %>% all()){
+    observations$distance[!is.na(observations$sd_dist)] <- TRUE
+  }
+  # Eliminacija merenih duzina izmedju fiksnih tacaka duzina izmedju
+  if(length(fixed.points) > 0){
+    fixed.distances <- which(observations$distance & observations$from %in% fixed.points & observations$to %in% fixed.points)
+    observations[fixed.distances, "distance"] <- FALSE
+    observations[fixed.distances, "sd_dist"] <- NA
+  }
+
+
+  observations <- as.data.table(observations) %>% dplyr::mutate(id = seq.int(nrow(.))) %>% split(., f = as.factor(.$id)) %>%
+    lapply(., function(row) {lmat <- matrix(unlist(row[c("x_from", "y_from", "x_to", "y_to")]), ncol = 2, byrow = TRUE)
+    st_linestring(lmat)}) %>%
+    sf::st_sfc() %>%
+    sf::st_sf('ID' = seq.int(nrow(observations)), observations, 'geometry' = .)
+
+  observations <- observations %>% sf::st_set_crs(dest_crs)
+
+  # Creating list
+  survey_net <- list(points, observations)
+  return(survey_net)
+}
+
 
 

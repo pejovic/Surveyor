@@ -4,7 +4,7 @@
 
 
 
-sim_Hz <- function(st_coords, target_coords, Hz_orient = NULL, Hz0 = 0, sd_cent = 2, sd_Hz = 5, c =  10, sd_colim = 5, sd_cent_target = NULL, sd_focus = NULL, seed = NULL, faces = list("mean", "both" ,"face1", "face2"), type = list("dms", "dec", "rad"), axes = c("Northing", "Easting")){
+  sim_Hz <- function(st_coords, target_coords, Hz_orient = NULL, Hz0 = 0, sd_cent = 2, sd_Hz = 5, c =  10, sd_colim = 5, sd_cent_target = NULL, sd_focus = NULL, seed = NULL, faces = list("mean", "both" ,"face1", "face2"), type = list("dms", "dec", "rad"), axes = c("Northing", "Easting")){
   ## check if the axis were set:
   if(length(axes) < 2) stop("axes must be defined with Easting and Northing")
   if(!any(axes %in% list("Northing", "Easting"))){ stop(paste(type, "axes must be Northing and Easting.")) }
