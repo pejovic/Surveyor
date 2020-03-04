@@ -308,8 +308,6 @@ sim.B.net <- import_surveynet2D(points = sim.B.net$Points, observations = sim.B.
 dns_points <- readxl::read_xlsx(path = ("C:/R_projects/Surveyer/Data/Input/With_observations/DNS_1D/DNS_1D_nulta.xlsx"), sheet = "Points", col_types = c("numeric", "text", "numeric", "numeric", "numeric", "logical", "logical", "logical", "logical"))
 dns_obs <- readxl::read_xlsx(path = ("C:/R_projects/Surveyer/Data/Input/With_observations/DNS_1D/DNS_1D_nulta.xlsx"), sheet = "Observations", col_types = c("text", "text", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric","numeric","numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric"))
 
-file_path <- "D:/R_projects/Surveyer/Data/Input/With_observations/DNS_1D/DNS_1D_nulta.xlsx"
-file_path <- here::here("Data/Input/With_observations/Brana/Brana.xlsx")
 
 read_surveynet <- function(file, type = list("1D", "2D"), s0, dest_crs = NA, axes = c("Easting", "Northing")){
   ponts_col_type <- c("numeric", "text", "numeric", "numeric", "numeric", "logical", "logical", "logical")
@@ -319,15 +317,26 @@ read_surveynet <- function(file, type = list("1D", "2D"), s0, dest_crs = NA, axe
 
   fixed.points <- points[apply(points[, c("FIX_2D", "FIX_1D")], 1, any), , ]$Name %>% .[!is.na(.)]
 
+  if(sum(rowSums(is.na(points[, c("x", "y")])) != 0) != 0){
+    warning("Network has no spatial coordinates")}else{
+
+      # Creating sf class from observations
+      observations$x_from <- points$x[match(observations$from, points$Name)]
+      observations$y_from <- points$y[match(observations$from, points$Name)]
+      observations$x_to <- points$x[match(observations$to, points$Name)]
+      observations$y_to <- points$y[match(observations$to, points$Name)]
+
+      points <- points %>% as.data.frame() %>% sf::st_as_sf(coords = c("x","y"))
+      if(which(axes == "Easting") == 2){points <- points %>% dplyr::rename(x = y,  y = x)}
+
+      observations <- as.data.table(observations) %>% dplyr::mutate(id = seq.int(nrow(.))) %>% split(., f = as.factor(.$id)) %>%
+        lapply(., function(row) {lmat <- matrix(unlist(row[c("x_from", "y_from", "x_to", "y_to")]), ncol = 2, byrow = TRUE)
+        st_linestring(lmat)}) %>%
+        sf::st_sfc() %>%
+        sf::st_sf('ID' = seq.int(nrow(observations)), observations, 'geometry' = .)
+    }
+
   if(type[1] == "2D"){
-
-    observations$x_from <- points$x[match(observations$from, points$Name)]
-    observations$y_from <- points$y[match(observations$from, points$Name)]
-    observations$x_to <- points$x[match(observations$to, points$Name)]
-    observations$y_to <- points$y[match(observations$to, points$Name)]
-
-    points <- points %>% as.data.frame() %>% sf::st_as_sf(coords = c("x","y"))
-    if(which(axes == "Easting") == 2){points <- points %>% dplyr::rename(x = y,  y = x)}
 
     if(sum(rowSums(is.na(observations[, c("HzD", "HzM", "HzS")])) != 0) != 0){stop("There is uncomplete observations")}
 
@@ -349,11 +358,6 @@ read_surveynet <- function(file, type = list("1D", "2D"), s0, dest_crs = NA, axe
       observations[fixed.distances, "sd_dist"] <- NA
     }
 
-    observations <- as.data.table(observations) %>% dplyr::mutate(id = seq.int(nrow(.))) %>% split(., f = as.factor(.$id)) %>%
-      lapply(., function(row) {lmat <- matrix(unlist(row[c("x_from", "y_from", "x_to", "y_to")]), ncol = 2, byrow = TRUE)
-      st_linestring(lmat)}) %>%
-      sf::st_sfc() %>%
-      sf::st_sf('ID' = seq.int(nrow(observations)), observations, 'geometry' = .)
 
     if(!is.na(dest_crs)){
       observations %<>% sf::st_set_crs(dest_crs)
@@ -363,91 +367,44 @@ read_surveynet <- function(file, type = list("1D", "2D"), s0, dest_crs = NA, axe
   }else{
     observations <- observations %>% dplyr::mutate(diff_level = (!is.na(.$dh) | !is.na(.$sd_dh) | !is.na(.$d_dh) | !is.na(.$n_dh))) %>%
       dplyr::select(from, to, dh, sd_dh, d_dh, n_dh, diff_level)
-
-    if(sum(rowSums(is.na(points[, c("x", "y")])) != 0) != 0){
-      warning("Leveling network has no spatial coordinates")}else{
-
-        # Creating sf class from observations
-        observations$x_from <- points$x[match(observations$from, points$Name)]
-        observations$y_from <- points$y[match(observations$from, points$Name)]
-        observations$x_to <- points$x[match(observations$to, points$Name)]
-        observations$y_to <- points$y[match(observations$to, points$Name)]
-
-        points <- points %>% as.data.frame() %>% sf::st_as_sf(coords = c("x","y"))
-        if(which(axes == "Easting") == 2){points <- points %>% dplyr::rename(x = y,  y = x)}
-
-        observations <- as.data.table(observations) %>% dplyr::mutate(id = seq.int(nrow(.))) %>% split(., f = as.factor(.$id)) %>%
-          lapply(., function(row) {lmat <- matrix(unlist(row[c("x_from", "y_from", "x_to", "y_to")]), ncol = 2, byrow = TRUE)
-          st_linestring(lmat)}) %>%
-          sf::st_sfc() %>%
-          sf::st_sf('ID' = seq.int(nrow(observations)), observations, 'geometry' = .)
-
-      }
   }
   # Creating list
   survey_net <- list(points, observations)
+  names(survey_net) <- c("points", "observations")
   return(survey_net)
 }
 
+file_path <- "C:/R_projects/Surveyer/Data/Input/With_observations/DNS_1D/DNS_1D_nulta.xlsx"
+file_path <- here::here("Data/Input/With_observations/Brana/Brana.xlsx")
 
-read_surveynet(file = file_path, type = "1D")
 
+dns <- read_surveynet(file = file_path, type = "1D")
 
+surveynet <- dns
 
-import_surveynet2D <- function(points = points, observations = observations, dest_crs = NA, axes = c("Easting", "Northing")){
+Amat1D <- function(surveynet){
+  used_points <- unique(c(surveynet$observations$from, surveynet$observations$to))
+  point_names <- unique(surveynet$points$Name)
+  point_names <- point_names[point_names %in% used_points]
+  if(!all(used_points %in% point_names)){stop("Some points are missed")}
 
-  observations <- mutate_at(observations, .vars = c("from", "to"), as.character)
-  points <- mutate_at(points, .vars = c("Name"), as.character)
-
-  fixed.points <- points[apply(points[, c("FIX_X", "FIX_Y")], 1, all), , drop=FALSE]$Name
-
-  # Create geometry columns for points
-  if (is.na(dest_crs)){
-    dest_crs <- 3857
-  } else{
-    dest_crs <- dest_crs
+  Amat <- data.frame(matrix(0, ncol = length(point_names), nrow = dim(surveynet$observations)[1]))
+  names(Amat) <- point_names
+  for(i in 1:dim(Amat)[1]){
+    Amat[i, surveynet$observations$from[i]] <- -1
+    Amat[i, surveynet$observations$to[i]] <- 1
   }
+  fixed_points <- surveynet$points[apply(surveynet$points[, c("FIX_1D")], 1, any), , ]$Name %>% .[!is.na(.)]
+  Amat <- Amat %>% select(-fixed_points)
 
-  if(which(axes == "Easting") == 2){points <- points %>% dplyr::rename(x = y,  y = x)}
-
-  observations$x_from <- points$x[match(observations$from, points$Name)]
-  observations$y_from <- points$y[match(observations$from, points$Name)]
-  observations$x_to <- points$x[match(observations$to, points$Name)]
-  observations$y_to <- points$y[match(observations$to, points$Name)]
-
-  points <- points %>% as.data.frame() %>% sf::st_as_sf(coords = c("x","y")) %>% sf::st_set_crs(dest_crs)
-
-  observations <- observations %>% dplyr::mutate(Hz = HzD + HzM/60 + HzS/3600,
-                                                 Vz = VzD + VzM/60 + VzS/3600,
-                                                 distance = (!is.na(.$HD) | !is.na(.$SD)),
-                                                 direction = !is.na(Hz))
-
-  if(dplyr::select(observations, HzD, HzM, HzS) %>% is.na() %>% all()){
-    observations$direction[!is.na(observations$sd_Hz)] <- TRUE
-  }
-  if(dplyr::select(observations, HD, SD) %>% is.na() %>% all()){
-    observations$distance[!is.na(observations$sd_dist)] <- TRUE
-  }
-  # Eliminacija merenih duzina izmedju fiksnih tacaka duzina izmedju
-  if(length(fixed.points) > 0){
-    fixed.distances <- which(observations$distance & observations$from %in% fixed.points & observations$to %in% fixed.points)
-    observations[fixed.distances, "distance"] <- FALSE
-    observations[fixed.distances, "sd_dist"] <- NA
-  }
-
-
-  observations <- as.data.table(observations) %>% dplyr::mutate(id = seq.int(nrow(.))) %>% split(., f = as.factor(.$id)) %>%
-    lapply(., function(row) {lmat <- matrix(unlist(row[c("x_from", "y_from", "x_to", "y_to")]), ncol = 2, byrow = TRUE)
-    st_linestring(lmat)}) %>%
-    sf::st_sfc() %>%
-    sf::st_sf('ID' = seq.int(nrow(observations)), observations, 'geometry' = .)
-
-  observations <- observations %>% sf::st_set_crs(dest_crs)
-
-  # Creating list
-  survey_net <- list(points, observations)
-  return(survey_net)
+  Amat <- as.matrix(Amat)
+  return(Amat)
 }
+
+
+Amat1D(surveynet = dns)
+
+
 
 
 
