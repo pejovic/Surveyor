@@ -362,7 +362,7 @@ read_surveynet <- function(file, dest_crs = NA, axes = c("Easting", "Northing"))
   # Eliminacija merenih duzina i visinsih razlika izmedju fiksnih tacaka duzina izmedju
   # checking for fixed points
   # TODO what in case of no-fixed points
-  fixed_points <- points %>% dplyr::filter(FIX_2D, FIX_1D) %>% .$Name
+  fixed_points <- points %>% dplyr::filter(FIX_2D | FIX_1D) %>% .$Name
 
   if(length(fixed_points) > 1){
     observations[observations$from %in% fixed_points & observations$to %in% fixed_points, "distance"] <- FALSE
@@ -465,7 +465,7 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
   # Model
   if(dim_type == "2D"){
     fix.mat2D <- !rep(survey.net[[1]]$FIX_2D, each = 2) # ovo je novo
-    A.mat <- Amat(survey.net, units = units)
+    A.mat <- Amat(survey.net, units = units) # Ne radi kada su mereni samo pravci
     W.mat <- Wmat(survey.net, sd.apriori = sd.apriori)
     rownames(A.mat) <- observations$from_to
     colnames(W.mat) <- observations$from_to
