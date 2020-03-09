@@ -116,9 +116,9 @@ coef_p <- function (pt1, pt2, pts, units) {
   return(vec_p)
 }
 
-
-fix.params <- function(net.points){
-  as.logical(c(apply(cbind(net.points$FIX_X, net.points$FIX_Y), 1, as.numeric)))
+# net.points <- survey.net[[1]]
+fix_params2D <- function(net.points){
+  rep(as.logical(c(apply(cbind(net.points$FIX_2D), 1, as.numeric))), each = 2)
 }
 
 # survey.net <- brana
@@ -154,7 +154,7 @@ Amat <- function(survey.net, units){
     Z_mat <- NULL
   }
 
-  fix <- fix.params(net.points = survey.net[[1]])
+  fix <- fix_params2D(net.points = survey.net[[1]])
   if(!is.null(A_dir) & !is.null(A_dist)){
     rest_mat <- matrix(0, nrow = dim(A_dist)[1], ncol = dim(Z_mat)[2])
   }else{
@@ -495,6 +495,7 @@ fdir_st <- function(st.survey.net, units.dir = "sec"){
   f <- (st.survey.net$Hz0 - st.survey.net$Hz)*units.table[units.dir]
   return(f)
 }
+
 
 
 fmat <- function(survey.net, units.dir = "sec", units.dist = "mm"){
