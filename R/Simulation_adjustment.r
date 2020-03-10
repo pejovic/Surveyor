@@ -344,8 +344,8 @@ read_surveynet <- function(file, dest_crs = NA, axes = c("Easting", "Northing"))
   observations <- observations %>% dplyr::mutate(Hz = HzD + HzM/60 + HzS/3600,
                                                  Vz = VzD + VzM/60 + VzS/3600,
                                                  tdh = SD*cos(Vz*pi/180),
-                                                 distance = (!is.na(HD) | !is.na(SD)),
-                                                 direction = !is.na(Hz),
+                                                 distance = (!is.na(HD) | !is.na(SD)) & !is.na(sd_dist),
+                                                 direction = !is.na(Hz) & !is.na(sd_Hz),
                                                  diff_level = (!is.na(dh) | !is.na(tdh)))
 
   # In network design, observation is included if measurement standard is provided
@@ -381,13 +381,13 @@ read_surveynet <- function(file, dest_crs = NA, axes = c("Easting", "Northing"))
   return(survey_net)
 }
 
-file_path <- "D:/R_projects/Surveyer/Data/Input/With_observations/DNS_1D/DNS_1D_nulta.xlsx"
-file_path <- here::here("Data/Input/With_observations/Brana/Brana.xlsx")
+#file_path <- "D:/R_projects/Surveyer/Data/Input/With_observations/DNS_1D/DNS_1D_nulta.xlsx"
+#file_path <- here::here("Data/Input/With_observations/Brana/Brana.xlsx")
 
 
-dns <- read_surveynet(file = file_path)
+#dns <- read_surveynet(file = file_path)
 
-surveynet <- dns
+#surveynet <- dns
 
 Amat1D <- function(survey.net){
   used_points <- unique(c(survey.net$observations$from, survey.net$observations$to))
@@ -442,8 +442,14 @@ file_path <- "D:/R_projects/Surveyer/Data/Input/With_observations/DNS_1D/DNS_1D_
 file_path <- here::here("Data/Input/With_observations/Brana/Brana.xlsx")
 dns <- read_surveynet(file = file_path)
 survey.net = dns
+dim_type = "2D"
+result.units = "mm"
+prob = 0.95
+adjust = TRUE
+sd.apriori = 0.5
+teta.unit = list("deg", "rad"); units.dir = "sec"; units.dist = "mm"; use.sd.estimated = TRUE; all = FALSE
 
-adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), sd.apriori = 1, prob = 0.95, result.units = list("mm", "cm", "m"), ellipse.scale = 1, teta.unit = list("deg", "rad"), units.dir = "sec", units.dist = "mm", use.sd.estimated = TRUE, all = FALSE){
+adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), sd.apriori = 1, maxiter = 50, prob = 0.95, coord_tolerance = 1e-4, result.units = list("mm", "cm", "m"), ellipse.scale = 1, teta.unit = list("deg", "rad"), units.dir = "sec", units.dist = "mm", use.sd.estimated = TRUE, all = FALSE){
   dim_type <- dim_type[[1]]
   "%!in%" <- Negate("%in%")
   if(!adjust){use.sd.estimated <- FALSE}
@@ -465,7 +471,7 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
   # Model
   if(dim_type == "2D"){
     fix.mat2D <- !rep(survey.net[[1]]$FIX_2D, each = 2) # ovo je novo
-    A.mat <- Amat(survey.net, units = units) # Ne radi kada su mereni samo pravci
+    A.mat <- Amat(survey.net, units = units)
     W.mat <- Wmat(survey.net, sd.apriori = sd.apriori)
     rownames(A.mat) <- observations$from_to
     colnames(W.mat) <- observations$from_to
@@ -491,9 +497,10 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
     r <- Qv.mat%*%W.mat
 
     if(adjust){
-      tol <- 1e-3
       e <- 1
-      while (e > tol) {
+      iter <- 1
+      while (e > coord_tolerance && iter < maxiter) {
+        iter <- iter + 1
         coords.iter.inc <- as.vector(t(cbind(survey.net[[1]]$x, survey.net[[1]]$y)))[fix.mat2D]
         f.mat <- fmat(survey.net = survey.net, units.dir = units.dir, units.dist = units)
         n.mat <- crossprod(A.mat, W.mat) %*% f.mat
@@ -503,6 +510,7 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
         survey.net[[1]][!survey.net[[1]]$FIX_2D, c("x", "y")] <- matrix(coords.est, ncol = 2, byrow = TRUE)
         e <- max(coords.est-coords.iter.inc)
       }
+      sd.estimated <- sqrt((crossprod(v.mat, W.mat) %*% v.mat)/(df))
     }
   }else{
     A.mat <- Amat1D(survey.net)
@@ -531,9 +539,10 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
     r <- Qv.mat%*%W.mat
 
     if(adjust){
-      tol <- 1e-5
       e <- 1
-      while (e > tol) {
+      iter <- 1
+      while (e > coord_tolerance && iter < maxiter) {
+        iter <- iter + 1
         coords.iter.inc <- survey.net[[1]]$h[!survey.net[[1]]$FIX_1D]
         f.mat <- fmat1D(survey.net = survey.net, units = units)
         n.mat <- crossprod(A.mat, W.mat) %*% f.mat
@@ -541,6 +550,11 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
         v.mat <- A.mat%*%x.mat + f.mat
         survey.net[[1]]$h[!survey.net[[1]]$FIX_1D] <- survey.net[[1]]$h[!survey.net[[1]]$FIX_1D] + x.mat/res.unit.lookup[units]
         e <- max(abs(survey.net[[1]]$h[!survey.net[[1]]$FIX_1D]-coords.iter.inc))
+      }
+      sd.estimated <- sqrt((crossprod(v.mat, W.mat) %*% v.mat)/(df))
+      model_adequacy <- model_adequacy_test(sd.apriori, sd.estimated, df, prob = 0.999)
+      if(!model_adequacy){
+        tds <- abs(v.mat)/(sd.apriori*sqrt(diag(Qv.mat)))
       }
     }
   }

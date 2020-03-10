@@ -124,7 +124,7 @@ fix_params2D <- function(net.points){
 # survey.net <- brana
 Amat <- function(survey.net, units){
 
-  if(!all(is.na(survey.net[[2]]$sd_Hz))){
+  if(any(survey.net[[2]]$direction)){
     A_dir <- survey.net[[2]] %>% dplyr::filter(direction) %>% st_coordinates() %>% as.data.frame() %>% mutate_at(vars(L1), as.factor) %>%
       split(., .$L1) %>%
       lapply(., function(x) coef_p(pt1 = x[1, 1:2], pt2 = x[2, 1:2], pts = st_coordinates(survey.net[[1]][, 1:2]), units = units)) %>%
@@ -133,7 +133,7 @@ Amat <- function(survey.net, units){
     A_dir <- NULL
   }
 
-  if(!all(is.na(survey.net[[2]]$sd_dist))){
+  if(any(survey.net[[2]]$distance)){
     A_dist <- survey.net[[2]] %>% dplyr::filter(distance) %>% st_coordinates() %>% as.data.frame() %>% mutate_at(vars(L1), as.factor) %>%
       split(., .$L1) %>%
       lapply(., function(x) coef_d(pt1 = x[1, 1:2], pt2 = x[2, 1:2], pts = st_coordinates(survey.net[[1]][, 1:2]), units = units)) %>%
@@ -510,6 +510,18 @@ fmat <- function(survey.net, units.dir = "sec", units.dist = "mm"){
 }
 
 
-
+model_adequacy_test <- function(sd.apriori, sd.estimated, df, prob){
+  if(sd.estimated > sd.apriori){
+    F.estimated <- sd.estimated^2/sd.apriori^2
+    F.quantile <- qf(p = prob, df1 = df, df2 = 10^1000)
+  }else{
+    F.estimated <- sd.apriori^2/sd.estimated^2
+    F.quantile <- qf(p = prob, df1 = 10^1000, df2 = df)
+  }
+  F.estimated < F.quantile
+    # print(paste(round(F.estimated, 2), ">", round(F.quantile, 2), "Model is not correct", sep = " "))
+    # Data snooping and others have to be put in the list
+    # print(paste(round(F.estimated, 2), "<", round(F.quantile, 2), "Model is correct", sep = " "))
+}
 
 
