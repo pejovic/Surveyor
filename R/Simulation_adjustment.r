@@ -433,9 +433,9 @@ fmat1D <- function(survey.net, units = units){
   return(f)
 }
 
-Wmat1D(survey.net = dns, w_model = "n_dh")
-Amat1D(survey.net = dns)
-fmat1D(survey.net = dns, units = "mm")
+#Wmat1D(survey.net = dns, w_model = "n_dh")
+#Amat1D(survey.net = dns)
+#fmat1D(survey.net = dns, units = "mm")
 
 
 file_path <- "D:/R_projects/Surveyer/Data/Input/With_observations/DNS_1D/DNS_1D_nulta.xlsx"
@@ -444,12 +444,14 @@ dns <- read_surveynet(file = file_path)
 survey.net = dns
 dim_type = "2D"
 result.units = "mm"
-prob = 0.95
+prob = 0.99
 adjust = TRUE
-sd.apriori = 0.5
+sd.apriori = 1
+coord_tolerance = 1e-3
+maxiter = 50
 teta.unit = list("deg", "rad"); units.dir = "sec"; units.dist = "mm"; use.sd.estimated = TRUE; all = FALSE
 
-adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), sd.apriori = 1, maxiter = 50, prob = 0.95, coord_tolerance = 1e-4, result.units = list("mm", "cm", "m"), ellipse.scale = 1, teta.unit = list("deg", "rad"), units.dir = "sec", units.dist = "mm", use.sd.estimated = TRUE, all = FALSE){
+adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), sd.apriori = 1, maxiter = 50, prob = 0.95, coord_tolerance = 1e-3, result.units = list("mm", "cm", "m"), ellipse.scale = 1, teta.unit = list("deg", "rad"), units.dir = "sec", units.dist = "mm", use.sd.estimated = TRUE, all = FALSE){
   dim_type <- dim_type[[1]]
   "%!in%" <- Negate("%in%")
   if(!adjust){use.sd.estimated <- FALSE}
@@ -495,24 +497,51 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
     Ql.mat <- A.mat %*% tcrossprod(Qx.mat, A.mat)
     Qv.mat <- solve(W.mat) - Ql.mat
     r <- Qv.mat%*%W.mat
-
     if(adjust){
       e <- 1
       iter <- 1
+      coords.iter_0 <- as.vector(t(cbind(survey.net[[1]]$x, survey.net[[1]]$y)))[fix.mat2D]
       while (e > coord_tolerance && iter < maxiter) {
         iter <- iter + 1
         coords.iter.inc <- as.vector(t(cbind(survey.net[[1]]$x, survey.net[[1]]$y)))[fix.mat2D]
+        A.mat <- Amat(survey.net, units = units)
+        W.mat <- Wmat(survey.net, sd.apriori = sd.apriori)
+        rownames(A.mat) <- observations$from_to
+        colnames(W.mat) <- observations$from_to
+        rownames(W.mat) <- observations$from_to
+        # MNK solution
+        N.mat <- crossprod(A.mat, W.mat) %*% A.mat
+        Qx.mat <- tryCatch(
+          {
+            x = Qx.mat = solve(N.mat)
+          },
+          error = function(e) {
+            x = Qx.mat = MASS::ginv(N.mat)
+          })
+        colnames(Qx.mat) <- colnames(N.mat)
+        rownames(Qx.mat) <- rownames(N.mat)
         f.mat <- fmat(survey.net = survey.net, units.dir = units.dir, units.dist = units)
         n.mat <- crossprod(A.mat, W.mat) %*% f.mat
         x.mat <- -Qx.mat %*% n.mat
         v.mat <- A.mat%*%x.mat + f.mat
+        Ql.mat <- A.mat %*% tcrossprod(Qx.mat, A.mat)
+        Qv.mat <- solve(W.mat) - Ql.mat
+        r <- Qv.mat%*%W.mat
         coords.est <- coords.iter.inc + x.mat[1:sum(fix.mat2D)]/res.unit.lookup[units]
         survey.net[[1]][!survey.net[[1]]$FIX_2D, c("x", "y")] <- matrix(coords.est, ncol = 2, byrow = TRUE)
+        survey.net[[1]] <- survey.net[[1]] %>% st_drop_geometry() %>% sf::st_as_sf(coords = c("x","y"), remove = FALSE)
         e <- max(coords.est-coords.iter.inc)
       }
+      x.mat <- (coords.est-coords.iter_0)*res.unit.lookup[units]
       sd.estimated <- sqrt((crossprod(v.mat, W.mat) %*% v.mat)/(df))
+      model_adequacy <- model_adequacy_test(sd.apriori, sd.estimated, df, prob = prob)
+      if(!model_adequacy){
+        tds <- data.frame(Observation = rownames(A.mat), statistics = as.numeric(abs(v.mat)/(sd.apriori*sqrt(diag(Qv.mat))))) %>% dplyr::arrange(., desc(statistics))
+        print("Check the statistics for individual observations. Suggestion: Remove the observation with the highest value of the statistics:")
+        tds
+      }
     }
-  }else{
+  }#else{
     A.mat <- Amat1D(survey.net)
     W.mat <- Wmat1D(survey.net = survey.net, wdh_model = wdh_model, sd0 = 1, d0 = NA, n0 = 1)
     rownames(A.mat) <- observations$from_to
@@ -552,36 +581,15 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
         e <- max(abs(survey.net[[1]]$h[!survey.net[[1]]$FIX_1D]-coords.iter.inc))
       }
       sd.estimated <- sqrt((crossprod(v.mat, W.mat) %*% v.mat)/(df))
-      model_adequacy <- model_adequacy_test(sd.apriori, sd.estimated, df, prob = 0.999)
+      model_adequacy <- model_adequacy_test(sd.apriori, sd.estimated, df, prob = prob)
       if(!model_adequacy){
-        tds <- abs(v.mat)/(sd.apriori*sqrt(diag(Qv.mat)))
+        tds <- data.frame(Observation = rownames(A.mat), statistics = as.numeric(abs(v.mat)/(sd.apriori*sqrt(diag(Qv.mat))))) %>% dplyr::arrange(., desc(statistics))
+        print("Check the statistics for individual observations. Suggestion: Remove the observation with the highest value of statistics:")
+        tds
       }
     }
   }
 
-
-
-  if(adjust){
-    n.mat <- crossprod(A.mat, W.mat) %*% f.mat
-    x.mat <- -Qx.mat %*% n.mat
-    v.mat <- A.mat%*%x.mat + f.mat
-    survey.net[[1]]$h[!survey.net[[1]]$FIX_1D] <- survey.net[[1]]$h[!survey.net[[1]]$FIX_1D] + x.mat/res.unit.lookup[units]
-
-    sd.estimated <- sqrt((crossprod(v.mat, W.mat) %*% v.mat)/(df))
-
-    if(sd.estimated > sd.apriori){
-      F.estimated <- sd.estimated^2/sd.apriori^2
-      F.quantile <- qf(p = prob, df1 = df, df2 = 10^1000)
-    }else{
-      F.estimated <- sd.apriori^2/sd.estimated^2
-      F.quantile <- qf(p = prob, df1 = 10^1000, df2 = df)
-    }
-    if(F.estimated > F.quantile){
-      F.test.conclusion <- paste("Model nije adekvatan")
-      # Data snooping and others have to be put in the list
-    }else{
-      F.test.conclusion <- paste("Model je adekvatan")
-    }
 
     if(use.sd.estimated){sd.apriori <- sd.estimated}
     # Results
@@ -608,7 +616,6 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
       sf::st_as_sf(coords = c("X","Y"), remove = FALSE)
       # TODO: Gubi se projekcija!!!!
 
-  }
 
   # Computing error ellipses
   Qxy.list <- Qxy(Qx.mat, n = lenght(used.points), fixd = fix.mat*1)

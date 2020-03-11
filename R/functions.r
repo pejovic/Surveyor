@@ -518,7 +518,10 @@ model_adequacy_test <- function(sd.apriori, sd.estimated, df, prob){
     F.estimated <- sd.apriori^2/sd.estimated^2
     F.quantile <- qf(p = prob, df1 = 10^1000, df2 = df)
   }
-  F.estimated < F.quantile
+  if(F.estimated < F.quantile){print(paste("sd.estimated =", round(sd.estimated, 2), "/ sd.apriori =", round(sd.apriori, 2), "/ Model is correct", sep = " "))} else{
+    print(paste("sd.estimated =", round(sd.estimated, 2), "/ sd.apriori =", round(sd.apriori, 2), "/ Model is not correct", sep = " "))
+  }
+  return(F.estimated < F.quantile)
     # print(paste(round(F.estimated, 2), ">", round(F.quantile, 2), "Model is not correct", sep = " "))
     # Data snooping and others have to be put in the list
     # print(paste(round(F.estimated, 2), "<", round(F.quantile, 2), "Model is correct", sep = " "))
