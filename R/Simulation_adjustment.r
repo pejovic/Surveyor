@@ -440,6 +440,8 @@ fmat1D <- function(survey.net, units = units){
 
 file_path <- "D:/R_projects/Surveyer/Data/Input/With_observations/DNS_1D/DNS_1D_nulta.xlsx"
 file_path <- here::here("Data/Input/With_observations/Brana/Brana.xlsx")
+file_path <- here::here("Data/Input/With_observations/Makis/Makis_observations.xlsx")
+file_path <- here::here("Data/Input/With_observations/Zadatak 1/Zadatak_1.xlsx")
 dns <- read_surveynet(file = file_path)
 survey.net = dns
 dim_type = "2D"
@@ -472,7 +474,7 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
 
   # Model
   if(dim_type == "2D"){
-    fix.mat2D <- !rep(survey.net[[1]]$FIX_2D, each = 2) # ovo je novo
+    fix.mat2D <- !rep(survey.net[[1]]$FIX_2D, each = 2)
     A.mat <- Amat(survey.net, units = units)
     W.mat <- Wmat(survey.net, sd.apriori = sd.apriori)
     rownames(A.mat) <- observations$from_to
@@ -597,12 +599,10 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
     # Problem nastaje kada je samo jedna koordinata neke tacke fiksna.
     # Resiti sa pivot i left_join.
 
-    coords.inc <- x.mat %>%
-      as.data.frame() %>%
-      tibble::rownames_to_column(var = "parameter")
-
-    coords.inc <- coords.inc[1:sum(fix.mat2D),] %>%
-      dplyr::rename(coords.inc = V1) %>%
+    coords.inc <- data.frame(parameter = colnames(A.mat)[1:sum(fix.mat2D)], coords.inc = as.numeric(x.mat))
+    coords.inc <- coords.inc %>%
+      # `colnames<-`(c("parameter", "coords.inc")) %>%
+      # dplyr::rename(coords.inc = .) %>%
       tidyr::separate(.,col = parameter, into = c("Name", "inc.name"), sep = "_") %>%
       tidyr::pivot_wider(., names_from = c(inc.name), values_from = c(coords.inc)) %>%
       dplyr::mutate_all(., ~replace(., is.na(.), 0))
