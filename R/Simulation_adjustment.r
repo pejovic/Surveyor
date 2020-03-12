@@ -506,7 +506,7 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
       while (e > coord_tolerance && iter < maxiter) {
         iter <- iter + 1
         coords.iter.inc <- as.vector(t(cbind(survey.net[[1]]$x, survey.net[[1]]$y)))[fix.mat2D]
-        A.mat <- Amat(survey.net, units = units)
+        A.mat <- Amat(survey.net, units = units) # Nije dobro u drugoj iteraciji
         W.mat <- Wmat(survey.net, sd.apriori = sd.apriori)
         rownames(A.mat) <- observations$from_to
         colnames(W.mat) <- observations$from_to
@@ -618,7 +618,7 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
 
 
   # Computing error ellipses
-  Qxy.list <- Qxy(Qx.mat, n = lenght(used.points), fixd = fix.mat*1)
+  Qxy.list <- Qxy(Qx.mat, n = lenght(used.points), fixd = fix.mat2D*1)
   ellipses <- lapply(Qxy.list, function(x) error.ellipse(x, prob = prob, sd.apriori = sd.apriori, teta.unit = teta.unit[[1]]))
   ellipses <- do.call(rbind, ellipses) %>%
     as.data.frame() %>%
@@ -686,6 +686,25 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
 
 }
 
+
+# Funkcija koja izdvaja elemente Qx matrice u listu za elipsu svake tacke
+Qxy <- function(Qx, n, fix = fix2D){
+  k = 0
+  fixd <- cbind(fixd, fixd[,1] + fixd[, 2])
+  Qxxx <- as.list(rep(NA, dim(fixd)[1]))
+  for(i in 1:length(Qxxx)){
+    k = fixd[i, 1] + fixd[i, 2] + k
+    if(fixd[i, 3] == 1){
+      Qxxx[[i]] <- diag(fixd[i, c(1, 2)])*Qx[k, k]
+    }
+    else if (fixd[i, 3] == 2){
+      Qxxx[[i]] <- cbind(c(Qx[k-1, k-1], Qx[k-1, k]), c(Qx[k, k-1], Qx[k, k]))
+    } else {
+      Qxxx[[i]] <- diag(fixd[i, c(1, 2)])
+    }
+  }
+  return(Qxxx)
+}
 
 
 
