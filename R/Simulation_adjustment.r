@@ -321,13 +321,14 @@ file_path <- "D:/R_projects/Surveyer/Data/Input/With_observations/DNS_1D/DNS_1D_
 file_path <- here::here("Data/Input/With_observations/Brana/Brana.xlsx")
 file_path <- here::here("Data/Input/With_observations/Makis/Makis_observations.xlsx")
 file_path <- here::here("Data/Input/With_observations/Zadatak 1/Zadatak_1.xlsx")
+file_path <- here::here("Data/Input/Without_observations/xlsx/TETO_plan opazanja.xlsx")
 dns <- read_surveynet(file = file_path)
 survey.net = dns
-dim_type = "2D"
+dim_type = "1D"
 result.units = "mm"
 prob = 0.99
-adjust = TRUE
-sd.apriori = 1
+adjust = FALSE
+sd.apriori = 0.2
 coord_tolerance = 1e-2
 maxiter = 50
 teta.unit = list("deg", "rad"); units.dir = "sec"; units.dist = "mm"; use.sd.estimated = TRUE; all = FALSE; ellipse.scale = 1
@@ -337,11 +338,13 @@ file_path <- "D:/R_projects/Surveyer/Data/Input/With_observations/DNS_1D/DNS_1D_
 file_path <- here::here("Data/Input/With_observations/Brana/Brana.xlsx")
 file_path <- here::here("Data/Input/With_observations/Makis/Makis_observations.xlsx")
 file_path <- here::here("Data/Input/With_observations/Zadatak 1/Zadatak_1.xlsx")
+file_path <- here::here("Data/Input/Without_observations/xlsx/TETO_plan opazanja.xlsx")
 
 dns <- read_surveynet(file = file_path)
-adjust.snet(adjust = TRUE, survey.net = dns, dim_type = "2D", sd.apriori = 1)
+adjust.snet(adjust = FALSE, survey.net = dns, wdh_model = "n_dh", dim_type = "2D", sd.apriori = 1,  all = FALSE)
 
-
+# TODO: Ako se zadata neki model tezina za koji ne postoje podaci stavi warning. Npr. za model "sd_dh" mora da postoji i sd.apriori koji se pretvara u sd0.
+# TODO: Ako se zadata neki model tezina za koji ne postoje podaci stavi warning. Npr. za model "sd_dh" mora da postoji i sd.apriori koji se pretvara u sd0.
 
 
 

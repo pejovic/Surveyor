@@ -370,6 +370,8 @@ model_adequacy_test <- function(sd.apriori, sd.estimated, df, prob){
 }
 
 read_surveynet <- function(file, dest_crs = NA, axes = c("Easting", "Northing")){
+  # TODO: Ako se definise neki model tezina za koji ne postoje podaci stavi warning. Npr. za model "sd_dh" mora da postoji i sd.apriori koji se pretvara u sd0.
+
   # TODO: Set warning if there are different or not used points in two elements of survey.net list.
   # TODO: Check if any point has no sufficient measurements to be adjusted.
   # setting columns type
@@ -408,14 +410,14 @@ read_surveynet <- function(file, dest_crs = NA, axes = c("Easting", "Northing"))
                                                  diff_level = (!is.na(dh) | !is.na(tdh)))
 
   # In network design, observation is included if measurement standard is provided
-  if(dplyr::select(observations, HzD, HzM, HzS) %>% is.na() %>% all()){
+  if(observations %>% purrr::when(is(., "sf") ~ st_drop_geometry(.), ~.) %>% dplyr::select(HzD, HzM, HzS) %>% is.na() %>% all()){
     observations$direction[!is.na(observations$sd_Hz)] <- TRUE
   }
-  if(dplyr::select(observations, HD, SD) %>% is.na() %>% all()){
+  if(observations %>% purrr::when(is(., "sf") ~ st_drop_geometry(.), ~.) %>% dplyr::select(HD, SD) %>% is.na() %>% all()){
     observations$distance[!is.na(observations$sd_dist)] <- TRUE
   }
-  if(dplyr::select(observations, dh) %>% is.na() %>% all()){
-    observations$diff_level[(!is.na(.$dh) | !is.na(.$sd_dh) | !is.na(.$d_dh) | !is.na(.$n_dh))] <- TRUE
+  if(observations %>% purrr::when(is(., "sf") ~ st_drop_geometry(.), ~.) %>% dplyr::select(dh) %>% is.na() %>% all()){
+    observations$diff_level[(!is.na(observations$dh) | !is.na(observations$sd_dh) | !is.na(observations$d_dh) | !is.na(observations$n_dh))] <- TRUE
   }
 
   # Eliminacija merenih duzina i visinsih razlika izmedju fiksnih tacaka duzina izmedju
@@ -467,7 +469,7 @@ Wmat1D <- function(survey.net, wdh_model = list("sd_dh", "d_dh", "n_dh", "E"), s
 
   survey.net[[2]] %<>%
     dplyr::mutate(weigth = case_when(
-      wdh_model == "sd_dh" ~ sd.apriori/sd_dh,
+      wdh_model == "sd_dh" ~ sd0/sd_dh,
       wdh_model == "d_dh" ~ 1/d_dh,
       wdh_model == "n_dh" ~ n0/n_dh,
       wdh_model == "E" ~ 1
@@ -485,7 +487,7 @@ fmat1D <- function(survey.net, units = units){
 }
 
 # Funkcija koja izdvaja elemente Qx matrice u listu za elipsu svake tacke
-Qxy <- function(Qx, fix = fix.mat[, 2]){
+Qxy <- function(Qx, fix){
   k = 0
   Qxxx <- as.list(rep(NA, length(fix)))
   for(i in 1:length(Qxxx)){
@@ -510,12 +512,9 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
   disp.unit.lookup <- c("mm" = 2, "cm" = 3, "m" = 4)
 
   # TODO: This has to be solved within the read.surveynet function
-  used.points <- unique(c(survey.net[[2]]$from, survey.net[[2]]$to))
+  used.points <- survey.net[[1]]$Name[survey.net[[1]]$Name %in% unique(c(survey.net[[2]]$from, survey.net[[2]]$to))]
   if(!!any(used.points %!in% survey.net[[1]]$Name)) stop(paste("There is no coordinates for point", used.points[which(used.points %!in% survey.net[[1]]$Name)]), sep = " ")
   survey.net[[1]] <- survey.net[[1]][which(survey.net[[1]]$Name %in% used.points), ]
-
-  fix.mat <- !cbind(survey.net[[1]]$FIX_1D, survey.net[[1]]$FIX_2D)
-
 
   # Model
   if(dim_type == "2D"){
@@ -586,15 +585,12 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
       # Results
       coords.inc <- data.frame(parameter = colnames(A.mat)[1:sum(fix.mat2D)], coords.inc = as.numeric(x.mat))
       coords.inc <- coords.inc %>%
-        # `colnames<-`(c("parameter", "coords.inc")) %>%
-        # dplyr::rename(coords.inc = .) %>%
         tidyr::separate(.,col = parameter, into = c("Name", "inc.name"), sep = "_") %>%
         tidyr::pivot_wider(., names_from = c(inc.name), values_from = c(coords.inc)) %>%
         dplyr::mutate_all(., ~replace(., is.na(.), 0))
 
       point.adj.results <- dplyr::left_join(survey.net[[1]], coords.inc, by = "Name") %>%
         dplyr::mutate_at(., .vars = c("dx", "dy"), ~replace(., is.na(.), 0)) %>%
-        #cbind(., st_coordinates(.)) %>%
         sf::st_drop_geometry() %>%
         dplyr::mutate(x0 = x - dx/res.unit.lookup[units], y0 = y - dy/res.unit.lookup[units]) %>%
         dplyr::mutate_at(., .vars = c("dx", "dy"), round, disp.unit.lookup[units]) %>%
@@ -624,7 +620,7 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
       r <- Qv.mat%*%W.mat
     }
     # Computing error ellipses
-    Qxy.list <- Qxy(Qx.mat, fix = fix.mat[, 2])
+    Qxy.list <- Qxy(Qx.mat, fix = !survey.net[[1]]$FIX_2D)
     ellipses <- lapply(Qxy.list, function(x) error.ellipse(x, prob = prob, sd.apriori = sd.apriori, teta.unit = teta.unit[[1]]))
     ellipses <- do.call(rbind, ellipses) %>%
       as.data.frame() %>%
@@ -640,14 +636,14 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
       dplyr::mutate_if(is.numeric, round, disp.unit.lookup[units])
 
     if(adjust){
-      survey.net[[1]] <- merge(point.adj.results, ellipses, by = "Name") %>% merge(., sigmas)
+      survey.net[[1]] <- merge(point.adj.results, ellipses, by = "Name") %>% merge(., sigmas) %>% dplyr::arrange(id)
     }else{
-      survey.net[[1]] <- merge(survey.net[[1]], ellipses, by = "Name") %>% merge(., sigmas)
+      survey.net[[1]] <- merge(survey.net[[1]], ellipses, by = "Name") %>% merge(., sigmas) %>% dplyr::arrange(id)
     }
 
     # Preparing ellipses as separate sf outcome
     # TODO Proveriti da li elipse uzimaju definitivne koordinate ili priblizne!
-    ellipse.net <- do.call(rbind, lapply(split(survey.net[[1]], survey.net[[1]]$Name), function(x) sf.ellipse(x, scale = ellipse.scale)))
+    ellipse.net <- do.call(rbind, lapply(split(survey.net[[1]], factor(survey.net[[1]]$Name, levels = survey.net[[1]]$Name)), function(x) sf.ellipse(x, scale = ellipse.scale)))
     ellipse.net <- merge(ellipse.net, sigmas)
     ellipse.net <- sf::st_set_crs(ellipse.net, value = st_crs(survey.net[[2]]))
 
@@ -660,7 +656,7 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
     fix.mat1D <- !(survey.net[[1]]$FIX_1D)
 
     A.mat <- Amat1D(survey.net)
-    W.mat <- Wmat1D(survey.net = survey.net, wdh_model = wdh_model, sd.apriori = sd.apriori, n0 = 1)
+    W.mat <- Wmat1D(survey.net = survey.net, wdh_model = wdh_model, n0 = 1)
     rownames(A.mat) <- observations$from_to
     colnames(W.mat) <- observations$from_to
     rownames(W.mat) <- observations$from_to
@@ -708,7 +704,7 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
         stop()
       }
       if(use.sd.estimated){sd.apriori <- sd.estimated}
-
+    }
       # Results
       if(adjust){
         h.inc <- data.frame(Name = as.character(colnames(A.mat)), dh = as.numeric(h.inc), sd_h = c(sd.apriori)*sqrt(diag(Qx.mat)), stringsAsFactors  = FALSE)
@@ -724,7 +720,6 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
           dplyr::mutate_at(., .vars = "sd_h", round, disp.unit.lookup[units]) %>%
           dplyr::select(id, Name, x, y, h, sd_h, FIX_1D, Point_object)
       }
-    }
     points <- survey.net[[1]]
   }
 
@@ -739,10 +734,10 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
 
   if(sum(rowSums(is.na(survey.net[[1]][, c("x", "y")])) != 0) == 0){
     observations <- observations %>%
-      dplyr::mutate(x_from = point.adj.results$x[match(observations$from, point.adj.results$Name)],
-                    y_from = point.adj.results$y[match(observations$from, point.adj.results$Name)],
-                    x_to = point.adj.results$x[match(observations$to, point.adj.results$Name)],
-                    y_to = point.adj.results$y[match(observations$to, point.adj.results$Name)])
+      dplyr::mutate(x_from = survey.net[[1]]$x[match(observations$from, survey.net[[1]]$Name)],
+                    y_from = survey.net[[1]]$y[match(observations$from, survey.net[[1]]$Name)],
+                    x_to = survey.net[[1]]$x[match(observations$to, survey.net[[1]]$Name)],
+                    y_to = survey.net[[1]]$y[match(observations$to, survey.net[[1]]$Name)])
 
     observations <- observations %>%
       as.data.table(.) %>%
