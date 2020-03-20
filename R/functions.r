@@ -765,3 +765,109 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
 
 }
 
+
+
+##################
+# plot_surveynet
+##################
+
+# Function for data geovisualisation trough package ggplot2 and mapview
+# Parameters:
+#    1. snet -  object from function read_surveynet
+#    2. webmap - plot 2d net using mapview package
+#    3. net.1D - 2d net indicator
+#    4. net.2D - 1d net indicator
+
+# snet = dns.snet
+
+plot_surveynet <- function(snet = snet, webmap = FALSE, net.1D = FALSE, net.2D = FALSE){
+  points <- snet$points
+  observations <- snet$observations
+
+  if(net.2D == TRUE) {
+    points %<>% dplyr::mutate(Point_type = dplyr::case_when(Point_object == FALSE ~ "Geodetic network",
+                                                            Point_object == TRUE ~ "Points at object"))
+    observations %<>% dplyr::mutate(Observation_type = dplyr::case_when(distance == TRUE & direction == FALSE ~ "Distance",
+                                                                        distance == FALSE & direction == TRUE ~ "Direction",
+                                                                        distance == TRUE & direction == TRUE ~ "Both",
+                                                                        distance == FALSE & direction == FALSE ~ "None"))
+
+    if(webmap == TRUE){
+
+      if(is.na(sf::st_crs(points)) == TRUE) {
+        points %<>% sf::st_set_crs(., 3857)
+      }
+
+      if(is.na(sf::st_crs(observations)) == TRUE) {
+        observations %<>% sf::st_set_crs(., 3857)
+      }
+
+      points <- st_transform(points, 3857)
+      observations <- st_transform(observations, 3857)
+
+      webmap.net <- mapview(points, zcol = "Point_type", col.regions = c("red","grey")) + mapview(observations, zcol = "Observation_type")
+      return(webmap.net)
+
+    } else {
+      plot.net <- ggplot() +
+        geom_sf(data=observations, aes(color = Observation_type),size=0.5,stroke=0.5)+
+        geom_sf(data=points, aes(fill = Point_type), shape = 24,  size=2, stroke=0.5) +
+        geom_sf_text(data=points, aes(label=Name,hjust = 1.5, vjust =1.5))+
+        xlab("\nEasting") +
+        ylab("Northing\n") +
+        ggtitle("GEODETIC 2D NETWORK")+
+        labs(subtitle = "Points and Observational plan")+
+        guides(col = guide_legend())+
+        theme_bw()+
+        theme(legend.position = 'bottom')
+
+      return(plot.net)
+    }
+  }
+
+  if(net.1D == TRUE){
+    observations %<>% dplyr::mutate(from_to = paste(from, to, sep = "-"))
+
+    p.plot <- ggplotly(ggplot()+
+               geom_point(data = points,
+                          aes(x = Name,
+                              y = h,
+                              colour = h))+
+               scale_colour_gradient(low="blue",
+                                     high="red")+
+               xlab("Name") +
+               ylab("h [m]") +
+               ggtitle("GEODETIC 1D NETWORK")+
+               labs(colour = "h [m]")+
+               theme_bw()+
+               ylim(min(points$h)-50,
+                    max(points$h)+50), showlegend = T
+             )
+
+    o.plot <- ggplotly(
+      ggplot()+
+        geom_point(data = observations,
+                   aes(x = from_to,
+                       y = dh,
+                       colour = dh))+
+        scale_colour_gradient(low="orange",
+                              high="red")+
+        xlab("Name") +
+        ylab("dh [m]") +
+        ggtitle("GEODETIC 1D NETWORK")+
+        labs(colour = "dh [m]")+
+        theme_bw()+
+        ylim(min(observations$dh)-1.5,
+             max(observations$dh)+1.5), showlegend = T
+    )
+
+    plot.1d.net <- plotly::subplot(style(p.plot, showlegend = FALSE),
+                                   style(o.plot, showlegend = TRUE),
+                                   nrows = 2,
+                                   shareX = FALSE,
+                                   shareY = FALSE,
+                                   titleX = TRUE,
+                                   titleY = TRUE)
+    return(plot.1d.net)
+  }
+}
