@@ -41,23 +41,28 @@ shinyServer(function(input, output){
   # ==================================================================
 
   # XLSX INPUT DATA
-  xlsx_points <- reactive({
-    req(input$fileXLSX)
-    map_xlsx_points <- readxl::read_xlsx(path = input$fileXLSX$datapath, sheet = "Points")#, col_types = c("numeric", "text", "numeric", "numeric", "logical", "logical", "logical"))
-    map_xlsx_points
-  })
+  # xlsx_points <- reactive({
+  #   req(input$fileXLSX)
+  #   map_xlsx_points <- read_surveynet(path = input$fileXLSX$datapath, dest_crs = NA)#, col_types = c("numeric", "text", "numeric", "numeric", "logical", "logical", "logical"))
+  #   map_xlsx_points$points
+  # })
 
-  xlsx_observations <- reactive({
-    req(input$fileXLSX)
-    map_xlsx_observations <- readxl::read_xlsx(path = input$fileXLSX$datapath, sheet = "Observations")#, col_types = c("text", "text", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric"))
-    map_xlsx_observations
-  })
+  # xlsx_observations <- reactive({
+  #   req(input$fileXLSX)
+  #   map_xlsx_observations <- read_surveynet(path = input$fileXLSX$datapath, dest_crs = NA)#, col_types = c("text", "text", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric"))
+  #   map_xlsx_observations
+  # })
 
   xlsx_list <- reactive({#(input$go2, {
-    p_xlsx <- xlsx_points()
-    o_xlsx <- xlsx_observations()
+    req(input$fileXLSX)
+    #p_xlsx <- xlsx_points()
+    #o_xlsx <- xlsx_observations()
     dest_crs_xlsx = as.numeric(input$epsg_xlsx)
-    output_xlsx <- import_surveynet2D(points = p_xlsx, observations = o_xlsx, dest_crs = dest_crs_xlsx)
+    output_xlsx <- read_surveynet(file = input$fileXLSX$datapath, dest_crs = dest_crs_xlsx)
+    # output_xlsx$points %<>%
+    #   dplyr::mutate_if(is.numeric, ~replace(., is.na(.), "NULL"))
+    # output_xlsx$observations %<>%
+    #   dplyr::mutate_if(is.numeric, ~replace(., is.na(.), "NULL"))
     output_xlsx
   })
 
@@ -72,8 +77,8 @@ shinyServer(function(input, output){
   })
 
   output$o_des_xlsx <- renderRHandsontable({
-    values_p$data <- hot_to_r(input$p_des_xlsx)
-    p_df <- as.data.frame(values_p$data)
+    # values_p$data <- hot_to_r(input$p_des_xlsx)
+    # p_df <- as.data.frame(values_p$data)
     rhandsontable(as.data.frame(xlsx_list()[[2]] %>% st_drop_geometry()), width = 650, height = 650)
   })
 
@@ -83,7 +88,7 @@ shinyServer(function(input, output){
     values_o$data <- hot_to_r(input$o_des_xlsx)
     o_df <- as.data.frame(values_o$data)
     dest_crs_xlsx = as.numeric(input$epsg_xlsx)
-    p_xlsx <- xlsx_points()
+    p_xlsx <- xlsx_list()[[1]]
     output_xlsx <- import_surveynet2D_updated(points = p_df, observations = o_df, dest_crs = dest_crs_xlsx, raw_points = p_xlsx)
     output_xlsx
   })
@@ -102,6 +107,9 @@ shinyServer(function(input, output){
   #  web_map_xlsx@map
   #})
 
+
+  # TO DO:: ZAMENITI SA plot_surveynet
+
   output$netSpatialView_xlsx_updated <- renderPlot({
     out_points_xlsx <- updated_xlsx_list()[[1]]
     out_observations_xlsx <- updated_xlsx_list()[[2]]
@@ -115,7 +123,6 @@ shinyServer(function(input, output){
     web_map_xlsx <- net_spatial_view_web(points = out_points_xlsx, observations = out_observations_xlsx)
     web_map_xlsx@map
   })
-
 
   #output$p_acc_design_xlsx <- renderRHandsontable({
   #  rhandsontable(data.frame(Sx = 0, Sy = 0, Sp = 0, A_B = 0, dP = 0, dPTeta = 0, Teta = 0))
@@ -160,9 +167,10 @@ shinyServer(function(input, output){
 
   output$p_des_map <- renderRHandsontable({
     rhandsontable(as.data.frame(po_me() %>% st_drop_geometry() %>%
-                                  mutate(
-                                    FIX_X = FALSE,
-                                    FIX_Y = FALSE,
+                                  dplyr::mutate(
+                                    FIX_2D = FALSE,
+                                    FIX_1D = NA,
+                                    h = as.numeric(NA),
                                     Point_object = FALSE
                                   )), width = 650, height = 650)
   })
@@ -214,23 +222,23 @@ shinyServer(function(input, output){
   # Input data with observations
   ##############################
 
-  xlsx_points_wO <- reactive({
-    req(input$fileXLSX_adj)
-    map_xlsx_points_wO <- readxl::read_xlsx(path = input$fileXLSX_adj$datapath, sheet = "Points")#, col_types = c("numeric", "text", "numeric", "numeric", "logical", "logical", "logical"))
-    map_xlsx_points_wO
-  })
+  # xlsx_points_wO <- reactive({
+  #   req(input$fileXLSX_adj)
+  #   map_xlsx_points_wO <- readxl::read_xlsx(path = input$fileXLSX_adj$datapath, sheet = "Points")#, col_types = c("numeric", "text", "numeric", "numeric", "logical", "logical", "logical"))
+  #   map_xlsx_points_wO
+  # })
 
-  xlsx_observations_wO <- reactive({
-    req(input$fileXLSX_adj)
-    map_xlsx_observations_wO <- readxl::read_xlsx(path = input$fileXLSX_adj$datapath, sheet = "Observations")#, col_types = c("text", "text", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric"))
-    map_xlsx_observations_wO
-  })
+  # xlsx_observations_wO <- reactive({
+  #   req(input$fileXLSX_adj)
+  #   map_xlsx_observations_wO <- readxl::read_xlsx(path = input$fileXLSX_adj$datapath, sheet = "Observations")#, col_types = c("text", "text", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric"))
+  #   map_xlsx_observations_wO
+  # })
 
   surveynet.wO <- reactive({#(input$preprocess_2d_adj, {
-    p_xlsx_wO <- xlsx_points_wO()
-    o_xlsx_wO <- xlsx_observations_wO()
+    # p_xlsx_wO <- xlsx_points_wO()
+    # o_xlsx_wO <- xlsx_observations_wO()
     dest_crs_xlsx_wO = as.numeric(input$epsg_xlsx_adj)
-    output_xlsx_wO <- import_surveynet2D(points = p_xlsx_wO, observations = o_xlsx_wO, dest_crs = dest_crs_xlsx_wO)
+    output_xlsx_wO <- read_surveynet(file = input$fileXLSX_adj$datapath, dest_crs = dest_crs_xlsx_wO)
     output_xlsx_wO
   })
 
@@ -306,28 +314,16 @@ shinyServer(function(input, output){
     ellipse_scale <- input$adjust_1_ell_scale
 
     if(length(data_up) == 0){
-      design_net_out <- adjust.snet(adjust = FALSE, survey.net = data, result.units = result_units, ellipse.scale = ellipse_scale,use.sd.estimated = FALSE, all = FALSE)
+      design_net_out <- adjust.snet(adjust = FALSE, survey.net = data, dim_type = "2D", result.units = result_units, ellipse.scale = ellipse_scale, use.sd.estimated = FALSE, all = FALSE)
       design_net_out
     } else{
-      design_net_out <- adjust.snet(adjust = FALSE, survey.net = data_up, result.units = result_units, ellipse.scale = ellipse_scale,use.sd.estimated = FALSE, all = FALSE)
+      design_net_out <- adjust.snet(adjust = FALSE, survey.net = data_up, dim_type = "2D", result.units = result_units, ellipse.scale = ellipse_scale, use.sd.estimated = FALSE, all = FALSE)
       design_net_out
     }
   })
 
   output$ellipse_error <- DT::renderDataTable({
-    #data <- adjusted_net_design()[[1]]
-    #data %<>%
-    #  st_drop_geometry() %>%
-    #  as.data.frame() %>%
-    #  mutate(
-    #    A = round(A, 4),
-    #    B = round(B, 4),
-    #    teta = round(teta, 4),
-    #    sx = round(sx, 4),
-    #    sy = round(sy, 4),
-    #    sp = round(sp, 4)
-    #  )
-    DT::datatable(adjusted_net_design()[[1]] %>%
+    DT::datatable(adjusted_net_design()[[1]]$ellipse.net %>%
                     st_drop_geometry() %>%
                     as.data.frame() %>%
                     mutate(
@@ -362,19 +358,19 @@ shinyServer(function(input, output){
   })
 
   output$netSpatialView_ell <- renderPlot({
-    ellipses_1 <- adjusted_net_design()[[1]]
-    observations_1 <- adjusted_net_design()[[3]]
+    ellipses_1 <- adjusted_net_design()[[1]]$ellipse.net
+    observations_1 <- adjusted_net_design()[[2]]
     adj_output_view <- adj_net_spatial_view(ellipses_1, observations_1)
     adj_output_view
   })
 
   plotInput <- function(){
-    adj_net_spatial_view(adjusted_net_design()[[1]], adjusted_net_design()[[3]])
+    adj_net_spatial_view(adjusted_net_design()[[1]]$ellipse.net, adjusted_net_design()[[2]])
   }
 
   output$netSpatialView_ell11 <- renderPlot({
-    ellipses_1 <- adjusted_net_design()[[1]]
-    observations_1 <- adjusted_net_design()[[3]]
+    ellipses_1 <- adjusted_net_design()[[1]]$ellipse.net
+    observations_1 <- adjusted_net_design()[[2]]
     adj_output_view <- adj_net_spatial_view(ellipses_1, observations_1)
     adj_output_view
   })
@@ -387,7 +383,7 @@ shinyServer(function(input, output){
 
   output$net_points_adj <- DT::renderDataTable({
     DT::datatable(
-        adjusted_net_design()[[2]] %>%
+        adjusted_net_design()[[1]]$net.points %>%
         st_drop_geometry() %>%
         as.data.frame() %>%
         mutate(
@@ -398,7 +394,7 @@ shinyServer(function(input, output){
           sy = round(sy, 1),
           sp = round(sp, 1)
         ) %>%
-          dplyr:: select(Name, FIX_X, FIX_Y, Point_object, sx, sy, sp),
+          dplyr:: select(Name, FIX_2D, Point_object, sx, sy, sp),
         escape=F,
         extensions = list('Buttons', 'Scroller'),
         options = list(dom = 'Bfrtip', buttons = I('colvis'),
@@ -426,7 +422,7 @@ shinyServer(function(input, output){
 
   output$net_observations_adj <- DT::renderDataTable({
     DT::datatable(
-      adjusted_net_design()[[3]] %>%
+      adjusted_net_design()[[2]] %>%
         st_drop_geometry() %>%
         as.data.frame() %>%
         mutate(
@@ -446,34 +442,38 @@ shinyServer(function(input, output){
       formatStyle(
         'rii',
         color = styleInterval(c(input$rii_xlsx), c('red', 'black')),
-        background = styleColorBar(adjusted_net_design()[[3]]$rii, 'steelblue'),
+        background = styleColorBar(adjusted_net_design()[[2]]$rii, 'steelblue'),
         backgroundSize = '100% 90%',
         backgroundRepeat = 'no-repeat',
         backgroundPosition = 'center'
       )
   })
-
+  # DA li elipse plotovati sa centrom u pribliznim ili ocenjenim koordinatama?
   output$map_ellipses_opt <- renderLeaflet({
-    ellipses <- adjusted_net_design()$ellipse.net
-    observations <- adjusted_net_design()$observations
-    points <- updated_xlsx_list()[[1]]
+    ellipses <- adjusted_net_design()[[1]]$ellipse.net
+    observations <- adjusted_net_design()[[2]]
+    points <- adjusted_net_design()[[1]]$net.points
     adj.net_map <- adj.net_spatial_view_web(ellipses = ellipses, observations = observations, points = points, sp_bound = input$sp_xlsx, rii_bound = input$rii_xlsx)
     adj.net_map@map
   })
 
+
+
+ # :::::::::::::::::::::::::::::::::::
  # 2D net design - map_edit input data
+ # :::::::::::::::::::::::::::::::::::
 
   adjusted_net_design_me <- eventReactive(input$design_adjust_map,{
     data <- mapEdit_list()
     result_units <- input$adjust_1_units_me
     ellipse_scale <- input$adjust_1_ell_scale_me
-    design_net_out <- adjust.snet(adjust = FALSE, survey.net = data, result.units = result_units, ellipse.scale = ellipse_scale, use.sd.estimated = FALSE, all = FALSE)
+    design_net_out <- adjust.snet(adjust = FALSE, survey.net = data, dim_type = "2D", result.units = result_units, ellipse.scale = ellipse_scale, use.sd.estimated = FALSE, all = FALSE)
     design_net_out
   })
 
   output$ellipse_error_me <- DT::renderDataTable({
     DT::datatable(
-        adjusted_net_design_me()[[1]] %>%
+        adjusted_net_design_me()[[1]]$ellipse.net %>%
         st_drop_geometry() %>%
         as.data.frame() %>%
         mutate(
@@ -508,19 +508,19 @@ shinyServer(function(input, output){
   })
 
   output$netSpatialView_ell_me <- renderPlot({
-    ellipses_1 <- adjusted_net_design_me()[[1]]
-    observations_1 <- adjusted_net_design_me()[[3]]
+    ellipses_1 <- adjusted_net_design_me()[[1]]$ellipse.net
+    observations_1 <- adjusted_net_design_me()[[2]]
     adj_output_view <- adj_net_spatial_view(ellipses_1, observations_1)
     adj_output_view
   })
 
   plotInput_me <- function(){
-    adj_net_spatial_view(adjusted_net_design_me()[[1]],adjusted_net_design_me()[[3]])
+    adj_net_spatial_view(adjusted_net_design_me()[[1]]$ellipse.net,adjusted_net_design_me()[[2]])
   }
 
   output$netSpatialView_ell_me11 <- renderPlot({
-    ellipses_1 <- adjusted_net_design_me()[[1]]
-    observations_1 <- adjusted_net_design_me()[[3]]
+    ellipses_1 <- adjusted_net_design_me()[[1]]$ellipse.net
+    observations_1 <- adjusted_net_design_me()[[2]]
     adj_output_view <- adj_net_spatial_view(ellipses_1, observations_1)
     adj_output_view
   })
@@ -533,7 +533,7 @@ shinyServer(function(input, output){
 
   output$net_points_adj_me <- DT::renderDataTable({
     DT::datatable(
-        adjusted_net_design_me()[[2]] %>%
+        adjusted_net_design_me()[[1]]$net.points %>%
         st_drop_geometry() %>%
         as.data.frame() %>%
         mutate(
@@ -544,7 +544,7 @@ shinyServer(function(input, output){
           sy = round(sy, 1),
           sp = round(sp, 1)
         ) %>%
-          dplyr:: select(Name, FIX_X, FIX_Y, Point_object, sx, sy, sp),
+          dplyr:: select(Name, FIX_2D, Point_object, sx, sy, sp),
         escape = FALSE,
         extensions = list('Buttons', 'Scroller'),
         options = list(dom = 'Bfrtip', buttons = I('colvis'),
@@ -571,7 +571,7 @@ shinyServer(function(input, output){
 
   output$net_observations_adj_me <- DT::renderDataTable({
     DT::datatable(
-        adjusted_net_design_me()[[3]] %>%
+        adjusted_net_design_me()[[2]] %>%
         st_drop_geometry() %>%
         as.data.frame() %>%
         mutate(
@@ -590,17 +590,17 @@ shinyServer(function(input, output){
       formatStyle(
         'rii',
         color = styleInterval(c(input$rii_map), c('red', 'black')),
-        background = styleColorBar(adjusted_net_design_me()[[3]]$rii, 'steelblue'),
+        background = styleColorBar(adjusted_net_design_me()[[2]]$rii, 'steelblue'),
         backgroundSize = '100% 90%',
         backgroundRepeat = 'no-repeat',
         backgroundPosition = 'center'
       )
   })
-
+ # DA li elipse plotovati sa centrom u pribliznim ili ocenjenim koordinatama?
   output$map_ellipses_opt_me <- renderLeaflet({
-    ellipses <- adjusted_net_design_me()$ellipse.net
-    observations <- adjusted_net_design_me()$observations
-    points <- mapEdit_list()[[1]]
+    ellipses <- adjusted_net_design_me()[[1]]$ellipse.net
+    observations <- adjusted_net_design_me()[[2]]
+    points <- adjusted_net_design_me()[[1]]$net.points
     adj.net_map <- adj.net_spatial_view_web(ellipses = ellipses, observations = observations, points = points, sp_bound = input$sp_map, rii_bound = input$rii_map)
     adj.net_map@map
   })
@@ -620,13 +620,13 @@ shinyServer(function(input, output){
       #file.copy("report.Rmd", tempReport, overwrite = TRUE)
 
       # Set up parameters to pass to Rmd document
-      ellipses <- adjusted_net_design_me()$ellipse.net
-      observations <- adjusted_net_design_me()$observations
+      ellipses <- adjusted_net_design_me()[[1]]$ellipse.net
+      observations <- adjusted_net_design_me()[[2]]
       sp_bound = input$sp_map
       rii_bound = input$rii_map
       sx_bound <- input$sx_map
       sy_bound <- input$sy_map
-      points <- mapEdit_list()[[1]]
+      points <- adjusted_net_design_me()[[1]]$net.points
       adjusted_net_design <- adjusted_net_design_me()
 
       params <- list(ellipses = ellipses,
@@ -659,13 +659,13 @@ shinyServer(function(input, output){
       tempReport <- file.path("D:/R_projects/Surveyer/R/Shiny_app/new_design/Reports/Report_2D_design.R")
 
       # Set up parameters to pass to Rmd document
-      ellipses <- adjusted_net_design()$ellipse.net
-      observations <- adjusted_net_design()$observations
+      ellipses <- adjusted_net_design()[[1]]$ellipse.net
+      observations <- adjusted_net_design()[[2]]
       sp_bound = input$sp_xlsx
       rii_bound = input$rii_xlsx
       sx_bound <- input$sx_xlsx
       sy_bound <- input$sy_xlsx
-      points <- updated_xlsx_list()[[1]]
+      points <- adjusted_net_design()[[1]]$net.points
       adjusted_net_design <- adjusted_net_design()
 
       params <- list(ellipses = ellipses,
@@ -707,8 +707,8 @@ shinyServer(function(input, output){
     ellipse_scale <- input$adjust_2_ell_scale
 
 
-    adjusted_net_out <- adjust.snet(survey.net = data, result.units = input$adjust_2_units, ellipse.scale = input$adjust_2_ell_scale, sd.apriori = input$st_apriori_adj_xlsx)
-
+    adjusted_net_out <- adjust.snet(adjust = TRUE, survey.net = data,  dim_type = "2D", result.units = input$adjust_2_units, ellipse.scale = input$adjust_2_ell_scale, sd.apriori = input$st_apriori_adj_xlsx, all = FALSE)
+    adjusted_net_out
     #if(length(data_up) == 0){
     #  design_net_out <- design.snet(survey.net = data, result.units = result_units, ellipse.scale = ellipse_scale, all = FALSE)
     #  design_net_out
@@ -718,6 +718,7 @@ shinyServer(function(input, output){
     #}
   })
 
+  # output$tekstputanja <- renderPrint(adjusted_net_adj())
   output$ellipse_error_2d_adj <- DT::renderDataTable({
     #data <- adjusted_net_design()[[1]]
     #data %<>%
@@ -731,7 +732,7 @@ shinyServer(function(input, output){
     #    sy = round(sy, 4),
     #    sp = round(sp, 4)
     #  )
-    DT::datatable(adjusted_net_adj()[[1]] %>%
+    DT::datatable(adjusted_net_adj()[[1]]$ellipse.net %>%
                     st_drop_geometry() %>%
                     as.data.frame() %>%
                     mutate(
@@ -766,19 +767,21 @@ shinyServer(function(input, output){
   })
 
   output$netSpatialView_ell_2d_adj <- renderPlot({
-    ellipses_1 <- adjusted_net_adj()[[1]]
-    observations_1 <- adjusted_net_adj()[[3]]
+    ellipses_1 <- adjusted_net_adj()[[1]]$ellipse.net
+    observations_1 <- adjusted_net_adj()[[2]]
     adj_output_view <- adj_net_spatial_view(ellipses_1, observations_1)
     adj_output_view
   })
 
   plotInput <- function(){
-    adj_net_spatial_view(adjusted_net_adj()[[1]], adjusted_net_adj()[[3]])
+    ellipses_1 <- adjusted_net_adj()[[1]]$ellipse.net
+    observations_1 <- adjusted_net_adj()[[2]]
+    adj_output_view <- adj_net_spatial_view(ellipses_1, observations_1)
   }
 
   output$netSpatialView_ell11_2d_adj <- renderPlot({
-    ellipses_1 <- adjusted_net_adj()[[1]]
-    observations_1 <- adjusted_net_adj()[[3]]
+    ellipses_1 <- adjusted_net_adj()[[1]]$ellipse.net
+    observations_1 <- adjusted_net_adj()[[2]]
     adj_output_view <- adj_net_spatial_view(ellipses_1, observations_1)
     adj_output_view
   })
@@ -791,7 +794,7 @@ shinyServer(function(input, output){
 
   output$net_points_adj_2d_adj <- DT::renderDataTable({
     DT::datatable(
-      adjusted_net_adj()[[2]] %>%
+      adjusted_net_adj()[[1]]$net.points %>%
         st_drop_geometry() %>%
         as.data.frame() %>%
         mutate(
@@ -803,8 +806,8 @@ shinyServer(function(input, output){
           sp = round(sp, 1),
           `dx [mm]` = round(dx, 2),
           `dy [mm]` = round(dy, 2),
-          X = round(X, 2),
-          Y = round(Y, 2)
+          X = round(x, 2),
+          Y = round(y, 2)
         ) %>%
         dplyr:: select(Name, `dx [mm]`, `dy [mm]`, X, Y, sx, sy, sp),
       escape=F,
@@ -834,15 +837,16 @@ shinyServer(function(input, output){
 
   output$net_observations_adj_2d_adj <- DT::renderDataTable({
     DT::datatable(
-      adjusted_net_adj()[[3]] %>%
+      adjusted_net_adj()[[2]] %>%
         st_drop_geometry() %>%
         as.data.frame() %>%
         mutate(
+          v = round(v, 2),
           Ql = round(Ql, 2),
           Qv = round(Qv, 2),
           rii = round(rii, 2)
         ) %>%
-        dplyr::select(from, to, type, Ql, Qv, rii, used),
+        dplyr::select(from, to, type,v ,Ql, Qv, rii, used),
       escape=F,
       extensions = list('Buttons', 'Scroller'),
       options = list(dom = 'Bfrtip', buttons = I('colvis'),
@@ -854,7 +858,7 @@ shinyServer(function(input, output){
       formatStyle(
         'rii',
         color = styleInterval(c(input$rii_xlsx_adj), c('red', 'black')),
-        background = styleColorBar(adjusted_net_adj()[[3]]$rii, 'steelblue'),
+        background = styleColorBar(adjusted_net_adj()[[2]]$rii, 'steelblue'),
         backgroundSize = '100% 90%',
         backgroundRepeat = 'no-repeat',
         backgroundPosition = 'center'
@@ -862,9 +866,9 @@ shinyServer(function(input, output){
   })
 
   output$map_ellipses_2d_adj <- renderLeaflet({
-    ellipses <- adjusted_net_adj()$ellipse.net
-    observations <- adjusted_net_adj()$observations
-    points <- surveynet.wO()[[1]]
+    ellipses <- adjusted_net_adj()[[1]]$ellipse.net
+    observations <- adjusted_net_adj()[[2]]
+    points <- adjusted_net_adj()[[1]]$net.points
     adj.net_map <- adj.net_spatial_view_web(ellipses = ellipses, observations = observations, points = points, sp_bound = input$sp_xlsx_adj, rii_bound = input$rii_xlsx_adj)
     adj.net_map@map
   })
@@ -880,13 +884,13 @@ shinyServer(function(input, output){
       tempReport <- file.path("D:/R_projects/Surveyer/R/Shiny_app/new_design/Reports/Report_2D_adjust.R")
 
       # Set up parameters to pass to Rmd document
-      ellipses <- adjusted_net_adj()[[1]]
-      observations <- adjusted_net_adj()[[3]]
+      ellipses <- adjusted_net_adj()[[1]]$ellipse.net
+      observations <- adjusted_net_adj()[[2]]
       sp_bound = input$sp_xlsx_adj
       rii_bound = input$rii_xlsx_adj
       sx_bound <- input$sx_xlsx_adj
       sy_bound <- input$sy_xlsx_adj
-      points <- surveynet.wO()[[1]]
+      points <- adjusted_net_adj()[[1]]$net.points
       adjusted_net_adj <- adjusted_net_adj()
 
       params <- list(ellipses = ellipses,
@@ -937,11 +941,10 @@ shinyServer(function(input, output){
   values_p_map_1d <- reactiveValues()
   #values_o_map_1d <- reactiveValues()
 
-  output$p_des_map <- renderRHandsontable({
-    rhandsontable(as.data.frame(po_me() %>% st_drop_geometry() %>%
+  output$p_des_map_1d <- renderRHandsontable({
+    rhandsontable(as.data.frame(po_me_1d() %>% st_drop_geometry() %>%
                                   mutate(
-                                    FIX_X = FALSE,
-                                    FIX_Y = FALSE,
+                                    FIX_1D = FALSE,
                                     Point_object = FALSE
                                   )), width = 650, height = 650)
   })

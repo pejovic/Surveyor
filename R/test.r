@@ -10,7 +10,7 @@ library(ggmap)
 library(sp)
 library(rgdal)
 library(leaflet)
-library(xlsx)
+# library(xlsx)
 library(data.table)
 library(mapview)
 library(mapedit)
@@ -45,7 +45,7 @@ makis.snet.adj <- adjust.snet(adjust = FALSE, survey.net = makis.snet, dim_type 
 file_path <- here::here("Data/Input/With_observations/Zadatak 1/Zadatak_1.xlsx")
 zadatak1.snet <- read_surveynet(file = file_path)
 plot_surveynet(snet = zadatak1.snet, webmap = FALSE, net.1D = FALSE, net.2D = TRUE)
-zadatak1.snet.adj <- adjust.snet(adjust = FALSE, survey.net = zadatak1.snet, dim_type = "2D", sd.apriori = 3 ,  all = FALSE)
+zadatak1.snet.adj <- adjust.snet(adjust = TRUE, survey.net = zadatak1.snet, dim_type = "2D", sd.apriori = 3 ,  all = FALSE)
 
 file_path <- here::here("Data/Input/Without_observations/xlsx/TETO_plan opazanja.xlsx")
 teto.snet <- read_surveynet(file = file_path)
@@ -53,3 +53,4 @@ plot_surveynet(snet = teto.snet, webmap = TRUE, net.1D = FALSE, net.2D = TRUE)
 teto.snet.adj <- adjust.snet(adjust = FALSE, survey.net = teto.snet, dim_type = "2D", sd.apriori = 1 ,  all = FALSE)
 
 
+adj.net_spatial_view_web(ellipses = brana.snet.adj[[1]]$ellipse.net, observations = brana.snet.adj[[2]], points = brana.snet.adj[[1]]$net.points, sp_bound = 2, rii_bound = 1)

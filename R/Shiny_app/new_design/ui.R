@@ -483,6 +483,7 @@ shinyUI(
                                                                               tabsetPanel(
                                                                                 tabPanel("MAP RESULTS",
                                                                                          p(""),
+                                                                                         #verbatimTextOutput('tekstputanja'),
                                                                                          leafletOutput("map_ellipses_2d_adj", height = 550) %>% withSpinner(color="#0dc5c1")
 
                                                                                 ),

@@ -140,28 +140,74 @@ import_surveynet2D_updated <- function(points = points, observations = observati
   points$x <- raw_points$x[match(points$Name, raw_points$Name)]
   points$y <- raw_points$y[match(points$Name, raw_points$Name)]
 
-  observations$x_station <- points$x[match(observations$from, points$Name)]
-  observations$y_station <- points$y[match(observations$from, points$Name)]
-  observations$x_obs.point <- points$x[match(observations$to, points$Name)]
-  observations$y_obs.point <- points$y[match(observations$to, points$Name)]
+  # observations$x_from <- points$x[match(observations$from, points$Name)]
+  # observations$y_from <- points$y[match(observations$from, points$Name)]
+  # observations$x_to <- points$x[match(observations$to, points$Name)]
+  # observations$y_to <- points$y[match(observations$to, points$Name)]
 
-  points <- points %>% as.data.frame %>% sf::st_as_sf(coords = c("x","y")) %>% sf::st_set_crs(dest_crs)
+  # points <- points %>% as.data.frame %>% sf::st_as_sf(coords = c("x","y")) %>% sf::st_set_crs(dest_crs)
 
+  # observations <- observations %>% dplyr::mutate(Hz = HzD + HzM/60 + HzS/3600,
+  #                                                Vz = VzD + VzM/60 + VzS/3600,
+  #                                                distance = (!is.na(.$HD) | !is.na(.$SD)),
+  #                                                direction = !is.na(Hz))
+
+  # observations$distance[!is.na(observations$sd_dist)] <- TRUE
+  # observations$direction[!is.na(observations$sd_Hz)] <- TRUE
+
+  if(sum(rowSums(is.na(points[, c("x", "y")])) != 0) != 0){
+    warning("Network has no spatial coordinates")}else{
+      # Creating sf class from observations
+      observations$x_from <- points$x[match(observations$from, points$Name)]
+      observations$y_from <- points$y[match(observations$from, points$Name)]
+      observations$x_to <- points$x[match(observations$to, points$Name)]
+      observations$y_to <- points$y[match(observations$to, points$Name)]
+
+      points <- points %>% as.data.frame() %>% sf::st_as_sf(coords = c("x","y"), remove = FALSE)
+      if(which(axes == "Easting") == 2){points <- points %>% dplyr::rename(x = y,  y = x)}
+
+      observations <- as.data.table(observations) %>% dplyr::mutate(id = seq.int(nrow(.))) %>% split(., f = as.factor(.$id)) %>%
+        lapply(., function(row) {lmat <- matrix(unlist(row[c("x_from", "y_from", "x_to", "y_to")]), ncol = 2, byrow = TRUE)
+        st_linestring(lmat)}) %>%
+        sf::st_sfc() %>%
+        sf::st_sf('ID' = seq.int(nrow(observations)), observations, 'geometry' = .)
+    }
   observations <- observations %>% dplyr::mutate(Hz = HzD + HzM/60 + HzS/3600,
                                                  Vz = VzD + VzM/60 + VzS/3600,
-                                                 distance = (!is.na(.$HD) | !is.na(.$SD)),
-                                                 direction = !is.na(Hz))
+                                                 tdh = SD*cos(Vz*pi/180),
+                                                 distance = (!is.na(HD) | !is.na(SD)) & !is.na(sd_dist),
+                                                 direction = !is.na(Hz) & !is.na(sd_Hz),
+                                                 diff_level = (!is.na(dh) | !is.na(tdh)))
 
-  observations$distance[!is.na(observations$sd_dist)] <- TRUE
-  observations$direction[!is.na(observations$sd_Hz)] <- TRUE
+  # In network design, observation is included if measurement standard is provided
+  if(observations %>% purrr::when(is(., "sf") ~ st_drop_geometry(.), ~.) %>% dplyr::select(HzD, HzM, HzS) %>% is.na() %>% all()){
+    observations$direction[!is.na(observations$sd_Hz)] <- TRUE
+  }
+  if(observations %>% purrr::when(is(., "sf") ~ st_drop_geometry(.), ~.) %>% dplyr::select(HD, SD) %>% is.na() %>% all()){
+    observations$distance[!is.na(observations$sd_dist)] <- TRUE
+  }
+  if(observations %>% purrr::when(is(., "sf") ~ st_drop_geometry(.), ~.) %>% dplyr::select(dh) %>% is.na() %>% all()){
+    observations$diff_level[(!is.na(observations$dh) | !is.na(observations$sd_dh) | !is.na(observations$d_dh) | !is.na(observations$n_dh))] <- TRUE
+  }
 
-  observations <- as.data.table(observations) %>% dplyr::mutate(id = seq.int(nrow(.))) %>% split(., f = as.factor(.$id)) %>%
-    lapply(., function(row) {lmat <- matrix(unlist(row[15:18]), ncol = 2, byrow = TRUE)
-    st_linestring(lmat)}) %>%
-    sf::st_sfc() %>%
-    sf::st_sf('ID' = seq.int(nrow(observations)), observations, 'geometry' = .)
+  fixed_points <- points %>% dplyr::filter(FIX_2D | FIX_1D) %>% .$Name
 
-  observations <- observations %>% sf::st_set_crs(dest_crs)
+  if(length(fixed_points) > 1){
+    observations[observations$from %in% fixed_points & observations$to %in% fixed_points, "distance"] <- FALSE
+    observations[observations$from %in% fixed_points & observations$to %in% fixed_points, "diff_level"] <- FALSE
+  }
+
+  # Setting coordinate system
+  if(!is.na(dest_crs)){
+    observations %<>% sf::st_set_crs(dest_crs)
+    points %<>% sf::st_set_crs(dest_crs)
+  }
+
+  # Creating list
+  survey_net <- list(points, observations)
+  names(survey_net) <- c("points", "observations")
+  return(survey_net)
+  # observations <- observations %>% sf::st_set_crs(dest_crs)
 
   #dt <- as.data.table(observations)
   #dt_1 <- dt[
@@ -623,7 +669,7 @@ surveynet.mapedit_view <- function(points = points){
 surveynet.mapedit_points <- function(points = points){
   j=1
   for(i in names(points)){
-    if (i == "_leaflet_id"){
+    if (i == "X_leaflet_id"){
       points <- subset(points, select = -c(j))
     }
     j=j+1
@@ -643,7 +689,7 @@ surveynet.mapedit_points <- function(points = points){
       points$id <- (1:length(points$geometry))
     }
   }
-  points <- points %>% mutate("Name" = "id")
+  points <- points %>% dplyr::mutate(Name = id)
 
   points$Name <- as.character(points$Name)
   vec <- c(1:99999)
@@ -655,6 +701,8 @@ surveynet.mapedit_points <- function(points = points){
 
     }
   }
+  points %<>% dplyr::mutate(FIX_2D = FALSE, Point_object = FALSE, h = as.numeric(NA), FIX_1D = NA )
+
   return(points)
 }
 
@@ -694,17 +742,24 @@ surveynet.mapedit_observations_edit <- function(points = points, st_dir = st_dir
 
   #observations$id <- 1:nrow(observations)
 
-  observations %<>% mutate(HzD = NA,
-                           HzM = NA,
-                           HzS = NA,
-                           HD = NA,
-                           SD = NA,
-                           VzD = NA,
-                           VzM = NA,
-                           VzS = NA,
-                           sd_Hz = as.numeric(st_dir),
-                           sd_dist = as.numeric(st_dist),
-                           sd_Vz = NA
+  observations %<>% dplyr::mutate(from = as.character(from),
+                                  to = as.character(to),
+                                  HzD = as.numeric(NA),
+                                  HzM = as.numeric(NA),
+                                  HzS = as.numeric(NA),
+                                  HD = as.numeric(NA),
+                                  SD = as.numeric(NA),
+                                  VzD = as.numeric(NA),
+                                  VzM = as.numeric(NA),
+                                  VzS = as.numeric(NA),
+                                  dh = as.numeric(NA),
+                                  sd_Hz = as.numeric(st_dir),
+                                  sd_dist = as.numeric(st_dist),
+                                  sd_Vz = as.numeric(NA),
+                                  sd_dh = as.numeric(NA),
+                                  d_dh = as.numeric(NA),
+                                  n_dh = as.numeric(NA)
+
   )
   return(observations)
 }
@@ -720,7 +775,7 @@ surveynet.mapedit_observations_edit <- function(points = points, st_dir = st_dir
 #    6. dest_crs - destination Coordinate Reference System - set EPSG code [default: 3857 - Web Mercator projection coordinate system]
 #    7. points_object - list with names of points that represnt object of interests
 
-surveynet.mapedit <- function(points_raw = points_raw, points = points, observations = observations, dest_crs = NA){
+surveynet.mapedit <- function(points_raw = points_raw, points = points, observations = observations, dest_crs = NA, axes = c("Easting", "Northing")){
 
   if (is.na(dest_crs)){
     dest_crs <- 3857
@@ -752,32 +807,101 @@ surveynet.mapedit <- function(points_raw = points_raw, points = points, observat
   #points %<>% mutate(Point_object = FALSE)
   #points$Point_object[points$Name %in% points_object] <- TRUE
 
-  points$FIX_X <- as.logical(points$FIX_X)
-  points$FIX_Y <- as.logical(points$FIX_Y)
-  points$Point_object <- as.logical(points$Point_object)
 
-  observations$x_station <- points$x[match(observations$from, points$Name)]
-  observations$y_station <- points$y[match(observations$from, points$Name)]
-  observations$x_obs.point <- points$x[match(observations$to, points$Name)]
-  observations$y_obs.point <- points$y[match(observations$to, points$Name)]
 
-  points <- points %>% as.data.frame() %>% sf::st_as_sf(coords = c("x","y")) %>% sf::st_set_crs(dest_crs)
 
+
+
+
+   points$FIX_2D <- as.logical(points$FIX_2D)
+   points$Point_object <- as.logical(points$Point_object)
+#
+  # observations$x_station <- points$x[match(observations$from, points$Name)]
+  # observations$y_station <- points$y[match(observations$from, points$Name)]
+  # observations$x_obs.point <- points$x[match(observations$to, points$Name)]
+  # observations$y_obs.point <- points$y[match(observations$to, points$Name)]
+#
+  # points <- points %>% as.data.frame() %>% sf::st_as_sf(coords = c("x","y")) %>% sf::st_set_crs(dest_crs)
+#
+  # observations <- observations %>% dplyr::mutate(Hz = HzD + HzM/60 + HzS/3600,
+  #                                                Vz = VzD + VzM/60 + VzS/3600,
+  #                                                distance = (!is.na(.$HD) | !is.na(.$SD)),
+  #                                                direction = !is.na(Hz))
+#
+  # observations$distance[!is.na(observations$sd_dist)] <- TRUE
+  # observations$direction[!is.na(observations$sd_Hz)] <- TRUE
+#
+  # observations <- as.data.table(observations) %>% dplyr::mutate(id = seq.int(nrow(.))) %>% split(., f = as.factor(.$id)) %>%
+  #   lapply(., function(row) {lmat <- matrix(unlist(row[14:17]), ncol = 2, byrow = TRUE)
+  #   st_linestring(lmat)}) %>%
+  #   sf::st_sfc() %>%
+  #   sf::st_sf('ID' = seq.int(nrow(observations)), observations, 'geometry' = .)
+#
+  # observations <- observations %>% sf::st_set_crs(dest_crs)
+
+
+  if(sum(rowSums(is.na(points[, c("x", "y")])) != 0) != 0){
+    warning("Network has no spatial coordinates")}else{
+      # Creating sf class from observations
+      observations$x_from <- points$x[match(observations$from, points$Name)]
+      observations$y_from <- points$y[match(observations$from, points$Name)]
+      observations$x_to <- points$x[match(observations$to, points$Name)]
+      observations$y_to <- points$y[match(observations$to, points$Name)]
+
+      points <- points %>% as.data.frame() %>% sf::st_as_sf(coords = c("x","y"), remove = FALSE)
+      if(which(axes == "Easting") == 2){points <- points %>% dplyr::rename(x = y,  y = x)}
+
+      observations <- as.data.table(observations) %>% dplyr::mutate(id = seq.int(nrow(.))) %>% split(., f = as.factor(.$id)) %>%
+        lapply(., function(row) {lmat <- matrix(unlist(row[c("x_from", "y_from", "x_to", "y_to")]), ncol = 2, byrow = TRUE)
+        st_linestring(lmat)}) %>%
+        sf::st_sfc() %>%
+        sf::st_sf('ID' = seq.int(nrow(observations)), observations, 'geometry' = .)
+    }
   observations <- observations %>% dplyr::mutate(Hz = HzD + HzM/60 + HzS/3600,
                                                  Vz = VzD + VzM/60 + VzS/3600,
-                                                 distance = (!is.na(.$HD) | !is.na(.$SD)),
-                                                 direction = !is.na(Hz))
+                                                 tdh = SD*cos(Vz*pi/180),
+                                                 distance = (!is.na(HD) | !is.na(SD)) & !is.na(sd_dist),
+                                                 direction = !is.na(Hz) & !is.na(sd_Hz),
+                                                 diff_level = (!is.na(dh) | !is.na(tdh))
+                                                 )
 
-  observations$distance[!is.na(observations$sd_dist)] <- TRUE
-  observations$direction[!is.na(observations$sd_Hz)] <- TRUE
+  # In network design, observation is included if measurement standard is provided
+  if(observations %>% purrr::when(is(., "sf") ~ st_drop_geometry(.), ~.) %>% dplyr::select(HzD, HzM, HzS) %>% is.na() %>% all()){
+    observations$direction[!is.na(observations$sd_Hz)] <- TRUE
+  }
+  if(observations %>% purrr::when(is(., "sf") ~ st_drop_geometry(.), ~.) %>% dplyr::select(HD, SD) %>% is.na() %>% all()){
+    observations$distance[!is.na(observations$sd_dist)] <- TRUE
+  }
+  if(observations %>% purrr::when(is(., "sf") ~ st_drop_geometry(.), ~.) %>% dplyr::select(dh) %>% is.na() %>% all()){
+   observations$diff_level[(!is.na(observations$dh) | !is.na(observations$sd_dh) | !is.na(observations$d_dh) | !is.na(observations$n_dh))] <- TRUE
+  }
 
-  observations <- as.data.table(observations) %>% dplyr::mutate(id = seq.int(nrow(.))) %>% split(., f = as.factor(.$id)) %>%
-    lapply(., function(row) {lmat <- matrix(unlist(row[14:17]), ncol = 2, byrow = TRUE)
-    st_linestring(lmat)}) %>%
-    sf::st_sfc() %>%
-    sf::st_sf('ID' = seq.int(nrow(observations)), observations, 'geometry' = .)
+  fixed_points <- points %>% dplyr::filter(FIX_2D | FIX_1D) %>% .$Name #
 
-  observations <- observations %>% sf::st_set_crs(dest_crs)
+  if(length(fixed_points) > 1){
+    observations[observations$from %in% fixed_points & observations$to %in% fixed_points, "distance"] <- FALSE
+    observations[observations$from %in% fixed_points & observations$to %in% fixed_points, "diff_level"] <- FALSE
+  }
+
+  # Setting coordinate system
+  if(!is.na(dest_crs)){
+    observations %<>% sf::st_set_crs(dest_crs)
+    points %<>% sf::st_set_crs(dest_crs)
+  }
+
+  # Creating list
+  survey_net <- list(points, observations)
+  names(survey_net) <- c("points", "observations")
+
+
+
+
+
+
+
+
+
+
 
   #observations$id <- as.numeric(1:nrow(observations))
 #
@@ -811,18 +935,18 @@ surveynet.mapedit <- function(points_raw = points_raw, points = points, observat
   #observations <- dt_1
 #
   ## Observational plan - adding new columns
-  observations %<>% mutate(from = as.character(observations$from),
-                           to = as.character(observations$to),
-                           distance = distance,
-                           direction = direction,
-                           sd_Hz= as.numeric(sd_Hz),
-                           sd_dist = as.numeric(sd_dist)
-  )
+  # observations %<>% mutate(from = as.character(observations$from),
+  #                          to = as.character(observations$to),
+  #                          distance = distance,
+  #                          direction = direction,
+  #                          sd_Hz= as.numeric(sd_Hz),
+  #                          sd_dist = as.numeric(sd_dist)
+  # )
   #points <- subset(points, select = -c(x,y))
   # Creating list
-  survey_net_mapedit <- list(points,observations)
+  #survey_net_mapedit <- list(points,observations)
 
-  return(survey_net_mapedit)
+  return(survey_net)
 }
 
 ##########################################
@@ -835,10 +959,12 @@ surveynet.mapedit <- function(points_raw = points_raw, points = points, observat
 #    2. observations - sf object with geometry type LINESTRING and related attributes as product from design.snet function
 
 adj.net_spatial_view_web <- function(ellipses = ellipses, observations = observations, points = points, sp_bound = sp_bound, rii_bound = rii_bound){
-  Ellipses <- st_transform(ellipses, 4326)
-  Observations <- st_transform(observations, 4326)
-
-  Points <- st_transform(points, 4326)
+  #Ellipses <- st_transform(ellipses, 4326)
+  #Observations <- st_transform(observations, 4326)
+  #Points <- st_transform(points, 4326)
+  Ellipses <- ellipses
+  Observations <- observations
+  Points <- points
   Points$type <- "Geodetic network"
   Points$type[Points$Point_object == TRUE] <- "Points at object"
 
@@ -1021,43 +1147,43 @@ adj_net_spatial_view <- function(adj.ellipses, adj.observations){
 # Parameters:
 #    1. points -  sf object with geometry type POINT and related attributes as product from function surveynet.mapedit_add
 
-surveynet.mapedit_points <- function(points = points){
-  j=1
-  for(i in names(points)){
-    if (i == "_leaflet_id"){
-      points <- subset(points, select = -c(j))
-    }
-    j=j+1
-  }
-  j=1
-  for(i in names(points)){
-    if (i == "feature_type"){
-      points <- subset(points, select = -c(j))
-    }
-    j=j+1
-  }
-
-  for(i in names(points)){
-    if(i == "id"){
-      break
-    } else {
-      points$id <- (1:length(points$geometry))
-    }
-  }
-  points <- points %>% rename("Name" = "id")
-
-  points$Name <- as.character(points$Name)
-  vec <- c(1:99999)
-  j = 1
-  for(i in points$Name){
-    if(i %in% vec){
-      points$Name[j] <- paste("T",i, sep = "")
-      j = j +1
-
-    }
-  }
-  return(points)
-}
+# surveynet.mapedit_points <- function(points = points){
+#   j=1
+#   for(i in names(points)){
+#     if (i == "_leaflet_id"){
+#       points <- subset(points, select = -c(j))
+#     }
+#     j=j+1
+#   }
+#   j=1
+#   for(i in names(points)){
+#     if (i == "feature_type"){
+#       points <- subset(points, select = -c(j))
+#     }
+#     j=j+1
+#   }
+#
+#   for(i in names(points)){
+#     if(i == "id"){
+#       break
+#     } else {
+#       points$id <- (1:length(points$geometry))
+#     }
+#   }
+#   points <- points %>% rename("Name" = "id")
+#
+#   points$Name <- as.character(points$Name)
+#   vec <- c(1:99999)
+#   j = 1
+#   for(i in points$Name){
+#     if(i %in% vec){
+#       points$Name[j] <- paste("T",i, sep = "")
+#       j = j +1
+#
+#     }
+#   }
+#   return(points)
+# }
 
 
 

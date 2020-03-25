@@ -110,7 +110,7 @@ adj.net_map
 #'
 #+ echo = FALSE, result = TRUE, eval = TRUE, out.width="100%"
   DT::datatable(
-    params$adjusted_net_design[[1]] %>%
+    params$adjusted_net_design[[1]]$ellipse.net %>%
       st_drop_geometry() %>%
       as.data.frame() %>%
       mutate(
@@ -144,7 +144,7 @@ adj.net_map
 #'
 #+ echo = FALSE, result = TRUE, eval = TRUE, out.width="100%"
   DT::datatable(
-    params$adjusted_net_design[[2]] %>%
+    params$adjusted_net_design[[1]]$net.points %>%
       st_drop_geometry() %>%
       as.data.frame() %>%
       mutate(
@@ -155,7 +155,7 @@ adj.net_map
         sy = round(sy, 1),
         sp = round(sp, 1)
       ) %>%
-      dplyr:: select(Name, FIX_X, FIX_Y, Point_object, sx, sy, sp),
+      dplyr:: select(Name, FIX_2D, Point_object, sx, sy, sp),
     escape = FALSE,
     extensions = list('Buttons', 'Responsive'),
     options = list(dom = 'Bfrtip', pageLength = 5, lengthMenu = c(5, 10, 15, 20)))%>%
@@ -180,7 +180,7 @@ adj.net_map
 #'
 #+ echo = FALSE, result = TRUE, eval = TRUE, out.width="100%"
   DT::datatable(
-    params$adjusted_net_design[[3]] %>%
+    params$adjusted_net_design[[2]] %>%
       st_drop_geometry() %>%
       as.data.frame() %>%
       mutate(
@@ -195,7 +195,7 @@ adj.net_map
     formatStyle(
       'rii',
       color = styleInterval(c(params$rii_bound), c('red', 'black')),
-      background = styleColorBar(params$adjusted_net_design[[3]]$rii, 'steelblue'),
+      background = styleColorBar(params$adjusted_net_design[[2]]$rii, 'steelblue'),
       backgroundSize = '100% 90%',
       backgroundRepeat = 'no-repeat',
       backgroundPosition = 'center'

@@ -110,7 +110,7 @@ adj.net_map
 #'
 #+ echo = FALSE, result = TRUE, eval = TRUE, out.width="100%"
   DT::datatable(
-    params$adjusted_net_adj[[1]] %>%
+    params$ellipses %>%
       st_drop_geometry() %>%
       as.data.frame() %>%
       mutate(
@@ -122,7 +122,7 @@ adj.net_map
         sp = round(sp, 1)
       ), escape = FALSE,
     extensions = list('Buttons', 'Responsive'),
-    options = list(dom = 'Bfrtip', pageLength = 5, lengthMenu = c(5, 10, 15, 20))) %>%
+    options = list(dom = 'Bfrtip', pageLength = 100, lengthMenu = c(5, 10, 15, 20))) %>%
     formatStyle(
       'sx',
       color = styleInterval(c(params$sx_bound), c('black', 'red'))#,
@@ -144,7 +144,7 @@ adj.net_map
 #'
 #+ echo = FALSE, result = TRUE, eval = TRUE, out.width="100%"
   DT::datatable(
-    params$adjusted_net_adj[[2]] %>%
+    params$points %>%
       st_drop_geometry() %>%
       as.data.frame() %>%
       mutate(
@@ -156,13 +156,13 @@ adj.net_map
         sp = round(sp, 1),
         `dx [mm]` = round(dx, 2),
         `dy [mm]` = round(dy, 2),
-        X = round(X, 2),
-        Y = round(Y, 2)
+        X = round(x, 2),
+        Y = round(y, 2)
       ) %>%
       dplyr:: select(Name, `dx [mm]`, `dy [mm]`, X, Y, sx, sy, sp),
     escape = FALSE,
     extensions = list('Buttons', 'Responsive'),
-    options = list(dom = 'Bfrtip', pageLength = 5, lengthMenu = c(5, 10, 15, 20)))%>%
+    options = list(dom = 'Bfrtip', pageLength = 100, lengthMenu = c(5, 10, 15, 20)))%>%
     formatStyle(
       'sx',
       color = styleInterval(c(params$sx_bound), c('black', 'red'))#,
@@ -184,10 +184,11 @@ adj.net_map
 #'
 #+ echo = FALSE, result = TRUE, eval = TRUE, out.width="100%"
   DT::datatable(
-    params$adjusted_net_adj[[3]] %>%
+    params$observations %>%
       st_drop_geometry() %>%
       as.data.frame() %>%
       mutate(
+        v = round(v, 2),
         Ql = round(Ql, 2),
         Qv = round(Qv, 2),
         rii = round(rii, 2)
@@ -195,11 +196,11 @@ adj.net_map
       dplyr::select(from, to, type, Ql, Qv, rii, used),
     escape = FALSE,
     extensions = list('Buttons', 'Responsive'),
-    options = list(dom = 'Bfrtip', pageLength = 10, lengthMenu = c(5, 10, 15, 20, 50)))%>%
+    options = list(dom = 'Bfrtip', pageLength = 100, lengthMenu = c(5, 10, 15, 20, 50)))%>%
     formatStyle(
       'rii',
       color = styleInterval(c(params$rii_bound), c('red', 'black')),
-      background = styleColorBar(params$adjusted_net_adj[[3]]$rii, 'steelblue'),
+      background = styleColorBar(params$adjusted_net_adj[[2]]$rii, 'steelblue'),
       backgroundSize = '100% 90%',
       backgroundRepeat = 'no-repeat',
       backgroundPosition = 'center'

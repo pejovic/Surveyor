@@ -171,7 +171,6 @@ Amat <- function(survey.net, units){
   return(A)
 }
 
-
 # Weights matrix
 # Wmat je ista, samo je promenjen naziv standarda. Stavljeni su "sd_Hz" i "sd_dist".
 Wmat <- function(survey.net, sd.apriori = 1){
@@ -338,19 +337,16 @@ fdir_st <- function(st.survey.net, units.dir = "sec"){
   return(f)
 }
 
-
-
 fmat <- function(survey.net, units.dir = "sec", units.dist = "mm"){
-  f_dir <- survey.net[[2]] %>% dplyr::filter(direction) %>% st_drop_geometry() %>% split(.,.$from) %>%
+  f_dir <- survey.net[[2]] %>% dplyr::filter(direction == TRUE) %>% st_drop_geometry() %>% split(.,.$from) %>%
     lapply(., function(x) fdir_st(x, units.dir = units.dir)) %>%
-    do.call(c, .) %>% as.numeric()
+    do.call("c",.) %>% as.numeric() %>% as.vector()
   dist.units.table <- c("mm" = 1000, "cm" = 100, "m" = 1)
   survey.net[[2]] <- survey.net[[2]] %>% dplyr::filter(distance) %>% st_drop_geometry() %>%
     dplyr::mutate(dist0 = sqrt((x_from-x_to)^2+(y_from-y_to)^2))
   f_dist <- (survey.net[[2]]$dist0 - survey.net[[2]]$HD)*dist.units.table[units.dist]
   return(c(f_dir, f_dist))
 }
-
 
 model_adequacy_test <- function(sd.apriori, sd.estimated, df, prob){
   if(sd.estimated > sd.apriori){
@@ -813,8 +809,8 @@ plot_surveynet <- function(snet = snet, webmap = FALSE, net.1D = FALSE, net.2D =
         geom_sf(data=observations, aes(color = Observation_type),size=0.5,stroke=0.5)+
         geom_sf(data=points, aes(fill = Point_type), shape = 24,  size=2, stroke=0.5) +
         geom_sf_text(data=points, aes(label=Name,hjust = 1.5, vjust =1.5))+
-        xlab("\nEasting") +
-        ylab("Northing\n") +
+        xlab("\nEasting [m]") +
+        ylab("Northing [m]\n") +
         ggtitle("GEODETIC 2D NETWORK")+
         labs(subtitle = "Points and Observational plan")+
         guides(col = guide_legend())+
