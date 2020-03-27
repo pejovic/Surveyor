@@ -1,3 +1,4 @@
+options(encoding="UTF-8")
 source(here::here("R/deprecated/input_functions.r"))
 source(here::here("R/deprecated/inputFunction_withObservations.R"))
 source(here::here("R/functions.r"))
@@ -111,16 +112,20 @@ shinyServer(function(input, output){
   # TO DO:: ZAMENITI SA plot_surveynet
 
   output$netSpatialView_xlsx_updated <- renderPlot({
-    out_points_xlsx <- updated_xlsx_list()[[1]]
-    out_observations_xlsx <- updated_xlsx_list()[[2]]
-    output_view_xlsx <- net_spatial_view(points = out_points_xlsx, observations = out_observations_xlsx)
+    # out_points_xlsx <- updated_xlsx_list()[[1]]
+    # out_observations_xlsx <- updated_xlsx_list()[[2]]
+    snet <- updated_xlsx_list()
+    output_view_xlsx <- plot_surveynet(snet = snet, webmap = FALSE, net.1D = FALSE, net.2D = TRUE)
     output_view_xlsx
-  })
+  },
+  width = 800,
+  height = 800)
 
   output$web_map_xlsx_updated <- renderLeaflet({
-    out_points_xlsx <- updated_xlsx_list()[[1]]
-    out_observations_xlsx <- updated_xlsx_list()[[2]]
-    web_map_xlsx <- net_spatial_view_web(points = out_points_xlsx, observations = out_observations_xlsx)
+    # out_points_xlsx <- updated_xlsx_list()[[1]]
+    # out_observations_xlsx <- updated_xlsx_list()[[2]]
+    snet <- updated_xlsx_list()
+    web_map_xlsx <- plot_surveynet(snet = snet, webmap = TRUE, net.1D = FALSE, net.2D = TRUE)
     web_map_xlsx@map
   })
 
@@ -191,18 +196,20 @@ shinyServer(function(input, output){
   })
 
  output$netSpatialView_me <- renderPlot({
-   out_points_me <- mapEdit_list()[[1]]
-   out_observations_me <- mapEdit_list()[[2]]
-   output_view_me <- net_spatial_view(points = out_points_me, observations = out_observations_me)
+   # out_points_me <- mapEdit_list()[[1]]
+   # out_observations_me <- mapEdit_list()[[2]]
+   snet <- mapEdit_list()
+   output_view_me <- plot_surveynet(snet = snet, webmap = FALSE, net.1D = FALSE, net.2D = TRUE)
    output_view_me
  },
- width = 600,
- height = 600)
+ width = 800,
+ height = 800)
 
  output$map_me_out <- renderLeaflet({
-   out_points_me <- mapEdit_list()[[1]]
-   out_observations_me <- mapEdit_list()[[2]]
-   web_map_me <- net_spatial_view_web(points = out_points_me, observations = out_observations_me)
+   # out_points_me <- mapEdit_list()[[1]]
+   # out_observations_me <- mapEdit_list()[[2]]
+   snet <- mapEdit_list()
+   web_map_me <- plot_surveynet(snet = snet, webmap = TRUE, net.1D = FALSE, net.2D = TRUE)
    web_map_me@map
  })
 
@@ -286,9 +293,11 @@ shinyServer(function(input, output){
     edited_observations_xlsx_wO <- edited_wO()$measurments
     edited_observations_xlsx_wO$geometry <- out_observations_xlsx_wO$geometry[match(edited_observations_xlsx_wO$ID, out_observations_xlsx_wO$ID )]
     edited_observations_xlsx_wO <- st_as_sf(edited_observations_xlsx_wO)
-    output_view_xlsx_wO <- net_spatial_view_2DAdjustment_Import(points = out_points_xlsx_wO, observations = edited_observations_xlsx_wO)
+    snet <- list("points" = out_points_xlsx_wO, "observations" = edited_observations_xlsx_wO)
+    # output_view_xlsx_wO <- net_spatial_view_2DAdjustment_Import(points = out_points_xlsx_wO, observations = edited_observations_xlsx_wO)
+    output_view_xlsx_wO <- plot_surveynet(snet = snet, webmap = FALSE, net.1D = FALSE, net.2D = TRUE)
     output_view_xlsx_wO
-  }, width = 600, height = 600
+  }, width = 800, height = 800
   )
 
   output$web_map_xlsx_2d_adj <- renderLeaflet({
@@ -297,7 +306,9 @@ shinyServer(function(input, output){
     edited_observations_xlsx_wO <- edited_wO()$measurments
     edited_observations_xlsx_wO$geometry <- out_observations_xlsx_wO$geometry[match(edited_observations_xlsx_wO$ID, out_observations_xlsx_wO$ID )]
     edited_observations_xlsx_wO <- st_as_sf(edited_observations_xlsx_wO)
-    web_map_xlsx <- net_spatial_view_web(points =  out_points_xlsx_wO, observations = edited_observations_xlsx_wO)
+    snet <- list("points" = out_points_xlsx_wO, "observations" = edited_observations_xlsx_wO)
+    # web_map_xlsx <- net_spatial_view_web(points =  out_points_xlsx_wO, observations = edited_observations_xlsx_wO)
+    web_map_xlsx <- plot_surveynet(snet = snet, webmap = TRUE, net.1D = FALSE, net.2D = TRUE)
     web_map_xlsx@map
   })
 
@@ -358,20 +369,21 @@ shinyServer(function(input, output){
   })
 
   output$netSpatialView_ell <- renderPlot({
-    ellipses_1 <- adjusted_net_design()[[1]]$ellipse.net
-    observations_1 <- adjusted_net_design()[[2]]
-    adj_output_view <- adj_net_spatial_view(ellipses_1, observations_1)
+    # ellipses_1 <- adjusted_net_design()[[1]]$ellipse.net
+    # observations_1 <- adjusted_net_design()[[2]]
+    snet.adj <- adjusted_net_design()
+    adj_output_view <- plot_surveynet(snet.adj = snet.adj, webmap = FALSE, net.1D = FALSE, net.2D = TRUE, ellipse.scale = input$adjust_1_ell_scale)
     adj_output_view
   })
 
   plotInput <- function(){
-    adj_net_spatial_view(adjusted_net_design()[[1]]$ellipse.net, adjusted_net_design()[[2]])
+    snet.adj <- adjusted_net_design()
+    plot_surveynet(snet.adj = snet.adj, webmap = FALSE, net.1D = FALSE, net.2D = TRUE, ellipse.scale = input$adjust_1_ell_scale)
   }
 
   output$netSpatialView_ell11 <- renderPlot({
-    ellipses_1 <- adjusted_net_design()[[1]]$ellipse.net
-    observations_1 <- adjusted_net_design()[[2]]
-    adj_output_view <- adj_net_spatial_view(ellipses_1, observations_1)
+    snet.adj <- adjusted_net_design()
+    adj_output_view <- plot_surveynet(snet.adj = snet.adj, webmap = FALSE, net.1D = FALSE, net.2D = TRUE, ellipse.scale = input$adjust_1_ell_scale)
     adj_output_view
   })
 
@@ -450,13 +462,10 @@ shinyServer(function(input, output){
   })
   # DA li elipse plotovati sa centrom u pribliznim ili ocenjenim koordinatama?
   output$map_ellipses_opt <- renderLeaflet({
-    ellipses <- adjusted_net_design()[[1]]$ellipse.net
-    observations <- adjusted_net_design()[[2]]
-    points <- adjusted_net_design()[[1]]$net.points
-    adj.net_map <- adj.net_spatial_view_web(ellipses = ellipses, observations = observations, points = points, sp_bound = input$sp_xlsx, rii_bound = input$rii_xlsx)
+    snet.adj <- adjusted_net_design()
+    adj.net_map <- plot_surveynet(snet.adj = snet.adj, webmap = TRUE, net.1D = FALSE, net.2D = TRUE, ellipse.scale = input$adjust_1_ell_scale, result.units = input$adjust_1_units, sp_bound = input$sp_xlsx, rii_bound = input$rii_xlsx)
     adj.net_map@map
   })
-
 
 
  # :::::::::::::::::::::::::::::::::::
@@ -508,22 +517,21 @@ shinyServer(function(input, output){
   })
 
   output$netSpatialView_ell_me <- renderPlot({
-    ellipses_1 <- adjusted_net_design_me()[[1]]$ellipse.net
-    observations_1 <- adjusted_net_design_me()[[2]]
-    adj_output_view <- adj_net_spatial_view(ellipses_1, observations_1)
+    snet.adj <- adjusted_net_design_me()
+    adj_output_view <- plot_surveynet(snet.adj = snet.adj, webmap = FALSE, net.1D = FALSE, net.2D = TRUE, ellipse.scale = input$adjust_1_ell_scale_me)
     adj_output_view
   })
 
   plotInput_me <- function(){
-    adj_net_spatial_view(adjusted_net_design_me()[[1]]$ellipse.net,adjusted_net_design_me()[[2]])
+    snet.adj <- adjusted_net_design_me()
+    plot_surveynet(snet.adj = snet.adj, webmap = FALSE, net.1D = FALSE, net.2D = TRUE, ellipse.scale = input$adjust_1_ell_scale_me)
   }
 
   output$netSpatialView_ell_me11 <- renderPlot({
-    ellipses_1 <- adjusted_net_design_me()[[1]]$ellipse.net
-    observations_1 <- adjusted_net_design_me()[[2]]
-    adj_output_view <- adj_net_spatial_view(ellipses_1, observations_1)
+    snet.adj <- adjusted_net_design_me()
+    adj_output_view <- plot_surveynet(snet.adj = snet.adj, webmap = FALSE, net.1D = FALSE, net.2D = TRUE, ellipse.scale = input$adjust_1_ell_scale_me)
     adj_output_view
-  })
+    })
 
   output$downloadPlot1 <- downloadHandler(
     filename = "plot.png",
@@ -598,10 +606,8 @@ shinyServer(function(input, output){
   })
  # DA li elipse plotovati sa centrom u pribliznim ili ocenjenim koordinatama?
   output$map_ellipses_opt_me <- renderLeaflet({
-    ellipses <- adjusted_net_design_me()[[1]]$ellipse.net
-    observations <- adjusted_net_design_me()[[2]]
-    points <- adjusted_net_design_me()[[1]]$net.points
-    adj.net_map <- adj.net_spatial_view_web(ellipses = ellipses, observations = observations, points = points, sp_bound = input$sp_map, rii_bound = input$rii_map)
+    snet.adj <- adjusted_net_design_me()
+    adj.net_map <- plot_surveynet(snet.adj = snet.adj, webmap = TRUE, net.1D = FALSE, net.2D = TRUE, ellipse.scale = input$adjust_1_ell_scale_me, result.units = input$adjust_1_units_me, sp_bound = input$sp_map, rii_bound = input$rii_map)
     adj.net_map@map
   })
 
@@ -626,6 +632,8 @@ shinyServer(function(input, output){
       rii_bound = input$rii_map
       sx_bound <- input$sx_map
       sy_bound <- input$sy_map
+      ellipse_scale <- input$adjust_1_ell_scale_me
+      result_units <- input$adjust_1_units_me
       points <- adjusted_net_design_me()[[1]]$net.points
       adjusted_net_design <- adjusted_net_design_me()
 
@@ -636,7 +644,9 @@ shinyServer(function(input, output){
                      sx_bound = sx_bound,
                      sy_bound = sy_bound,
                      points = points,
-                     adjusted_net_design = adjusted_net_design)
+                     adjusted_net_design = adjusted_net_design,
+                     ellipse_scale = ellipse_scale,
+                     result_units = result_units)
 
       # Knit the document, passing in the `params` list, and eval it in a
       # child of the global environment (this isolates the code in the document
@@ -667,6 +677,8 @@ shinyServer(function(input, output){
       sy_bound <- input$sy_xlsx
       points <- adjusted_net_design()[[1]]$net.points
       adjusted_net_design <- adjusted_net_design()
+      ellipse_scale <- input$adjust_1_ell_scale
+      result_units <- input$adjust_1_units
 
       params <- list(ellipses = ellipses,
                      observations = observations,
@@ -675,7 +687,9 @@ shinyServer(function(input, output){
                      sx_bound = sx_bound,
                      sy_bound = sy_bound,
                      points = points,
-                     adjusted_net_design = adjusted_net_design)
+                     adjusted_net_design = adjusted_net_design,
+                     ellipse_scale = ellipse_scale,
+                     result_units = result_units)
 
       rmarkdown::render(tempReport, output_file = file,
                         params = params,
@@ -767,24 +781,21 @@ shinyServer(function(input, output){
   })
 
   output$netSpatialView_ell_2d_adj <- renderPlot({
-    ellipses_1 <- adjusted_net_adj()[[1]]$ellipse.net
-    observations_1 <- adjusted_net_adj()[[2]]
-    adj_output_view <- adj_net_spatial_view(ellipses_1, observations_1)
+    snet.adj <- adjusted_net_adj()
+    adj_output_view <- plot_surveynet(snet.adj = snet.adj, webmap = FALSE, net.1D = FALSE, net.2D = TRUE, ellipse.scale = input$adjust_2_ell_scale)
     adj_output_view
   })
 
   plotInput <- function(){
-    ellipses_1 <- adjusted_net_adj()[[1]]$ellipse.net
-    observations_1 <- adjusted_net_adj()[[2]]
-    adj_output_view <- adj_net_spatial_view(ellipses_1, observations_1)
+    snet.adj <- adjusted_net_adj()
+    plot_surveynet(snet.adj = snet.adj, webmap = FALSE, net.1D = FALSE, net.2D = TRUE, ellipse.scale = input$adjust_2_ell_scale)
   }
 
   output$netSpatialView_ell11_2d_adj <- renderPlot({
-    ellipses_1 <- adjusted_net_adj()[[1]]$ellipse.net
-    observations_1 <- adjusted_net_adj()[[2]]
-    adj_output_view <- adj_net_spatial_view(ellipses_1, observations_1)
+    snet.adj <- adjusted_net_adj()
+    adj_output_view <- plot_surveynet(snet.adj = snet.adj, webmap = FALSE, net.1D = FALSE, net.2D = TRUE, ellipse.scale = input$adjust_2_ell_scale)
     adj_output_view
-  })
+  }, width = 800, height = 800)
 
   output$downloadPlot_2d_adj <- downloadHandler(
     filename = "plot.png",
@@ -866,10 +877,8 @@ shinyServer(function(input, output){
   })
 
   output$map_ellipses_2d_adj <- renderLeaflet({
-    ellipses <- adjusted_net_adj()[[1]]$ellipse.net
-    observations <- adjusted_net_adj()[[2]]
-    points <- adjusted_net_adj()[[1]]$net.points
-    adj.net_map <- adj.net_spatial_view_web(ellipses = ellipses, observations = observations, points = points, sp_bound = input$sp_xlsx_adj, rii_bound = input$rii_xlsx_adj)
+    snet.adj <- adjusted_net_adj()
+    adj.net_map <- plot_surveynet(snet.adj = snet.adj, webmap = TRUE, net.1D = FALSE, net.2D = TRUE, ellipse.scale = input$adjust_2_ell_scale, sp_bound = input$sp_xlsx_adj, rii_bound = input$rii_xlsx_adj, result.units = input$adjust_2_units)
     adj.net_map@map
   })
 
@@ -892,6 +901,8 @@ shinyServer(function(input, output){
       sy_bound <- input$sy_xlsx_adj
       points <- adjusted_net_adj()[[1]]$net.points
       adjusted_net_adj <- adjusted_net_adj()
+      ellipse_scale <- input$adjust_2_ell_scale
+      result_units <- input$adjust_2_units
 
       params <- list(ellipses = ellipses,
                      observations = observations,
@@ -900,7 +911,9 @@ shinyServer(function(input, output){
                      sx_bound = sx_bound,
                      sy_bound = sy_bound,
                      points = points,
-                     adjusted_net_adj = adjusted_net_adj)
+                     adjusted_net_adj = adjusted_net_adj,
+                     ellipse_scale = ellipse_scale,
+                     result_units = result_units)
 
       rmarkdown::render(tempReport, output_file = file,
                         params = params,

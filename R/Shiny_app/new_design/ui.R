@@ -1,3 +1,4 @@
+options(encoding="UTF-8")
 source(here::here("R/deprecated/input_functions.r"))
 source(here::here("R/deprecated/inputFunction_withObservations.R"))
 source(here::here("R/functions.r"))
@@ -97,8 +98,8 @@ shinyUI(
                                                                                                      #),
                                                                                                      #fluidRow(
                                                                                                      #  column(width = 4, numericInput("dp_map", "dP: ", value = 0)),
-                                                                                                     #  column(width = 4, numericInput("dpteta_map", "dPθ: ", value = 0)),
-                                                                                                     #  column(width = 4, numericInput("teta_map", "θ: ", value = 0))
+                                                                                                     #  column(width = 4, numericInput("dpteta_map", "dPT: ", value = 0)),
+                                                                                                     #  column(width = 4, numericInput("teta_map", "T: ", value = 0))
                                                                                                      #),
                                                                                                      #p(""),
                                                                                                      p("MEASURMENT ACCURACY", style="text-align: center; font-weight: bold;"),
@@ -209,8 +210,8 @@ shinyUI(
                                                                                                      ),
                                                                                                      fluidRow(
                                                                                                        column(width = 4, numericInput("dp_xlsx", "dP: ", value = 0)),
-                                                                                                       column(width = 4, numericInput("dpteta_xlsx", "dPθ: ", value = 0)),
-                                                                                                       column(width = 4, numericInput("teta_xlsx", "θ: ", value = 0))
+                                                                                                       column(width = 4, numericInput("dpteta_xlsx", "dPT: ", value = 0)),
+                                                                                                       column(width = 4, numericInput("teta_xlsx", "T: ", value = 0))
                                                                                                      ),
                                                                                                      p(""),
                                                                                                      p("MEASURMENT ACCURACY", style="text-align: center; font-weight: bold;"),
@@ -309,8 +310,8 @@ shinyUI(
                                                                                                      ),
                                                                                                      fluidRow(
                                                                                                        column(width = 4, numericInput("dp_map", "dP: ", value = 0)),
-                                                                                                       column(width = 4, numericInput("dpteta_map", "dPθ: ", value = 0)),
-                                                                                                       column(width = 4, numericInput("teta_map", "θ: ", value = 0))
+                                                                                                       column(width = 4, numericInput("dpteta_map", "dPT: ", value = 0)),
+                                                                                                       column(width = 4, numericInput("teta_map", "T: ", value = 0))
                                                                                                      ),
                                                                                                      p(""),
                                                                                                      p("MEASURMENT ACCURACY", style="text-align: center; font-weight: bold;"),
@@ -437,8 +438,8 @@ shinyUI(
                                                                                                     ),
                                                                                                     fluidRow(
                                                                                                       column(width = 4, numericInput("dp_xlsx_adj", "dP: ", value = 0)),
-                                                                                                      column(width = 4, numericInput("dpteta_xlsx_adj", "dPθ: ", value = 0)),
-                                                                                                      column(width = 4, numericInput("teta_xlsx_adj", "θ: ", value = 0))
+                                                                                                      column(width = 4, numericInput("dpteta_xlsx_adj", "dPT: ", value = 0)),
+                                                                                                      column(width = 4, numericInput("teta_xlsx_adj", "T: ", value = 0))
                                                                                                     ),
                                                                                                     p(""),
                                                                                                     p("MEASURMENT ACCURACY", style="text-align: center; font-weight: bold;"),

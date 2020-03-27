@@ -21,6 +21,8 @@
 #'   rii_bound: NA
 #'   sx_bound: NA
 #'   sy_bound: NA
+#'   ellipse_scale: NA
+#'   result_units: NA
 #'   adjusted_net_design: NA
 #' ---
 #'
@@ -96,13 +98,11 @@ mycolors=c("#f32440","#2185ef","#d421ef")
 #' This report provides the main results regarding the design of 2D geodetic network.
 #'
 #+ echo = FALSE, message = FALSE, warning = FALSE
-adj.net_map <- adj.net_spatial_view_web(ellipses = params$ellipses, observations = params$observations, points = params$points, sp_bound = params$sp_bound, rii_bound = params$rii_bound)
-
+adj.net_map <- plot_surveynet(snet.adj = params$adjusted_net_design, webmap = TRUE, net.1D = FALSE, net.2D = TRUE, sp_bound = params$sp_bound, rii_bound = params$rii_bound, ellipse.scale = params$ellipse_scale, result.units = params$result_units) # DOPUNITI ZA RESULT UNITS
 #'
 #' # Map results
 #+ echo = FALSE, result = TRUE, eval = TRUE, out.width="100%"
 adj.net_map
-
 
 #'
 #' # Tab results
