@@ -318,6 +318,8 @@ import_surveynet2D <- function(points = points, observations = observations, des
 #st.survey.net <- avala[[2]] %>% dplyr::filter(from == "S2")
 # st.survey.net <- A.survey.net[[2]] %>% dplyr::filter(from == "C")
 # st.survey.net <- Gorica.survey.net[[2]] %>% dplyr::filter(from == "1")
+# st.survey.net <- ab[[2]] %>% dplyr::filter(from == "P2")
+# st.survey.net <- survey.net[[2]] %>% dplyr::filter(from == "M2")
 
 fdir_st <- function(st.survey.net, units.dir = "sec"){
   units.table <- c("sec" = 3600, "min" = 60, "deg" = 1)
@@ -336,6 +338,12 @@ fdir_st <- function(st.survey.net, units.dir = "sec"){
   f <- (st.survey.net$Hz0 - st.survey.net$Hz)*units.table[units.dir]
   return(f)
 }
+# ab <- survey.net
+# survey.net = ab
+
+# survey.net[[2]] %>% dplyr::filter(from == "M2") %>% fdir_st() %>% round(.,2)
+
+# fmat(survey.net = survey.net) %>% round(., 2)
 
 fmat <- function(survey.net, units.dir = "sec", units.dist = "mm"){
   f_dir <- survey.net[[2]] %>% dplyr::filter(direction == TRUE) %>% st_drop_geometry() %>% split(.,.$from) %>%
@@ -372,7 +380,7 @@ read_surveynet <- function(file, dest_crs = NA, axes = c("Easting", "Northing"))
   # TODO: Check if any point has no sufficient measurements to be adjusted.
   # setting columns type
   ponts_col_type <- c("numeric", "text", "numeric", "numeric", "numeric", "logical", "logical", "logical")
-  obs_col_type <- c("text", "text", rep("numeric", 15))
+  obs_col_type <- c("text", "text", rep("numeric", 19))
   # reading data
   points <- readxl::read_xlsx(path = file, sheet = "Points", col_types = ponts_col_type) %>% mutate_at(., .vars = c("Name"), as.character)
   observations <- readxl::read_xlsx(path = file, sheet = "Observations", col_types = obs_col_type) %>% mutate_at(., .vars = c("from", "to"), as.character)
@@ -497,7 +505,7 @@ Qxy <- function(Qx, fix){
   return(Qxxx)
 }
 
-
+# adjust = TRUE; survey.net = mreza_sim; dim_type = "2D"; sd.apriori = 3; wdh_model = list("sd_dh", "d_dh", "n_dh", "E"); n0 = 1; maxiter = 50; prob = 0.95; coord_tolerance = 1e-3; result.units = "mm"; ellipse.scale = 1; teta.unit = "dec"; units.dir = "sec"; units.dist = "mm"; use.sd.estimated = TRUE; all = TRUE
 
 adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), sd.apriori = 1, wdh_model = list("sd_dh", "d_dh", "n_dh", "E"), n0 = 1, maxiter = 50, prob = 0.95, coord_tolerance = 1e-3, result.units = list("mm", "cm", "m"), ellipse.scale = 1, teta.unit = list("deg", "rad"), units.dir = "sec", units.dist = "mm", use.sd.estimated = TRUE, all = TRUE){
   dim_type <- dim_type[[1]]
@@ -568,7 +576,7 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
           sf::st_sf(survey.net[[2]], 'geometry' = .)
         e <- max(coords.est-coords.iter.inc)
       }
-      x.mat <- x.mat[1:sum(fix.mat2D)]  #(coords.est-coords.iter_0)*res.unit.lookup[units]
+      x.mat <- (coords.est-coords.iter_0)*res.unit.lookup[units] #x.mat[1:sum(fix.mat2D)]
       sd.estimated <- sqrt((crossprod(v.mat, W.mat) %*% v.mat)/(df))
       model_adequacy <- model_adequacy_test(sd.apriori, sd.estimated, df, prob = prob)
       if(!model_adequacy){
