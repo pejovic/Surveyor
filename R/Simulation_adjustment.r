@@ -18,8 +18,9 @@ library(matlib)
 library(nngeo)
 library(writexl)
 library(here)
+library(MASS)
 
-source("./R/Simulations_functions.r")
+source("./R/simulation_funs.r")
 source("./R/functions.r")
 
 
@@ -229,17 +230,18 @@ B.design$net.points
 
 
 # Simulation
+B.survey.net <- dns
 
 B_sim_obs <- rbind(dplyr::filter(B.survey.net[[2]], direction), dplyr::filter(B.survey.net[[2]], distance)) %>%
   dplyr::select(station = from, obs.point = to) %>% sf::st_drop_geometry() %>%
   dplyr::mutate(type = c(rep("p", dim(dplyr::filter(B.survey.net[[2]], direction))[1]), rep("d", dim(dplyr::filter(B.survey.net[[2]], distance))[1])))
 
-coord_sim_res <- matrix(round(rnorm(n = 16, mean = 0, sd = 3)/1000, 3), ncol = 2)
+coord_sim_res <- matrix(round(rnorm(n = 14, mean = 0, sd = 3)/1000, 3), ncol = 2)
 
-B_points$x <- B_points$x + coord_sim_res[, 1]
-B_points$y <- B_points$y + coord_sim_res[, 2]
+B.survey.net[[1]]$x <- B.survey.net[[1]]$x + coord_sim_res[, 1]
+B.survey.net[[1]]$y <- B.survey.net[[1]]$y + coord_sim_res[, 2]
 
-sim.B.net <- sim.obs(points = B_points, obs.plan = B_sim_obs, sd_Hz = 5, sd_cent_station = 1, sd_dist = 3, sd_cent_target = 1)
+sim.B.net <- sim.obs(points = B.survey.net[[1]], obs.plan = B_sim_obs, sd_Hz = 5, sd_cent_station = 1, sd_dist = 5, sd_cent_target = 1)
 sim.B.net <- import_surveynet2D(points = sim.B.net$Points, observations = sim.B.net$Observations)
 
 writexl::write_xlsx(sim.B.net, path = "E:/_Bechelor/_Ispiti/Projektovanje/17.9.2019/simBobs.xlsx")
@@ -338,13 +340,19 @@ file_path <- "D:/R_projects/Surveyer/Data/Input/With_observations/DNS_1D/DNS_1D_
 file_path <- here::here("Data/Input/With_observations/Brana/Brana.xlsx")
 file_path <- here::here("Data/Input/With_observations/Makis/Makis_observations.xlsx")
 file_path <- here::here("Data/Input/With_observations/Zadatak 1/Zadatak_1.xlsx")
-file_path <- here::here("Data/Input/Without_observations/xlsx/TETO_plan opazanja.xlsx")
+file_path <- here::here("Data/Input/Without_observations/xlsx/TETO_plan opazanja1.xlsx")
+file_path <- here::here("Data/Input/Without_observations/xlsx/zadatak_2862019.xlsx")
+file_path <- here::here("Data/Input/Without_observations/xlsx/zadatak_2862019_sim.xlsx")
 
 dns <- read_surveynet(file = file_path)
-adjust.snet(adjust = FALSE, survey.net = dns, wdh_model = "n_dh", dim_type = "2D", sd.apriori = 1,  all = FALSE)
+plot_surveynet(snet = dns, webmap = FALSE, net.1D = FALSE, net.2D = TRUE)
+ab <- sim_snetobs(survey.net = dns, red = TRUE)
+aa <- list(Points = ab[[1]] %>% st_drop_geometry(), Observations = ab[[2]] %>% st_drop_geometry() %>% dplyr::select(ID:e_air))
+aaa <- adjust.snet(adjust = TRUE, survey.net = dns, dim_type = "2D", sd.apriori = 3,  all = FALSE, prob = 0.95)
+bb <- adjust.snet(adjust = TRUE, survey.net = ab, dim_type = "2D", sd.apriori = 1,  all = FALSE, prob = 0.99)
+writexl::write_xlsx(aa)
+aa$Observations %>% st_drop_geometry()
 
-# TODO: Ako se zadata neki model tezina za koji ne postoje podaci stavi warning. Npr. za model "sd_dh" mora da postoji i sd.apriori koji se pretvara u sd0.
-# TODO: Ako se zadata neki model tezina za koji ne postoje podaci stavi warning. Npr. za model "sd_dh" mora da postoji i sd.apriori koji se pretvara u sd0.
-
+bb %>% .$Observations %>% dplyr::filter(type == "distance") %>% .$v %>% sd()
 
 
