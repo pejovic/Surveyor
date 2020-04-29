@@ -5,6 +5,83 @@
 
 # Functions:
 
+read_surveynet <- function(file, dest_crs = NA, axes = c("Easting", "Northing")){
+  # TODO: Ako se definise neki model tezina za koji ne postoje podaci stavi warning. Npr. za model "sd_dh" mora da postoji i sd.apriori koji se pretvara u sd0.
+
+  # TODO: Set warning if there are different or not used points in two elements of survey.net list.
+  # TODO: Check if any point has no sufficient measurements to be adjusted.
+  # setting columns type
+  ponts_col_type <- c("numeric", "text", "numeric", "numeric", "numeric", "logical", "logical", "logical")
+  obs_col_type <- c("text", "text", rep("numeric", 19))
+  # reading data
+  points <- readxl::read_xlsx(path = file, sheet = "Points", col_types = ponts_col_type) %>% mutate_at(., .vars = c("Name"), as.character)
+  observations <- readxl::read_xlsx(path = file, sheet = "Observations", col_types = obs_col_type) %>% mutate_at(., .vars = c("from", "to"), as.character)
+
+  if(sum(rowSums(is.na(points[, c("x", "y")])) != 0) != 0){
+    warning("Network has no spatial coordinates")}else{
+      # Creating sf class from observations
+      observations$x_from <- points$x[match(observations$from, points$Name)]
+      observations$y_from <- points$y[match(observations$from, points$Name)]
+      observations$x_to <- points$x[match(observations$to, points$Name)]
+      observations$y_to <- points$y[match(observations$to, points$Name)]
+
+      points <- points %>% as.data.frame() %>% sf::st_as_sf(coords = c("x","y"), remove = FALSE)
+      if(which(axes == "Easting") == 2){points <- points %>% dplyr::rename(x = y,  y = x)}
+
+      observations <- observations %>% dplyr::mutate(id = seq.int(nrow(.))) %>% split(., f = as.factor(.$id)) %>%
+        lapply(., function(row) {lmat <- matrix(unlist(row[c("x_from", "y_from", "x_to", "y_to")]), ncol = 2, byrow = TRUE)
+        st_linestring(lmat)}) %>%
+        sf::st_sfc() %>%
+        sf::st_sf('ID' = seq.int(nrow(observations)), observations, 'geometry' = .)
+    }
+
+
+
+  #if(sum(rowSums(is.na(observations[, c("HzD", "HzM", "HzS")])) != 0) != 0){stop("There is uncomplete observations")}
+
+
+  observations <- observations %>% dplyr::mutate(Hz = HzD + HzM/60 + HzS/3600,
+                                                 Vz = VzD + VzM/60 + VzS/3600,
+                                                 tdh = SD*cos(Vz*pi/180),
+                                                 distance = (!is.na(HD) | !is.na(SD)) & !is.na(sd_dist),
+                                                 direction = !is.na(Hz) & !is.na(sd_Hz),
+                                                 diff_level = (!is.na(dh) | !is.na(tdh)))
+
+  # In network design, observation is included if measurement standard is provided
+  if(observations %>% purrr::when(is(., "sf") ~ st_drop_geometry(.), ~.) %>% dplyr::select(HzD, HzM, HzS) %>% is.na() %>% all()){
+    observations$direction[!is.na(observations$sd_Hz)] <- TRUE
+  }
+  if(observations %>% purrr::when(is(., "sf") ~ st_drop_geometry(.), ~.) %>% dplyr::select(HD, SD) %>% is.na() %>% all()){
+    observations$distance[!is.na(observations$sd_dist)] <- TRUE
+  }
+  if(observations %>% purrr::when(is(., "sf") ~ st_drop_geometry(.), ~.) %>% dplyr::select(dh) %>% is.na() %>% all()){
+    observations$diff_level[(!is.na(observations$dh) | !is.na(observations$sd_dh) | !is.na(observations$d_dh) | !is.na(observations$n_dh))] <- TRUE
+  }
+
+  # Eliminacija merenih duzina i visinsih razlika izmedju fiksnih tacaka duzina izmedju
+  # checking for fixed points
+  # TODO what in case of no-fixed points
+  fixed_points <- points %>% dplyr::filter(FIX_2D | FIX_1D) %>% .$Name
+
+  if(length(fixed_points) > 1){
+    observations[observations$from %in% fixed_points & observations$to %in% fixed_points, "distance"] <- FALSE
+    observations[observations$from %in% fixed_points & observations$to %in% fixed_points, "diff_level"] <- FALSE
+  }
+
+  # Setting coordinate system
+  if(!is.na(dest_crs)){
+    observations %<>% sf::st_set_crs(dest_crs)
+    points %<>% sf::st_set_crs(dest_crs)
+  }
+
+
+  # Creating list
+  survey_net <- list(points, observations)
+  names(survey_net) <- c("points", "observations")
+  return(survey_net)
+}
+
+
 dist <- function(pt1_coords, pt2_coords){
   dEasting <- as.numeric(pt2_coords[1] - pt1_coords[1])
   dNorthing <- as.numeric(pt2_coords[2] - pt1_coords[2])
@@ -187,7 +264,20 @@ Wmat <- function(survey.net, sd.apriori = 1){
   return(diag(sd.apriori^2/obs.data$standard^2))
 }
 
-
+# Funkcija koja izdvaja elemente Qx matrice u listu za elipsu svake tacke
+Qxy <- function(Qx, fix){
+  k = 0
+  Qxxx <- as.list(rep(NA, length(fix)))
+  for(i in 1:length(Qxxx)){
+    k = 2*fix[i] + k
+    if (fix[i]){
+      Qxxx[[i]] <- cbind(c(Qx[k-1, k-1], Qx[k-1, k]), c(Qx[k, k-1], Qx[k, k]))
+    } else {
+      Qxxx[[i]] <- diag(rep(fix[i]*1, 2))
+    }
+  }
+  return(Qxxx)
+}
 
 # # Funkcija koja izdvaja elemente Qx matrice u listu za elipsu svake tacke
 # Qxy <- function(Qx, n, fixd = fix){
@@ -257,69 +347,13 @@ sigma.xy <- function(Qxy.mat, sd.apriori){
   sigma <- diag(diag(as.numeric(sd.apriori), 2, 2)%*%diag(sqrt(diag(Qxy.mat)), 2, 2))
 }
 
-# TODO Treba resiti da u points idu samo tacke koje ucestvuju u merenjima.
-import_surveynet2D <- function(points = points, observations = observations, dest_crs = NA, axes = c("Easting", "Northing")){
-
-  observations <- mutate_at(observations, .vars = c("from", "to"), as.character)
-  points <- mutate_at(points, .vars = c("Name"), as.character)
-
-  fixed.points <- points[apply(points[, c("FIX_X", "FIX_Y")], 1, all), , drop=FALSE]$Name
-
-  # Create geometry columns for points
-  if (is.na(dest_crs)){
-    dest_crs <- 3857
-  } else{
-    dest_crs <- dest_crs
-  }
-
-  if(which(axes == "Easting") == 2){points <- points %>% dplyr::rename(x = y,  y = x)}
-
-  observations$x_from <- points$x[match(observations$from, points$Name)]
-  observations$y_from <- points$y[match(observations$from, points$Name)]
-  observations$x_to <- points$x[match(observations$to, points$Name)]
-  observations$y_to <- points$y[match(observations$to, points$Name)]
-
-  points <- points %>% as.data.frame() %>% sf::st_as_sf(coords = c("x","y")) %>% sf::st_set_crs(dest_crs)
-
-  observations <- observations %>% dplyr::mutate(Hz = HzD + HzM/60 + HzS/3600,
-                                                 Vz = VzD + VzM/60 + VzS/3600,
-                                                 distance = (!is.na(.$HD) | !is.na(.$SD)),
-                                                 direction = !is.na(Hz))
-
-  if(dplyr::select(observations, HzD, HzM, HzS) %>% is.na() %>% all()){
-    observations$direction[!is.na(observations$sd_Hz)] <- TRUE
-  }
-  if(dplyr::select(observations, HD, SD) %>% is.na() %>% all()){
-    observations$distance[!is.na(observations$sd_dist)] <- TRUE
-  }
-  # Eliminacija merenih duzina izmedju fiksnih tacaka duzina izmedju
-  if(length(fixed.points) > 0){
-    fixed.distances <- which(observations$distance & observations$from %in% fixed.points & observations$to %in% fixed.points)
-    observations[fixed.distances, "distance"] <- FALSE
-    observations[fixed.distances, "sd_dist"] <- NA
-  }
-
-
-  observations <- as.data.table(observations) %>% dplyr::mutate(id = seq.int(nrow(.))) %>% split(., f = as.factor(.$id)) %>%
-    lapply(., function(row) {lmat <- matrix(unlist(row[c("x_from", "y_from", "x_to", "y_to")]), ncol = 2, byrow = TRUE)
-    st_linestring(lmat)}) %>%
-    sf::st_sfc() %>%
-    sf::st_sf('ID' = seq.int(nrow(observations)), observations, 'geometry' = .)
-
-  observations <- observations %>% sf::st_set_crs(dest_crs)
-
-  # Creating list
-  survey_net <- list(points, observations)
-  return(survey_net)
-}
-
 #st.survey.net <- Makis.survey.net[[2]] %>% dplyr::filter(from == "OM1")
 #st.survey.net <- brana[[2]] %>% dplyr::filter(from == "T1")
 #st.survey.net <- avala[[2]] %>% dplyr::filter(from == "S2")
 # st.survey.net <- A.survey.net[[2]] %>% dplyr::filter(from == "C")
 # st.survey.net <- Gorica.survey.net[[2]] %>% dplyr::filter(from == "1")
 # st.survey.net <- ab[[2]] %>% dplyr::filter(from == "P2")
-# st.survey.net <- survey.net[[2]] %>% dplyr::filter(from == "M2")
+#  st.survey.net <- mreza_sim[[2]] %>% dplyr::filter(from == "M10")
 
 fdir_st <- function(st.survey.net, units.dir = "sec"){
   units.table <- c("sec" = 3600, "min" = 60, "deg" = 1)
@@ -328,25 +362,44 @@ fdir_st <- function(st.survey.net, units.dir = "sec"){
     do.call(rbind,.) %>%
     dplyr::mutate(z = Hz-ni) %>%
     dplyr::arrange(ID)
-  st.survey.net$z <- ifelse(st.survey.net$z < 1, st.survey.net$z + 360, st.survey.net$z)
+  st.survey.net$z <- ifelse(st.survey.net$z < 0, st.survey.net$z + 360, st.survey.net$z)
   z0_mean <- mean(st.survey.net$z)
-  st.survey.net$Hz0 <- z0_mean + st.survey.net$ni
-  st.survey.net$Hz0 <- ifelse(st.survey.net$Hz0 > 359, st.survey.net$Hz0 - 360, st.survey.net$Hz0)
-  st.survey.net$Hz <- ifelse(st.survey.net$Hz < 1, st.survey.net$Hz + 360, st.survey.net$Hz)
-  st.survey.net$Hz <- ifelse(st.survey.net$Hz >= 360, st.survey.net$Hz - 360, st.survey.net$Hz)
-
-  f <- (st.survey.net$Hz0 - st.survey.net$Hz)*units.table[units.dir]
+  f <-  st.survey.net$ni + z0_mean - st.survey.net$Hz
+  f <- ifelse(f < -1, f + 360 , f)
+  f <- ifelse(f > 359, f - 360, f)
+  f <- f*units.table[units.dir]
   return(f)
 }
-# ab <- survey.net
+# ab <- survey.survey.sim
 # survey.net = ab
+
+
+# fdir_st <- function(st.survey.net, units.dir = "sec"){
+#   units.table <- c("sec" = 3600, "min" = 60, "deg" = 1)
+#   st.survey.net <- st.survey.net %>% split(., f = as.factor(.$to)) %>%
+#     lapply(., function(x) {x$ni = ni(pt1_coords = as.numeric(x[, c("x_from", "y_from")]), pt2_coords = as.numeric(x[, c("x_to", "y_to")]), type = "dec"); return(x)}) %>%
+#     do.call(rbind,.) %>%
+#     dplyr::mutate(z = Hz-ni) %>%
+#     dplyr::arrange(ID)
+#   st.survey.net$z <- ifelse(st.survey.net$z < 1, st.survey.net$z + 360, st.survey.net$z)
+#   z0_mean <- mean(st.survey.net$z)
+#   st.survey.net$Hz0 <- z0_mean + st.survey.net$ni
+#   st.survey.net$Hz0 <- ifelse(st.survey.net$Hz0 > 359, st.survey.net$Hz0 - 360, st.survey.net$Hz0)
+#   st.survey.net$Hz <- ifelse(st.survey.net$Hz < 1, st.survey.net$Hz + 360, st.survey.net$Hz)
+#   st.survey.net$Hz <- ifelse(st.survey.net$Hz >= 360, st.survey.net$Hz - 360, st.survey.net$Hz)
+#   st.survey.net$f <- (st.survey.net$Hz0 - st.survey.net$Hz)*units.table[units.dir]
+#
+#   f <- (st.survey.net$Hz0 - st.survey.net$Hz)*units.table[units.dir]
+#   return(f)
+# }
+
 
 # survey.net[[2]] %>% dplyr::filter(from == "M2") %>% fdir_st() %>% round(.,2)
 
 # fmat(survey.net = survey.net) %>% round(., 2)
 
 fmat <- function(survey.net, units.dir = "sec", units.dist = "mm"){
-  f_dir <- survey.net[[2]] %>% dplyr::filter(direction == TRUE) %>% st_drop_geometry() %>% split(.,.$from) %>%
+  f_dir <- survey.net[[2]] %>% dplyr::filter(direction == TRUE) %>% st_drop_geometry() %>% split(.,factor(.$from, levels = unique(.$from))) %>%
     lapply(., function(x) fdir_st(x, units.dir = units.dir)) %>%
     do.call("c",.) %>% as.numeric() %>% as.vector()
   dist.units.table <- c("mm" = 1000, "cm" = 100, "m" = 1)
@@ -373,78 +426,6 @@ model_adequacy_test <- function(sd.apriori, sd.estimated, df, prob){
     # print(paste(round(F.estimated, 2), "<", round(F.quantile, 2), "Model is correct", sep = " "))
 }
 
-read_surveynet <- function(file, dest_crs = NA, axes = c("Easting", "Northing")){
-  # TODO: Ako se definise neki model tezina za koji ne postoje podaci stavi warning. Npr. za model "sd_dh" mora da postoji i sd.apriori koji se pretvara u sd0.
-
-  # TODO: Set warning if there are different or not used points in two elements of survey.net list.
-  # TODO: Check if any point has no sufficient measurements to be adjusted.
-  # setting columns type
-  ponts_col_type <- c("numeric", "text", "numeric", "numeric", "numeric", "logical", "logical", "logical")
-  obs_col_type <- c("text", "text", rep("numeric", 19))
-  # reading data
-  points <- readxl::read_xlsx(path = file, sheet = "Points", col_types = ponts_col_type) %>% mutate_at(., .vars = c("Name"), as.character)
-  observations <- readxl::read_xlsx(path = file, sheet = "Observations", col_types = obs_col_type) %>% mutate_at(., .vars = c("from", "to"), as.character)
-
-  if(sum(rowSums(is.na(points[, c("x", "y")])) != 0) != 0){
-    warning("Network has no spatial coordinates")}else{
-      # Creating sf class from observations
-      observations$x_from <- points$x[match(observations$from, points$Name)]
-      observations$y_from <- points$y[match(observations$from, points$Name)]
-      observations$x_to <- points$x[match(observations$to, points$Name)]
-      observations$y_to <- points$y[match(observations$to, points$Name)]
-
-      points <- points %>% as.data.frame() %>% sf::st_as_sf(coords = c("x","y"), remove = FALSE)
-      if(which(axes == "Easting") == 2){points <- points %>% dplyr::rename(x = y,  y = x)}
-
-      observations <- as.data.table(observations) %>% dplyr::mutate(id = seq.int(nrow(.))) %>% split(., f = as.factor(.$id)) %>%
-        lapply(., function(row) {lmat <- matrix(unlist(row[c("x_from", "y_from", "x_to", "y_to")]), ncol = 2, byrow = TRUE)
-        st_linestring(lmat)}) %>%
-        sf::st_sfc() %>%
-        sf::st_sf('ID' = seq.int(nrow(observations)), observations, 'geometry' = .)
-    }
-
-
-  #if(sum(rowSums(is.na(observations[, c("HzD", "HzM", "HzS")])) != 0) != 0){stop("There is uncomplete observations")}
-
-  observations <- observations %>% dplyr::mutate(Hz = HzD + HzM/60 + HzS/3600,
-                                                 Vz = VzD + VzM/60 + VzS/3600,
-                                                 tdh = SD*cos(Vz*pi/180),
-                                                 distance = (!is.na(HD) | !is.na(SD)) & !is.na(sd_dist),
-                                                 direction = !is.na(Hz) & !is.na(sd_Hz),
-                                                 diff_level = (!is.na(dh) | !is.na(tdh)))
-
-  # In network design, observation is included if measurement standard is provided
-  if(observations %>% purrr::when(is(., "sf") ~ st_drop_geometry(.), ~.) %>% dplyr::select(HzD, HzM, HzS) %>% is.na() %>% all()){
-    observations$direction[!is.na(observations$sd_Hz)] <- TRUE
-  }
-  if(observations %>% purrr::when(is(., "sf") ~ st_drop_geometry(.), ~.) %>% dplyr::select(HD, SD) %>% is.na() %>% all()){
-    observations$distance[!is.na(observations$sd_dist)] <- TRUE
-  }
-  if(observations %>% purrr::when(is(., "sf") ~ st_drop_geometry(.), ~.) %>% dplyr::select(dh) %>% is.na() %>% all()){
-    observations$diff_level[(!is.na(observations$dh) | !is.na(observations$sd_dh) | !is.na(observations$d_dh) | !is.na(observations$n_dh))] <- TRUE
-  }
-
-  # Eliminacija merenih duzina i visinsih razlika izmedju fiksnih tacaka duzina izmedju
-  # checking for fixed points
-  # TODO what in case of no-fixed points
-  fixed_points <- points %>% dplyr::filter(FIX_2D | FIX_1D) %>% .$Name
-
-  if(length(fixed_points) > 1){
-    observations[observations$from %in% fixed_points & observations$to %in% fixed_points, "distance"] <- FALSE
-    observations[observations$from %in% fixed_points & observations$to %in% fixed_points, "diff_level"] <- FALSE
-  }
-
-  # Setting coordinate system
-  if(!is.na(dest_crs)){
-    observations %<>% sf::st_set_crs(dest_crs)
-    points %<>% sf::st_set_crs(dest_crs)
-  }
-
-  # Creating list
-  survey_net <- list(points, observations)
-  names(survey_net) <- c("points", "observations")
-  return(survey_net)
-}
 
 Amat1D <- function(survey.net){
   used_points <- unique(c(survey.net$observations$from, survey.net$observations$to))
@@ -490,22 +471,9 @@ fmat1D <- function(survey.net, units = units){
   return(f)
 }
 
-# Funkcija koja izdvaja elemente Qx matrice u listu za elipsu svake tacke
-Qxy <- function(Qx, fix){
-  k = 0
-  Qxxx <- as.list(rep(NA, length(fix)))
-  for(i in 1:length(Qxxx)){
-    k = 2*fix[i] + k
-    if (fix[i]){
-      Qxxx[[i]] <- cbind(c(Qx[k-1, k-1], Qx[k-1, k]), c(Qx[k, k-1], Qx[k, k]))
-    } else {
-      Qxxx[[i]] <- diag(rep(fix[i]*1, 2))
-    }
-  }
-  return(Qxxx)
-}
 
-# adjust = TRUE; survey.net = mreza_sim; dim_type = "2D"; sd.apriori = 3; wdh_model = list("sd_dh", "d_dh", "n_dh", "E"); n0 = 1; maxiter = 50; prob = 0.95; coord_tolerance = 1e-3; result.units = "mm"; ellipse.scale = 1; teta.unit = "dec"; units.dir = "sec"; units.dist = "mm"; use.sd.estimated = TRUE; all = TRUE
+
+# adjust = TRUE; survey.net = mreza_sim; dim_type = "2D"; sd.apriori = 1; wdh_model = list("sd_dh", "d_dh", "n_dh", "E"); n0 = 1; maxiter = 1; prob = 0.95; coord_tolerance = 1e-3; result.units = "mm"; ellipse.scale = 1; teta.unit = "dec"; units.dir = "sec"; units.dist = "mm"; use.sd.estimated = TRUE; all = TRUE
 
 adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), sd.apriori = 1, wdh_model = list("sd_dh", "d_dh", "n_dh", "E"), n0 = 1, maxiter = 50, prob = 0.95, coord_tolerance = 1e-3, result.units = list("mm", "cm", "m"), ellipse.scale = 1, teta.unit = list("deg", "rad"), units.dir = "sec", units.dist = "mm", use.sd.estimated = TRUE, all = TRUE){
   dim_type <- dim_type[[1]]
@@ -527,10 +495,11 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
       dplyr::mutate(from_to = str_c(.$from, .$to, sep = "_"))
 
     fix.mat2D <- !rep(survey.net[[1]]$FIX_2D, each = 2)
+    stations <- observations %>% dplyr::filter(type == "direction") %>% .$from %>% unique()
     if(length(fix.mat2D) != sum(fix.mat2D)){
-      df <- (dim(observations)[1] - sum(fix.mat2D)) #abs(diff(dim(A.mat)))
+      df <- (dim(observations)[1] - (sum(fix.mat2D) + length(stations))) #abs(diff(dim(A.mat)))
     }else{
-      df <- (dim(observations)[1] - sum(fix.mat2D)) + 3
+      df <- (dim(observations)[1] - (sum(fix.mat2D) + length(stations))) + 3
     }
     if(adjust){
       e <- 1
@@ -728,11 +697,12 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
   }
 
   if(adjust){
-    observations <- observations %>% dplyr::mutate(v = v.mat, Ql = diag(Ql.mat), Qv = diag(Qv.mat), rii = diag(r)) %>%
-      dplyr::mutate_if(is.numeric, round, disp.unit.lookup[units]) #%>%
+    # obs <- tidyr::gather(survey.net[[2]] %>% purrr::when(is(., "sf") ~ st_drop_geometry(.), ~.) %>% dplyr::select(from, to, Hz, HD), key = type, value = obs, -c(from, to)) %>% dplyr::filter(!is.na(obs)) %>% dplyr::mutate(v = v.mat, f = f.mat, Kl = c(sd.apriori^2)*diag(Ql.mat), Kv =  c(sd.apriori^2)*diag(Qv.mat), rii = diag(r)) %>% dplyr::mutate_if(is.numeric, round, disp.unit.lookup[units])
+
+    observations <- observations %>% dplyr::mutate(v = v.mat, f = f.mat, Kl = c(sd.apriori^2)*diag(Ql.mat), Kv =  c(sd.apriori^2)*diag(Qv.mat), rii = diag(r)) %>% dplyr::mutate_if(is.numeric, round, disp.unit.lookup[units]) #%>%
     #dplyr::rename_at(., .vars = "v", .funs = paste("v", paste("[", units, "]", sep = ""), sep = " "))
   }else{
-    observations <- observations %>% dplyr::mutate(Ql = diag(Ql.mat), Qv = diag(Qv.mat), rii = diag(r)) %>%
+    observations <- observations %>% dplyr::mutate(Kl =  c(sd.apriori^2)*diag(Ql.mat), Kv =  c(sd.apriori^2)*diag(Qv.mat), rii = diag(r)) %>%
       dplyr::mutate_if(is.numeric, round, disp.unit.lookup[units])
   }
 
@@ -754,11 +724,11 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
       dplyr::select(-c(x_from, y_from, x_to, y_to))
     observations %<>% sf::st_set_crs(value = st_crs(survey.net[[2]]))
 
-    results <- list(design.matrices = list(A = A.mat, W = W.mat, Qx = Qx.mat, Ql = Ql.mat, Qv = Qv.mat), points, observations = observations)
+    results <- list(design_matrices = list(A = A.mat, W = W.mat, Qx = Qx.mat, Ql = Ql.mat, Qv = Qv.mat), Points = points, Observations = observations)
     # results$net.points <- sf::st_set_crs(results$net.points, value = st_crs(survey.net[[2]])) TODO: gubi se projekcija pa ovo ne moze da se uradi.
   }
 
-  results <- list(design.matrices = list(A = A.mat, W = W.mat, Qx = Qx.mat, Ql = Ql.mat, Qv = Qv.mat), Points = points, Observations = observations)
+  results <- list(design_matrices = list(A = A.mat, W = W.mat, Qx = Qx.mat, Ql = Ql.mat, Qv = Qv.mat), Points = points, Observations = observations)
 
 
   if(all){
