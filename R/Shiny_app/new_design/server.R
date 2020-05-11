@@ -438,11 +438,11 @@ shinyServer(function(input, output){
         st_drop_geometry() %>%
         as.data.frame() %>%
         mutate(
-          Ql = round(Ql, 2),
-          Qv = round(Qv, 2),
+          Kl = round(Kl, 2),
+          Kv = round(Kv, 2),
           rii = round(rii, 2)
         ) %>%
-        dplyr::select(from, to, type, Ql, Qv, rii),
+        dplyr::select(from, to, type, Kl, Kv, rii),
       escape=F,
       extensions = list('Buttons', 'Scroller'),
       options = list(dom = 'Bfrtip', buttons = I('colvis'),
@@ -583,11 +583,11 @@ shinyServer(function(input, output){
         st_drop_geometry() %>%
         as.data.frame() %>%
         mutate(
-          Ql = round(Ql, 2),
-          Qv = round(Qv, 2),
+          Kl = round(Kl, 2),
+          Kv = round(Kv, 2),
           rii = round(rii, 2)
         ) %>%
-          dplyr::select(from, to, type, Ql, Qv, rii),
+          dplyr::select(from, to, type, Kl, Kv, rii),
         escape = FALSE,
         extensions = list('Buttons', 'Scroller'),
         options = list(dom = 'Bfrtip', buttons = I('colvis'),
@@ -853,11 +853,11 @@ shinyServer(function(input, output){
         as.data.frame() %>%
         mutate(
           v = round(v, 2),
-          Ql = round(Ql, 2),
-          Qv = round(Qv, 2),
+          Kl = round(Kl, 2),
+          Kv = round(Kv, 2),
           rii = round(rii, 2)
         ) %>%
-        dplyr::select(from, to, type,v ,Ql, Qv, rii, used),
+        dplyr::select(from, to, type, v, Kl, Kv, rii, used),
       escape=F,
       extensions = list('Buttons', 'Scroller'),
       options = list(dom = 'Bfrtip', buttons = I('colvis'),

@@ -93,9 +93,9 @@ rand_coords <- function(snet.points, sp){
 
 
 
-survey.net.st <- survey.net[[2]] %>% filter(from == "PP2")
+# survey.net.st <- survey.net[[2]] %>% filter(from == "PP2")
 
-survey.net.st %>% st_drop_geometry() %>% .[1, c("x_from", "y_from")] %>% as.numeric()
+# survey.net.st %>% st_drop_geometry() %>% .[1, c("x_from", "y_from")] %>% as.numeric()
 
 
 
