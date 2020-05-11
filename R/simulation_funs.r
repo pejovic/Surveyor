@@ -91,7 +91,7 @@ sim_st <- function(survey.net.st, red){
   return(survey.net.st)
 }
 
-
+#survey.net = mreza_s; red = TRUE; Hz0 = NA; seed = NULL; type = list("dms", "dec", "rad")
 
 sim_snetobs <- function(survey.net, red = TRUE, Hz0 = NA, seed = NULL, type = list("dms", "dec", "rad")){
 
@@ -123,6 +123,12 @@ sim_snetobs <- function(survey.net, red = TRUE, Hz0 = NA, seed = NULL, type = li
                   seed_to = seed_from + id)
 
   survey.net[[2]] <- survey.net[[2]] %>% split(., f = factor(.$from)) %>% lapply(., function(x) sim_st(survey.net.st = x, red = red)) %>% do.call(rbind,.) %>% dplyr::arrange(ID)
+
+  # fixed_points <- survey.net[[1]] %>% dplyr::filter(FIX_2D | FIX_1D) %>% .$Name
+  #
+  # if(length(fixed_points) > 1){
+  #   survey.net[[2]][survey.net[[2]]$from %in% fixed_points & survey.net[[2]]$to %in% fixed_points, "HD"] <- NA
+  # }
 
   return(survey.net)
 }

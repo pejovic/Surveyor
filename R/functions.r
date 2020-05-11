@@ -11,10 +11,10 @@ read_surveynet <- function(file, dest_crs = NA, axes = c("Easting", "Northing"))
   # TODO: Set warning if there are different or not used points in two elements of survey.net list.
   # TODO: Check if any point has no sufficient measurements to be adjusted.
   # setting columns type
-  ponts_col_type <- c("numeric", "text", "numeric", "numeric", "numeric", "logical", "logical", "logical")
+  points_col_type <- c("numeric", "text", "numeric", "numeric", "numeric", "logical", "logical", "logical")
   obs_col_type <- c("text", "text", rep("numeric", 19))
   # reading data
-  points <- readxl::read_xlsx(path = file, sheet = "Points", col_types = ponts_col_type) %>% mutate_at(., .vars = c("Name"), as.character)
+  points <- readxl::read_xlsx(path = file, sheet = "Points", col_types = points_col_type) %>% mutate_at(., .vars = c("Name"), as.character)
   observations <- readxl::read_xlsx(path = file, sheet = "Observations", col_types = obs_col_type) %>% mutate_at(., .vars = c("from", "to"), as.character)
 
   if(sum(rowSums(is.na(points[, c("x", "y")])) != 0) != 0){
@@ -558,9 +558,10 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
       # Results
       coords.inc <- data.frame(parameter = colnames(A.mat)[1:sum(fix.mat2D)], coords.inc = as.numeric(x.mat))
       coords.inc <- coords.inc %>%
-        tidyr::separate(.,col = parameter, into = c("Name", "inc.name"), sep = "_") %>%
+        tidyr::separate(.,col = parameter, into = c("Name", "inc.name"), sep = "_d") %>%
         tidyr::pivot_wider(., names_from = c(inc.name), values_from = c(coords.inc)) %>%
-        dplyr::mutate_all(., ~replace(., is.na(.), 0))
+        dplyr::mutate_all(., ~replace(., is.na(.), 0)) %>%
+        dplyr::rename(dx = x, dy = y)
 
       point.adj.results <- dplyr::left_join(survey.net[[1]], coords.inc, by = "Name") %>%
         dplyr::mutate_at(., .vars = c("dx", "dy"), ~replace(., is.na(.), 0)) %>%
