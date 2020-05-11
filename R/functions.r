@@ -347,9 +347,9 @@ sigma.xy <- function(Qxy.mat, sd.apriori){
   sigma <- diag(diag(as.numeric(sd.apriori), 2, 2)%*%diag(sqrt(diag(Qxy.mat)), 2, 2))
 }
 
-#st.survey.net <- Makis.survey.net[[2]] %>% dplyr::filter(from == "OM1")
-#st.survey.net <- brana[[2]] %>% dplyr::filter(from == "T1")
-#st.survey.net <- avala[[2]] %>% dplyr::filter(from == "S2")
+# st.survey.net <- makis.snet[[2]] %>% dplyr::filter(from == "OM20")
+# st.survey.net <- brana[[2]] %>% dplyr::filter(from == "T1")
+# st.survey.net <- avala[[2]] %>% dplyr::filter(from == "S2")
 # st.survey.net <- A.survey.net[[2]] %>% dplyr::filter(from == "C")
 # st.survey.net <- Gorica.survey.net[[2]] %>% dplyr::filter(from == "1")
 # st.survey.net <- ab[[2]] %>% dplyr::filter(from == "P2")
@@ -473,7 +473,7 @@ fmat1D <- function(survey.net, units = units){
 
 
 
-# adjust = TRUE; survey.net = mreza_sim; dim_type = "2D"; sd.apriori = 1; wdh_model = list("sd_dh", "d_dh", "n_dh", "E"); n0 = 1; maxiter = 1; prob = 0.95; coord_tolerance = 1e-3; result.units = "mm"; ellipse.scale = 1; teta.unit = "dec"; units.dir = "sec"; units.dist = "mm"; use.sd.estimated = TRUE; all = TRUE
+# adjust = TRUE; survey.net = makis.snet; dim_type = "2D"; sd.apriori = 1; wdh_model = list("sd_dh", "d_dh", "n_dh", "E"); n0 = 1; maxiter = 1; prob = 0.95; coord_tolerance = 1e-3; result.units = "mm"; ellipse.scale = 1; teta.unit = "dec"; units.dir = "sec"; units.dist = "mm"; use.sd.estimated = TRUE; all = TRUE
 
 adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), sd.apriori = 1, wdh_model = list("sd_dh", "d_dh", "n_dh", "E"), n0 = 1, maxiter = 50, prob = 0.95, coord_tolerance = 1e-3, result.units = list("mm", "cm", "m"), ellipse.scale = 1, teta.unit = list("deg", "rad"), units.dir = "sec", units.dist = "mm", use.sd.estimated = TRUE, all = TRUE){
   dim_type <- dim_type[[1]]
