@@ -64,82 +64,67 @@ shinyUI(
                                                 tabPanel("1D DESIGN",
                                                          p(""),
                                                            tabsetPanel(type = "pills",
-                                                             tabPanel("XLSX INPUT DATA"
-                                                                      ),
-                                                             tabPanel("MAP INPUT DATA",
+                                                             tabPanel("XLSX INPUT DATA",
                                                                       p(""),
                                                                       fluidRow(
                                                                         column(width = 6, "DATA PREPARATION",
                                                                                tabsetPanel(
                                                                                  tabPanel("MAIN",
                                                                                           p(""),
+                                                                                          fileInput(inputId = "fileXLSX_1d", label = "Upload points and observations file. Choose Excel - xlsx file:",
+                                                                                                    multiple = TRUE, accept = c('.xlsx')),
+                                                                                          p(""),
                                                                                           navlistPanel(
                                                                                             tabPanel("OBSERVATION ACCURACY",
-                                                                                                     numericInput(inputId = "st_dir_dh", "Standard deviation for height difference [mm]: ", value = 1),
-                                                                                                     numericInput(inputId = "st_dist_rdh", "Standard deviation for reference height difference [mm]: ", value = 1),
-                                                                                                     numericInput(inputId = "st_apriori_dh", "'a priori' Standard deviation: ", value = 1)
+                                                                                                     numericInput(inputId = "sd_dir_dh", "Standard deviation for height difference [mm]: ", value = 1),
+                                                                                                     numericInput(inputId = "sd_dist_rdh", "Standard deviation for reference height difference [mm]: ", value = 1),
+                                                                                                     numericInput(inputId = "sd_apriori_dh", "'a priori' Standard deviation for height differences: ", value = 0.2)
                                                                                             ),
                                                                                             tabPanel("COORDINATE REFERENCE SYSTEM",
-                                                                                                     numericInput(inputId = "epsg_me_1d", "Destination CRS [EPSG code]: ", value = 3857)
+                                                                                                     numericInput(inputId = "epsg_1d", "Destination CRS [EPSG code]: ", value = NA)
                                                                                             ),
                                                                                             tabPanel("RESULT UNITS AND SCALE",
-                                                                                                     textInput(inputId = "units_me_1d", "Result units: " , value = "mm"),
-                                                                                                     numericInput(inputId = "scale_me_1d", "Result scale: ", value = 10)
+                                                                                                     textInput(inputId = "units_1d", "Result units: " , value = "m"),
+                                                                                                     numericInput(inputId = "scale_1d", "Result scale: ", value = 10)
                                                                                             ),
                                                                                             tabPanel("CRITERIA",
-                                                                                                     #p("POINT ACCURACY", style="text-align: center; font-weight: bold;"),
-                                                                                                     #fluidRow(
-                                                                                                     #  column(width = 4, numericInput("sx_map", "Sx: ", value = 1.5)),
-                                                                                                     #  column(width = 4, numericInput("sy_map", "Sy: ", value = 1.5)),
-                                                                                                     #  column(width = 4, numericInput("sp_map", "Sp: ", value = 2))
-                                                                                                     #),
-                                                                                                     #fluidRow(
-                                                                                                     #  column(width = 12, numericInput("ab_map", "A/B: ", value = 0))
-                                                                                                     #),
-                                                                                                     #fluidRow(
-                                                                                                     #  column(width = 4, numericInput("dp_map", "dP: ", value = 0)),
-                                                                                                     #  column(width = 4, numericInput("dpteta_map", "dPT: ", value = 0)),
-                                                                                                     #  column(width = 4, numericInput("teta_map", "T: ", value = 0))
-                                                                                                     #),
-                                                                                                     #p(""),
+                                                                                                     p("STOCHACTIC MODEL", style="text-align: center; font-weight: bold;"),
+                                                                                                     fluidRow(
+                                                                                                       checkboxGroupInput("dh.s.model", "Stochastic model:", c("Standard deviation for height difference [mm]" = "sd_dh",
+                                                                                                                                                               "Leveling distances [km]" = "d_dh",
+                                                                                                                                                               "Number of stations" = "n_dh",
+                                                                                                                                                               "Unit weights - identity matrix" = "E"))
+                                                                                                     ),
+                                                                                                     p(""),
                                                                                                      p("MEASURMENT ACCURACY", style="text-align: center; font-weight: bold;"),
                                                                                                      fluidRow(
-                                                                                                       column(width = 6, numericInput("sdh_map", "Sdh: ", value = 0)),
-                                                                                                       column(width = 6, numericInput("sH_map", "SH: ", value = 0))
-                                                                                                     )#,
-                                                                                                     #p(""),
-
-                                                                                                     #p("MEASURMENT RELIABILITY", style="text-align: center; font-weight: bold;"),
-                                                                                                     #fluidRow(
-                                                                                                     #  column(width = 6, numericInput("rii_map", "rii: ", value = 0.3)),
-                                                                                                     #  column(width = 6, numericInput("gii_map", "Gii: ", value = 0))
-                                                                                                     #)
+                                                                                                       # column(width = 6, numericInput("sd_H", "sd_H: ", value = 0.50)),
+                                                                                                       column(width = 6, numericInput("sd_H", "sd_H: ", value = 0.3))
+                                                                                                     ),
+                                                                                                     p(""),
+                                                                                                     p("MEASURMENT RELIABILITY", style="text-align: center; font-weight: bold;"),
+                                                                                                     fluidRow(
+                                                                                                       column(width = 6, numericInput("rii_1d", "rii: ", value = 0.3))
+                                                                                                     )
                                                                                             )
                                                                                           ),
                                                                                           p(""),
-                                                                                          actionButton(inputId ='map_edit_1d_result', label='PREPROCESS DATA', class = "btn-primary btn-block"),
+                                                                                          actionButton(inputId ='design_1d_result', label='PREPROCESS DATA', class = "btn-primary btn-block"),
                                                                                           p(""),
-                                                                                          actionButton(inputId ='update_design_1d_map', label='Update 1D net design', class = "btn-primary"),
+                                                                                          actionButton(inputId ='update_design_1d', label='Update 1D net design', class = "btn-primary"),
                                                                                           p(""),
-                                                                                          actionButton(inputId ='design_adjust_1d_map', label='ADJUST', class = "btn-danger btn-block")
+                                                                                          actionButton(inputId ='design_adjust_1d', label='ADJUST', class = "btn-danger btn-block")
                                                                                  ),
-                                                                                 tabPanel("EDIT MAP",
-                                                                                          h4("Interactive web carthography maps."),
-                                                                                          editModUI("map_me_1d", height=550)
+                                                                                 tabPanel("POINTS",
+                                                                                          rHandsontableOutput('p_1d') %>% withSpinner(color="#0dc5c1")
                                                                                  ),
-                                                                                 tabPanel("POINTS"#,
-                                                                                          #rHandsontableOutput('p_des_map_1d') %>% withSpinner(color="#0dc5c1")
-                                                                                 ),
-                                                                                 tabPanel("OBSERVATIONS"#,
-                                                                                          #rHandsontableOutput('o_des_map_1d') %>% withSpinner(color="#0dc5c1")
+                                                                                 tabPanel("OBSERVATIONS",
+                                                                                          rHandsontableOutput('o_1d') %>% withSpinner(color="#0dc5c1")
                                                                                  ),
                                                                                  tabPanel("MAP",
                                                                                           tabsetPanel(
-                                                                                            tabPanel("WEB MAP"#,
-                                                                                                     #leafletOutput("map_me_out_1d", height = 550) %>% withSpinner(color="#0dc5c1")
-                                                                                            ),
-                                                                                            tabPanel("PLOT"#,
-                                                                                                     #plotOutput("netSpatialView_me_1d") %>% withSpinner(color="#0dc5c1")
+                                                                                            tabPanel("PLOT",
+                                                                                                     plotlyOutput("netSpatialView_1d") %>% withSpinner(color="#0dc5c1")
                                                                                             )
                                                                                           )
                                                                                  )
@@ -148,27 +133,140 @@ shinyUI(
                                                                         column(width = 6, "DESIGN 1D NET RESULTS",
                                                                                tabsetPanel(
                                                                                  tabPanel("MAP RESULTS",
-                                                                                          p("")#,
+                                                                                          p(""),
+                                                                                          verbatimTextOutput("update_1d_res")
                                                                                           #leafletOutput("map_opt_me_1d", height = 550) %>% withSpinner(color="#0dc5c1")
                                                                                  ),
                                                                                  tabPanel("TAB RESULTS",
                                                                                           p(""),
                                                                                           navlistPanel(
-                                                                                            #tabPanel("Error ellipse", DT::dataTableOutput("ellipse_error_me") %>% withSpinner(color="#0dc5c1")),
-                                                                                            #tabPanel("Net points", DT::dataTableOutput('net_points_adj_me') %>% withSpinner(color="#0dc5c1")),
-                                                                                            #tabPanel("Obseravtions", DT::dataTableOutput('net_observations_adj_me') %>% withSpinner(color="#0dc5c1")),
-                                                                                            #tabPanel("Plot error ellipses", plotOutput("netSpatialView_ell_me") %>% withSpinner(color="#0dc5c1"))
+                                                                                            tabPanel("Net points", DT::dataTableOutput('1d_points_des') %>% withSpinner(color="#0dc5c1")),
+                                                                                            tabPanel("Obseravtions", DT::dataTableOutput('1d_observations_des') %>% withSpinner(color="#0dc5c1")),
+                                                                                            tabPanel("Plots", plotOutput("netSpatialView_1d_des") %>% withSpinner(color="#0dc5c1"))
                                                                                           )
                                                                                  ),
                                                                                  tabPanel("EXPORT RESULTS",
                                                                                           actionButton(inputId ='modal_plot_1d', label='PLOT', class = "btn-danger"),
-                                                                                          bsModal("modalExample1d", "Plot - 1D net design", "modal_plot_1d", size = "large", plotOutput("netSpatialView_me_1d"), downloadButton('downloadPlot1d', 'Download'))
+                                                                                          bsModal("modalExample1d", "Plot - 1D net design", "modal_plot_1d", size = "large", plotOutput("netSpatialView_1d_modal"), downloadButton('downloadPlot1d', 'Download'))
                                                                                  )
                                                                                )
 
                                                                         )
 
                                                                       )
+
+
+                                                                    ),
+                                                             tabPanel("MAP INPUT DATA",
+                                                                      p(""),
+                                                                      # fluidRow(
+                                                                      #  column(width = 6, "DATA PREPARATION",
+                                                                      #         tabsetPanel(
+                                                                      #           tabPanel("MAIN",
+                                                                      #                    p(""),
+                                                                      #                    navlistPanel(
+                                                                      #                      tabPanel("OBSERVATION ACCURACY",
+                                                                      #                               numericInput(inputId = "sd_dir_dh .me", "Standard deviation for height difference [mm]: ", value = 1),
+                                                                      #                               numericInput(inputId = "sd_dist_rdh.me", "Standard deviation for reference height difference [mm]: ", value = 1),
+                                                                      #                               numericInput(inputId = "sd_apriori_dh.me", "'a priori' Standard deviation for height differences: ", value = 0.2)
+                                                                      #                      ),
+                                                                      #                      tabPanel("COORDINATE REFERENCE SYSTEM",
+                                                                      #                               numericInput(inputId = "epsg_me_1d", "Destination CRS [EPSG code]: ", value = 3857)
+                                                                      #                      ),
+                                                                      #                      tabPanel("RESULT UNITS AND SCALE",
+                                                                      #                               textInput(inputId = "units_me_1d", "Result units: " , value = "mm"),
+                                                                      #                               numericInput(inputId = "scale_me_1d", "Result scale: ", value = 10)
+                                                                      #                      ),
+                                                                      #                      tabPanel("CRITERIA",
+                                                                      #                               p("STOCHACTIC MODEL", style="text-align: center; font-weight: bold;"),
+                                                                      #                               fluidRow(
+                                                                      #                                 checkboxGroupInput("dh.s.model.me", "Stochastic model:", c("Standard deviation for height difference [mm]" = "sd_dh",
+                                                                      #                                                                                         "Leveling distances [km]" = "d_dh",
+                                                                      #                                                                                         "Number of stations" = "n_dh",
+                                                                      #                                                                                         "Unit weights - identity matrix" = "E"))
+                                                                      #                               ),
+                                                                      #                               #p("POINT ACCURACY", style="text-align: center; font-weight: bold;"),
+                                                                      #                               #fluidRow(
+                                                                      #                               #  column(width = 4, numericInput("sx_map", "Sx: ", value = 1.5)),
+                                                                      #                               #  column(width = 4, numericInput("sy_map", "Sy: ", value = 1.5)),
+                                                                      #                               #  column(width = 4, numericInput("sp_map", "Sp: ", value = 2))
+                                                                      #                               #),
+                                                                      #                               #fluidRow(
+                                                                      #                               #  column(width = 12, numericInput("ab_map", "A/B: ", value = 0))
+                                                                      #                               #),
+                                                                      #                               #fluidRow(
+                                                                      #                               #  column(width = 4, numericInput("dp_map", "dP: ", value = 0)),
+                                                                      #                               #  column(width = 4, numericInput("dpteta_map", "dPT: ", value = 0)),
+                                                                      #                               #  column(width = 4, numericInput("teta_map", "T: ", value = 0))
+                                                                      #                               #),
+                                                                      #                               #p(""),
+                                                                      #                               p("MEASURMENT ACCURACY", style="text-align: center; font-weight: bold;"),
+                                                                      #                               fluidRow(
+                                                                      #                                 column(width = 6, numericInput("sdh_map", "Sdh: ", value = 0)),
+                                                                      #                                 column(width = 6, numericInput("sH_map", "SH: ", value = 0))
+                                                                      #                               )#,
+                                                                      #                               #p(""),
+#
+                                                                      #                               #p("MEASURMENT RELIABILITY", style="text-align: center; font-weight: bold;"),
+                                                                      #                               #fluidRow(
+                                                                      #                               #  column(width = 6, numericInput("rii_map", "rii: ", value = 0.3)),
+                                                                      #                               #  column(width = 6, numericInput("gii_map", "Gii: ", value = 0))
+                                                                      #                               #)
+                                                                      #                      )
+                                                                      #                    ),
+                                                                      #                    p(""),
+                                                                      #                    actionButton(inputId ='map_edit_1d_result', label='PREPROCESS DATA', class = "btn-primary btn-block"),
+                                                                      #                    p(""),
+                                                                      #                    actionButton(inputId ='update_design_1d_map', label='Update 1D net design', class = "btn-primary"),
+                                                                      #                    p(""),
+                                                                      #                    actionButton(inputId ='design_adjust_1d_map', label='ADJUST', class = "btn-danger btn-block")
+                                                                      #           ),
+                                                                      #           tabPanel("EDIT MAP",
+                                                                      #                    h4("Interactive web carthography maps."),
+                                                                      #                    editModUI("map_me_1d", height=550)
+                                                                      #           ),
+                                                                      #           tabPanel("POINTS"#,
+                                                                      #                    #rHandsontableOutput('p_des_map_1d') %>% withSpinner(color="#0dc5c1")
+                                                                      #           ),
+                                                                      #           tabPanel("OBSERVATIONS"#,
+                                                                      #                    #rHandsontableOutput('o_des_map_1d') %>% withSpinner(color="#0dc5c1")
+                                                                      #           ),
+                                                                      #           tabPanel("MAP",
+                                                                      #                    tabsetPanel(
+                                                                      #                      tabPanel("WEB MAP"#,
+                                                                      #                               #leafletOutput("map_me_out_1d", height = 550) %>% withSpinner(color="#0dc5c1")
+                                                                      #                      ),
+                                                                      #                      tabPanel("PLOT"#,
+                                                                      #                               #plotOutput("netSpatialView_me_1d") %>% withSpinner(color="#0dc5c1")
+                                                                      #                      )
+                                                                      #                    )
+                                                                      #           )
+                                                                      #         )
+                                                                      #  ),
+                                                                      #  column(width = 6, "DESIGN 1D NET RESULTS",
+                                                                      #         tabsetPanel(
+                                                                      #           tabPanel("MAP RESULTS",
+                                                                      #                    p("")#,
+                                                                      #                    #leafletOutput("map_opt_me_1d", height = 550) %>% withSpinner(color="#0dc5c1")
+                                                                      #           ),
+                                                                      #           tabPanel("TAB RESULTS",
+                                                                      #                    p(""),
+                                                                      #                    navlistPanel(
+                                                                      #                      #tabPanel("Error ellipse", DT::dataTableOutput("ellipse_error_me") %>% withSpinner(color="#0dc5c1")),
+                                                                      #                      #tabPanel("Net points", DT::dataTableOutput('net_points_adj_me') %>% withSpinner(color="#0dc5c1")),
+                                                                      #                      #tabPanel("Obseravtions", DT::dataTableOutput('net_observations_adj_me') %>% withSpinner(color="#0dc5c1")),
+                                                                      #                      #tabPanel("Plot error ellipses", plotOutput("netSpatialView_ell_me") %>% withSpinner(color="#0dc5c1"))
+                                                                      #                    )
+                                                                      #           ),
+                                                                      #           tabPanel("EXPORT RESULTS",
+                                                                      #                    actionButton(inputId ='modal_plot_1d', label='PLOT', class = "btn-danger"),
+                                                                      #                    bsModal("modalExample1d", "Plot - 1D net design", "modal_plot_1d", size = "large", plotOutput("netSpatialView_me_1d"), downloadButton('downloadPlot1d', 'Download'))
+                                                                      #           )
+                                                                      #         )
+#
+                                                                      #  )
+#
+                                                                      #)
                                                                     )
                                                            )
                                                 ),

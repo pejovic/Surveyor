@@ -24,17 +24,11 @@ library(plotly)
 source("./R/Simulations_functions.r")
 source("./R/functions.r")
 
-
-file_path <- here::here("Data/Input/With_observations/DNS_1D/DNS_1D_nulta.xlsx")
-dns.snet <- read_surveynet(file = file_path)
-plot_surveynet(snet = dns.snet, webmap = FALSE, net.1D = TRUE, net.2D = FALSE)
-dns.snet.adj <- adjust.snet(adjust = FALSE, survey.net = dns.snet, wdh_model = "n_dh", dim_type = "1D", sd.apriori = 0.2 ,  all = FALSE)
-
 file_path <- here::here("Data/Input/With_observations/Brana/Brana.xlsx")
 brana.snet <- read_surveynet(file = file_path)
 plot_surveynet(snet = brana.snet, webmap = FALSE, net.1D = FALSE, net.2D = TRUE)
 plot_surveynet(snet = brana.snet, webmap = TRUE, net.1D = FALSE, net.2D = TRUE)
-brana.snet.adj <- adjust.snet(adjust = TRUE, survey.net = brana.snet, dim_type = "2D", sd.apriori = 1,  all = FALSE)
+brana.snet.adj <- adjust.snet(adjust = TRUE, survey.net = brana.snet, dim_type = "2D", sd.apriori = 1, ellipse.scale = 10, all = FALSE) # promeniti sd pravca i duzina
 plot_surveynet(snet.adj = brana.snet.adj, webmap = TRUE, net.1D = FALSE, net.2D = TRUE)
 
 file_path <- here::here("Data/Input/With_observations/Makis/Makis_observations.xlsx")
@@ -68,3 +62,14 @@ gorica1.snet <- read_surveynet(file = file_path)
 plot_surveynet(snet = gorica1.snet, webmap = FALSE, net.1D = FALSE, net.2D = TRUE)
 gorica1.snet.adj <- adjust.snet(adjust = TRUE, survey.net = gorica1.snet, dim_type = "2D", sd.apriori = 1 ,  all = FALSE)
 
+
+
+
+# 1D design and adjustment
+file_path <- here::here("Data/Input/With_observations/DNS_1D/DNS_1D_nulta.xlsx")
+dns.snet <- read_surveynet(file = file_path)
+plot_surveynet(snet = dns.snet, webmap = FALSE, net.1D = TRUE, net.2D = FALSE)
+dns.snet.adj <- adjust.snet(adjust = FALSE, survey.net = dns.snet, wdh_model = "n_dh", dim_type = "1D", sd.apriori = 0.2 ,  all = FALSE, result.units = "m")
+survey.net <- dns.snet
+
+fixed_points <- survey.net$points[apply(survey.net$points[, c("FIX_1D")], 1, any), , ]$Name %>% .[!is.na(.)]

@@ -184,11 +184,11 @@ adj.net_map
       st_drop_geometry() %>%
       as.data.frame() %>%
       mutate(
-        Ql = round(Ql, 2),
-        Qv = round(Qv, 2),
+        Kl = round(Kl, 2),
+        Kv = round(Kv, 2),
         rii = round(rii, 2)
       ) %>%
-      dplyr::select(from, to, type, Ql, Qv, rii),
+      dplyr::select(from, to, type, Kl, Kv, rii),
     escape = FALSE,
     extensions = list('Buttons', 'Responsive'),
     options = list(dom = 'Bfrtip', pageLength = 10, lengthMenu = c(5, 10, 15, 20, 50)))%>%

@@ -129,11 +129,17 @@ import_surveynet2D_updated <- function(points = points, observations = observati
   #}
 
   # Create geometry columns for points
-  if (is.na(dest_crs)){
-    dest_crs <- 3857
-  }else{
+
+  if(sum(rowSums(is.na(points[, c("x", "y")])) != 0) != 0){
     dest_crs = dest_crs
+  }else{
+    if (is.na(dest_crs)){
+      dest_crs <- 3857
+    }else{
+      dest_crs = dest_crs
+    }
   }
+
 
   if(which(axes == "Easting") == 2){points <- points %>% dplyr::rename(x = y,  y = x)}
 
@@ -189,6 +195,9 @@ import_surveynet2D_updated <- function(points = points, observations = observati
   if(observations %>% purrr::when(is(., "sf") ~ st_drop_geometry(.), ~.) %>% dplyr::select(dh) %>% is.na() %>% all()){
     observations$diff_level[(!is.na(observations$dh) | !is.na(observations$sd_dh) | !is.na(observations$d_dh) | !is.na(observations$n_dh))] <- TRUE
   }
+
+  points %<>% dplyr::mutate(Name = as.character(Name),
+                            FIX_1D = as.logical(FIX_1D))
 
   fixed_points <- points %>% dplyr::filter(FIX_2D | FIX_1D) %>% .$Name
 
