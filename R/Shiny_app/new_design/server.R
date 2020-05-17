@@ -970,13 +970,8 @@ shinyServer(function(input, output){
 
 
   # 1D XLSX DESIGN RESULTS
-  output$update_1d_res <- renderPrint({
-    survey_net <- updated_xlsx_list_1d()
-    fixed_points <- survey.net$points[apply(survey.net$points[, c("FIX_1D")], 1, any), , ]$Name %>% .[!is.na(.)]
-    fixed_points
-    })
 
-  adjusted_1d.net_design <- eventReactive(input$design_adjust_1d,{
+    adjusted_1d.net_design <- eventReactive(input$design_adjust_1d,{
     data <- xlsx_list_1d()
     data_up <- updated_xlsx_list_1d()
     result_units <- input$units_1d
@@ -1016,9 +1011,23 @@ shinyServer(function(input, output){
   #     ggsave(file, plotInput_design.xlsx())
   #   })
 
+  output$netSpatialView_1d_design <- renderPlotly({
+    snet_adj <- adjusted_1d.net_design()
+    output_des_plot <- plot_surveynet(snet.adj = snet_adj, webmap = FALSE, net.1D = TRUE, net.2D = FALSE)
+    output_des_plot
+  })
+
+  output$netSpatialView_1d_des <- renderPlotly({
+    snet_adj <- adjusted_1d.net_design()
+    output_des_plot <- plot_surveynet(snet.adj = snet_adj, webmap = FALSE, net.1D = TRUE, net.2D = FALSE)
+    output_des_plot
+  })
+
+
+
   output$`1d_points_des` <- DT::renderDataTable({
     DT::datatable(
-      adjusted_1d.net_design()[[1]]$Points %>%
+      adjusted_1d.net_design()[[1]] %>%
         as.data.frame() %>%
         mutate(
           h = round(h, 2),
@@ -1034,9 +1043,9 @@ shinyServer(function(input, output){
                      scroller = TRUE)
     ) %>%
       formatStyle(
-        'sd_H',
-        color = styleInterval(c(input$sd_H), c('black', 'red')),
-        backgroundColor = styleInterval(input$sd_H, c('lightGray', 'tomato'))
+        'sd_h',
+        color = styleInterval(c(input$sd_h), c('black', 'aqua')),
+        backgroundColor = styleInterval(input$sd_h, c('lightGray', '#FF6347'))
       )
   })
 

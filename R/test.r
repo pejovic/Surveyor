@@ -69,7 +69,40 @@ gorica1.snet.adj <- adjust.snet(adjust = TRUE, survey.net = gorica1.snet, dim_ty
 file_path <- here::here("Data/Input/With_observations/DNS_1D/DNS_1D_nulta.xlsx")
 dns.snet <- read_surveynet(file = file_path)
 plot_surveynet(snet = dns.snet, webmap = FALSE, net.1D = TRUE, net.2D = FALSE)
-dns.snet.adj <- adjust.snet(adjust = FALSE, survey.net = dns.snet, wdh_model = "n_dh", dim_type = "1D", sd.apriori = 0.2 ,  all = FALSE, result.units = "m")
-survey.net <- dns.snet
+dns.snet.adj <- adjust.snet(adjust = FALSE, survey.net = dns.snet, wdh_model = "n_dh", dim_type = "1D", sd.apriori = 0.2 ,  all = FALSE, result.units = "mm")
+plot_surveynet(snet.adj = dns.snet.adj, webmap = FALSE, net.1D = TRUE, net.2D = FALSE)
 
-fixed_points <- survey.net$points[apply(survey.net$points[, c("FIX_1D")], 1, any), , ]$Name %>% .[!is.na(.)]
+dns.snet.adj <- adjust.snet(adjust = TRUE, survey.net = dns.snet, wdh_model = "n_dh", dim_type = "1D", sd.apriori = 0.2 ,  all = FALSE, result.units = "mm")
+plot_surveynet(snet.adj = dns.snet.adj, webmap = FALSE, net.1D = TRUE, net.2D = FALSE)
+
+
+fixed_points <- survey1net$points[(survey1net$points$FIX_1D == TRUE), ]$Name %>% .[!is.na(.)]
+
+
+
+
+
+# proba 1d adjust=T
+dns.snet.adj$Observations$id <- row_number(dns.snet.adj$Observations$from)
+
+ggplotly(
+  ggplot()+
+    geom_ribbon(data = dns.snet.adj$Observations,
+                aes(x = id,
+                    ymin = 0,
+                    ymax = f) )+
+    #geom_area(data = dns.snet.adj$Observations,
+    #          aes(x = from_to,
+    #              y = f, fill = "blue"))+
+    scale_colour_gradient(low="orange",
+                          high="red", guide = FALSE)+
+    xlab("Name") +
+    ylab("Residuals [mm]") +
+    ggtitle("GEODETIC 1D NETWORK")+
+    labs(colour = "Residuals [mm]")+
+    theme_bw()+
+    ylim(min(dns.snet.adj$Observations$f)-sd(dns.snet.adj$Observations$f),
+         max(dns.snet.adj$Observations$f)+sd(dns.snet.adj$Observations$f)), showlegend = TRUE
+)
+
+

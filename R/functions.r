@@ -439,7 +439,8 @@ Amat1D <- function(survey.net){
     Amat[i, survey.net$observations$from[i]] <- -1
     Amat[i, survey.net$observations$to[i]] <- 1
   }
-  fixed_points <- survey.net$points[apply(survey.net$points[, c("FIX_1D")], 1, any), , ]$Name %>% .[!is.na(.)]
+  # fixed_points <- survey.net$points[apply(survey.net$points[, c("FIX_1D")], 1, any), , ]$Name %>% .[!is.na(.)]
+  fixed_points <- survey.net$points[(survey.net$points$FIX_1D == TRUE), ]$Name %>% .[!is.na(.)]
   Amat <- Amat %>% select(-fixed_points)
 
   Amat <- as.matrix(Amat)
@@ -813,59 +814,112 @@ plot_surveynet <- function(snet = NULL, snet.adj = NULL, webmap = FALSE, net.1D 
 
   if(net.1D == TRUE){
     observations %<>% dplyr::mutate(from_to = paste(from, to, sep = "-"))
+    observations$id <- row_number(observations$from_to)
+    if(!is.null(observations$dh)){
+      p.plot <- ggplotly(ggplot()+
+                           geom_point(data = points,
+                                      aes(x = id,
+                                          y = h,
+                                          colour = h))+
+                           scale_colour_gradient(low="blue",
+                                                 high="red")+
+                           geom_ribbon(data = points,
+                                       aes(x = id,
+                                           ymin = mean(h),
+                                           ymax = h),
+                                       fill="blue",
+                                       alpha=.2)+
+                           geom_text(data = points,
+                                     aes(x = id,
+                                         y = h,
+                                         label=Name),
+                                     nudge_x = 0,
+                                     nudge_y = 0.55)+
+                           xlab("Name") +
+                           ylab("h [m]") +
+                           ggtitle("GEODETIC 1D NETWORK")+
+                           labs(colour = "h [m]")+
+                           theme_bw()+
+                           ylim(min(points$h)-sd(points$h),
+                                max(points$h)+sd(points$h)), showlegend = T
+      )
 
-    p.plot <- ggplotly(ggplot()+
-               geom_point(data = points,
-                          aes(x = Name,
-                              y = h,
-                              colour = h))+
-               scale_colour_gradient(low="blue",
-                                     high="red")+
-               xlab("Name") +
-               ylab("h [m]") +
-               ggtitle("GEODETIC 1D NETWORK")+
-               labs(colour = "h [m]")+
-               theme_bw()+
-               ylim(min(points$h)-50,
-                    max(points$h)+50), showlegend = T
-             )
+      o.plot <- ggplotly(
+        ggplot()+
+          geom_point(data = observations,
+                     aes(x = id,
+                         y = dh,
+                         colour = dh))+
+          scale_colour_gradient(low="orange",
+                                high="red")+
+          geom_area(data = observations,
+                    aes(x = id,
+                        y = dh),fill="blue", alpha=.2)+
+          geom_text(data = observations,
+                    aes(x = id,
+                        y = dh,
+                        label = from_to),
+                    nudge_x = 0,
+                    nudge_y = 0.03)+
+          xlab("Name") +
+          ylab("dh [m]") +
+          ggtitle("GEODETIC 1D NETWORK")+
+          labs(colour = "dh [m]")+
+          theme_bw()+
+          ylim(min(observations$dh)-sd(observations$dh),
+               max(observations$dh)+sd(observations$dh)), showlegend = T
+      )
 
-    o.plot <- ggplotly(
-      ggplot()+
-        geom_point(data = observations,
-                   aes(x = from_to,
-                       y = dh,
-                       colour = dh))+
-        scale_colour_gradient(low="orange",
-                              high="red")+
-        xlab("Name") +
-        ylab("dh [m]") +
-        ggtitle("GEODETIC 1D NETWORK")+
-        labs(colour = "dh [m]")+
-        theme_bw()+
-        ylim(min(observations$dh)-1.5,
-             max(observations$dh)+1.5), showlegend = T
-    )
+      plot.1d.net <- plotly::subplot(style(p.plot, showlegend = FALSE),
+                                     style(o.plot, showlegend = TRUE),
+                                     nrows = 2,
+                                     shareX = FALSE,
+                                     shareY = FALSE,
+                                     titleX = TRUE,
+                                     titleY = TRUE)
+      return(plot.1d.net)
 
-    plot.1d.net <- plotly::subplot(style(p.plot, showlegend = FALSE),
-                                   style(o.plot, showlegend = TRUE),
-                                   nrows = 2,
-                                   shareX = FALSE,
-                                   shareY = FALSE,
-                                   titleX = TRUE,
-                                   titleY = TRUE)
-    return(plot.1d.net)
+    }else{
+      p.plot <- ggplotly(ggplot()+
+                           geom_point(data = points,
+                                      aes(x = id,
+                                          y = h,
+                                          colour = h))+
+                           scale_colour_gradient(low="blue",
+                                                 high="red")+
+                           geom_ribbon(data = points,
+                                       aes(x = id,
+                                           ymin = mean(h),
+                                           ymax = h),
+                                       fill="blue",
+                                       alpha=.2)+
+                           geom_text(data = points,
+                                     aes(x = id,
+                                         y = h,
+                                         label=Name),
+                                     nudge_x = 0,
+                                     nudge_y = 0.55)+
+                           xlab("Name") +
+                           ylab("h [m]") +
+                           ggtitle("GEODETIC 1D NETWORK")+
+                           labs(colour = "h [m]")+
+                           theme_bw()+
+                           ylim(min(points$h)-sd(points$h),
+                                max(points$h)+sd(points$h)), showlegend = T
+      )
+
+
+      return(p.plot)
+
+    }
   }
   }
 
   if(!is.null(snet.adj)){
-    points <- snet.adj$Points$net.points
-    observations <- snet.adj$Observations
-    ellipses <- snet.adj$Points$ellipse.net
-
-
     if(net.2D == TRUE) {
-
+      points <- snet.adj$Points$net.points
+      observations <- snet.adj$Observations
+      ellipses <- snet.adj$Points$ellipse.net
       if(webmap == TRUE){
 
         if(is.na(sf::st_crs(points)) == TRUE) {
@@ -921,51 +975,111 @@ plot_surveynet <- function(snet = NULL, snet.adj = NULL, webmap = FALSE, net.1D 
       }
     }
 
-    # if(net.1D == TRUE){
-    #   observations %<>% dplyr::mutate(from_to = paste(from, to, sep = "-"))
-    #
-    #   p.plot <- ggplotly(ggplot()+
-    #                        geom_point(data = points,
-    #                                   aes(x = Name,
-    #                                       y = h,
-    #                                       colour = h))+
-    #                        scale_colour_gradient(low="blue",
-    #                                              high="red")+
-    #                        xlab("Name") +
-    #                        ylab("h [m]") +
-    #                        ggtitle("GEODETIC 1D NETWORK")+
-    #                        labs(colour = "h [m]")+
-    #                        theme_bw()+
-    #                        ylim(min(points$h)-50,
-    #                             max(points$h)+50), showlegend = T
-    #   )
-    #
-    #   o.plot <- ggplotly(
-    #     ggplot()+
-    #       geom_point(data = observations,
-    #                  aes(x = from_to,
-    #                      y = dh,
-    #                      colour = dh))+
-    #       scale_colour_gradient(low="orange",
-    #                             high="red")+
-    #       xlab("Name") +
-    #       ylab("dh [m]") +
-    #       ggtitle("GEODETIC 1D NETWORK")+
-    #       labs(colour = "dh [m]")+
-    #       theme_bw()+
-    #       ylim(min(observations$dh)-1.5,
-    #            max(observations$dh)+1.5), showlegend = T
-    #   )
-    #
-    #   plot.1d.net <- plotly::subplot(style(p.plot, showlegend = FALSE),
-    #                                  style(o.plot, showlegend = TRUE),
-    #                                  nrows = 2,
-    #                                  shareX = FALSE,
-    #                                  shareY = FALSE,
-    #                                  titleX = TRUE,
-    #                                  titleY = TRUE)
-    #   return(plot.1d.net)
-    # }
+    if(net.1D == TRUE){
+      points <- snet.adj$Points
+      observations <- snet.adj$Observations
+      observations$id <- row_number(observations$from_to)
+     if(!is.null(points$h0)){
+       # ADJUST PLOT
+       p.plot <- ggplotly(ggplot()+
+                            geom_crossbar(data = points,
+                                          aes(x = id,
+                                              y = h,
+                                              ymin = h-sd_h/2,
+                                              ymax = h+sd_h/2,
+                                              fill = sd_h), fatten = 0)+
+                            scale_fill_gradient(low="green",
+                                                high="red")+
+                            geom_point(data = points,
+                                       aes(x = id,
+                                           y = h,
+                                           colour = h))+
+                            scale_colour_gradient(low="blue",
+                                                  high="red",
+                                                  guide=FALSE)+
+                            geom_ribbon(data = points,
+                                        aes(x = id,
+                                            ymin = mean(h),
+                                            ymax = h),fill="blue", alpha=.2)+
+                            geom_text(data=points, aes(x = id, y = h, label=Name), nudge_x = 0, nudge_y = 0.55)+
+                            xlab("ID") +
+                            ylab("h [m]") +
+                            ggtitle("GEODETIC 1D NETWORK")+
+                            labs(colour = "h [m]", fill = "sd_h [m]")+
+                            theme_bw()+
+                            theme(axis.title.x = element_blank())+
+                            ylim(min(points$h)-sd(points$h),
+                                 max(points$h)+sd(points$h)), showlegend = TRUE
+       )
+       o.plot <- ggplotly(
+         ggplot()+
+           geom_point(data = observations,
+                     aes(x = id,
+                         y = f,
+                         colour = f))+
+           geom_area(data = observations,
+                      aes(x = id,
+                          y = f),fill="blue", alpha=.2)+
+           scale_colour_gradient(low="orange",
+                                 high="red", guide = FALSE)+
+           geom_text(data=observations, aes(x = id, y = f, label=from_to), nudge_x = 0, nudge_y = 0.03)+
+           xlab("ID") +
+           ylab("Residuals [mm]") +
+           ggtitle("GEODETIC 1D NETWORK")+
+           labs(colour = "Residuals [mm]")+
+           theme_bw()+
+           ylim(min(observations$f)-sd(observations$f),
+                max(observations$f)+sd(observations$f)), showlegend = TRUE
+       )
+       plot.1d.net <- plotly::subplot(style(p.plot, showlegend = FALSE),
+                                      style(o.plot, showlegend = TRUE),
+                                      nrows = 2,
+                                      shareX = FALSE,
+                                      shareY = FALSE,
+                                      titleX = TRUE,
+                                      titleY = TRUE)
+       return(plot.1d.net)
+
+
+
+
+     }else{
+       # DESIGN PLOT
+       plot.1d.net <- ggplotly(ggplot()+
+                  geom_crossbar(data = points,
+                                aes(x = id,
+                                    y = h,
+                                    ymin = h-sd_h/2,
+                                    ymax = h+sd_h/2,
+                                    fill = sd_h), fatten = 0)+
+                  scale_fill_gradient(low="green",
+                                      high="red")+
+                  geom_point(data = points,
+                               aes(x = id,
+                                   y = h,
+                                   colour = h))+
+                  scale_colour_gradient(low="blue",
+                                          high="red")+
+                  geom_ribbon(data = points,
+                                aes(x = id,
+                                    ymin = mean(h),
+                                    ymax = h), fill = "blue", alpha=.2)+
+                  geom_text(data=points, aes(x = id, y = h, label=Name), nudge_x = 0, nudge_y = 0.55)+
+
+                  xlab("ID") +
+                  ylab("h [m]") +
+                  ggtitle("GEODETIC 1D NETWORK")+
+                  labs(colour = "h [m]", fill = "sd_h [m]")+
+                  theme_bw()+
+                  ylim(min(points$h)-sd(points$h),
+                       max(points$h)+sd(points$h)), showlegend = TRUE
+       )
+
+       return(plot.1d.net)
+
+     }
+
+    }
 
 
 

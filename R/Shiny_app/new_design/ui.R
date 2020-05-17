@@ -75,6 +75,20 @@ shinyUI(
                                                                                                     multiple = TRUE, accept = c('.xlsx')),
                                                                                           p(""),
                                                                                           navlistPanel(
+                                                                                            tabPanel("STOCHACTIC MODEL",
+                                                                                                     fluidRow(
+                                                                                                       p("Please select one to define the weights", style="text-align: left; font-weight: bold; font-colour: red"),
+                                                                                                     ),
+                                                                                                     fluidRow(
+                                                                                                       checkboxGroupInput("dh.s.model", "Stochastic model:", c("Standard deviation for height difference [mm]" = "sd_dh",
+                                                                                                                                                               "Leveling distances [km]" = "d_dh",
+                                                                                                                                                               "Number of stations" = "n_dh",
+                                                                                                                                                               "Unit weights - identity matrix" = "E"))
+                                                                                                     ),
+                                                                                                     fluidRow(
+                                                                                                       p("The selected model must be identical to the input data.", style="text-align: left; font-weight: bold; color: red")
+                                                                                                     )
+                                                                                            ),
                                                                                             tabPanel("OBSERVATION ACCURACY",
                                                                                                      numericInput(inputId = "sd_dir_dh", "Standard deviation for height difference [mm]: ", value = 1),
                                                                                                      numericInput(inputId = "sd_dist_rdh", "Standard deviation for reference height difference [mm]: ", value = 1),
@@ -84,22 +98,22 @@ shinyUI(
                                                                                                      numericInput(inputId = "epsg_1d", "Destination CRS [EPSG code]: ", value = NA)
                                                                                             ),
                                                                                             tabPanel("RESULT UNITS AND SCALE",
-                                                                                                     textInput(inputId = "units_1d", "Result units: " , value = "m"),
+                                                                                                     textInput(inputId = "units_1d", "Result units: " , value = "mm"),
                                                                                                      numericInput(inputId = "scale_1d", "Result scale: ", value = 10)
                                                                                             ),
                                                                                             tabPanel("CRITERIA",
-                                                                                                     p("STOCHACTIC MODEL", style="text-align: center; font-weight: bold;"),
-                                                                                                     fluidRow(
-                                                                                                       checkboxGroupInput("dh.s.model", "Stochastic model:", c("Standard deviation for height difference [mm]" = "sd_dh",
-                                                                                                                                                               "Leveling distances [km]" = "d_dh",
-                                                                                                                                                               "Number of stations" = "n_dh",
-                                                                                                                                                               "Unit weights - identity matrix" = "E"))
-                                                                                                     ),
+                                                                                                     # p("STOCHACTIC MODEL", style="text-align: center; font-weight: bold;"),
+                                                                                                     # fluidRow(
+                                                                                                     #   checkboxGroupInput("dh.s.model", "Stochastic model:", c("Standard deviation for height difference [mm]" = "sd_dh",
+                                                                                                     #                                                           "Leveling distances [km]" = "d_dh",
+                                                                                                     #                                                           "Number of stations" = "n_dh",
+                                                                                                     #                                                           "Unit weights - identity matrix" = "E"))
+                                                                                                     # ),
                                                                                                      p(""),
                                                                                                      p("MEASURMENT ACCURACY", style="text-align: center; font-weight: bold;"),
                                                                                                      fluidRow(
                                                                                                        # column(width = 6, numericInput("sd_H", "sd_H: ", value = 0.50)),
-                                                                                                       column(width = 6, numericInput("sd_H", "sd_H: ", value = 0.3))
+                                                                                                       column(width = 6, numericInput("sd_h", "sd_h: ", value = 0.3))
                                                                                                      ),
                                                                                                      p(""),
                                                                                                      p("MEASURMENT RELIABILITY", style="text-align: center; font-weight: bold;"),
@@ -134,15 +148,14 @@ shinyUI(
                                                                                tabsetPanel(
                                                                                  tabPanel("MAP RESULTS",
                                                                                           p(""),
-                                                                                          verbatimTextOutput("update_1d_res")
-                                                                                          #leafletOutput("map_opt_me_1d", height = 550) %>% withSpinner(color="#0dc5c1")
+                                                                                          plotlyOutput("netSpatialView_1d_design") %>% withSpinner(color="#0dc5c1")
                                                                                  ),
                                                                                  tabPanel("TAB RESULTS",
                                                                                           p(""),
                                                                                           navlistPanel(
                                                                                             tabPanel("Net points", DT::dataTableOutput('1d_points_des') %>% withSpinner(color="#0dc5c1")),
                                                                                             tabPanel("Obseravtions", DT::dataTableOutput('1d_observations_des') %>% withSpinner(color="#0dc5c1")),
-                                                                                            tabPanel("Plots", plotOutput("netSpatialView_1d_des") %>% withSpinner(color="#0dc5c1"))
+                                                                                            tabPanel("Plots", plotlyOutput("netSpatialView_1d_des") %>% withSpinner(color="#0dc5c1"))
                                                                                           )
                                                                                  ),
                                                                                  tabPanel("EXPORT RESULTS",
