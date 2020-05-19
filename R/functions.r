@@ -835,13 +835,17 @@ plot_surveynet <- function(snet = NULL, snet.adj = NULL, webmap = FALSE, net.1D 
                                          label=Name),
                                      nudge_x = 0,
                                      nudge_y = 0.55)+
-                           xlab("Name") +
+                           scale_y_continuous(limits = c(round(min(points$h)-sd(points$h),0), round(max(points$h)+sd(points$h),0)),
+                                              breaks = seq(round(min(points$h)-sd(points$h),0), round(max(points$h)+sd(points$h),0),
+                                                           by = 1))+
+                           xlab("ID") +
                            ylab("h [m]") +
                            ggtitle("GEODETIC 1D NETWORK")+
                            labs(colour = "h [m]")+
-                           theme_bw()+
-                           ylim(min(points$h)-sd(points$h),
-                                max(points$h)+sd(points$h)), showlegend = T
+                           theme_bw(),#+
+                           #ylim(min(points$h)-sd(points$h),
+                           #    max(points$h)+sd(points$h)),
+      showlegend = T
       )
 
       o.plot <- ggplotly(
@@ -861,13 +865,17 @@ plot_surveynet <- function(snet = NULL, snet.adj = NULL, webmap = FALSE, net.1D 
                         label = from_to),
                     nudge_x = 0,
                     nudge_y = 0.03)+
-          xlab("Name") +
+          scale_y_continuous(limits = c(round(min(observations$dh)-sd(observations$dh), 0), round( max(observations$dh)+sd(observations$dh),0)),
+                             breaks = seq(round(min(observations$dh)-sd(observations$dh), 0), round( max(observations$dh)+sd(observations$dh),0),
+                                          by = 0.5))+
+          xlab("ID") +
           ylab("dh [m]") +
           ggtitle("GEODETIC 1D NETWORK")+
           labs(colour = "dh [m]")+
-          theme_bw()+
-          ylim(min(observations$dh)-sd(observations$dh),
-               max(observations$dh)+sd(observations$dh)), showlegend = T
+          theme_bw(),#+
+          #ylim(min(observations$dh)-sd(observations$dh),
+          #     max(observations$dh)+sd(observations$dh)),
+        showlegend = T
       )
 
       plot.1d.net <- plotly::subplot(style(p.plot, showlegend = FALSE),
@@ -899,13 +907,17 @@ plot_surveynet <- function(snet = NULL, snet.adj = NULL, webmap = FALSE, net.1D 
                                          label=Name),
                                      nudge_x = 0,
                                      nudge_y = 0.55)+
-                           xlab("Name") +
+                           scale_y_continuous(limits = c(round(min(points$h)-sd(points$h),0), round(max(points$h)+sd(points$h),0)),
+                                              breaks = seq(round(min(points$h)-sd(points$h),0), round(max(points$h)+sd(points$h),0),
+                                                           by = 1))+
+                           xlab("ID") +
                            ylab("h [m]") +
                            ggtitle("GEODETIC 1D NETWORK")+
                            labs(colour = "h [m]")+
-                           theme_bw()+
-                           ylim(min(points$h)-sd(points$h),
-                                max(points$h)+sd(points$h)), showlegend = T
+                           theme_bw(),#+
+                           #ylim(min(points$h)-sd(points$h),
+                                #max(points$h)+sd(points$h)),
+                         showlegend = T
       )
 
 
@@ -1002,14 +1014,18 @@ plot_surveynet <- function(snet = NULL, snet.adj = NULL, webmap = FALSE, net.1D 
                                             ymin = mean(h),
                                             ymax = h),fill="blue", alpha=.2)+
                             geom_text(data=points, aes(x = id, y = h, label=Name), nudge_x = 0, nudge_y = 0.55)+
+                            scale_y_continuous(limits = c(round(min(points$h)-sd(points$h),0), round(max(points$h)+sd(points$h),0)),
+                                               breaks = seq(round(min(points$h)-sd(points$h),0), round(max(points$h)+sd(points$h),0),
+                                                            by = 1))+
                             xlab("ID") +
                             ylab("h [m]") +
                             ggtitle("GEODETIC 1D NETWORK")+
                             labs(colour = "h [m]", fill = "sd_h [m]")+
                             theme_bw()+
-                            theme(axis.title.x = element_blank())+
-                            ylim(min(points$h)-sd(points$h),
-                                 max(points$h)+sd(points$h)), showlegend = TRUE
+                            theme(axis.title.x = element_blank()),#+
+                            #ylim(min(points$h)-sd(points$h),
+                            #     max(points$h)+sd(points$h)),
+                          showlegend = TRUE
        )
        o.plot <- ggplotly(
          ggplot()+
@@ -1023,13 +1039,17 @@ plot_surveynet <- function(snet = NULL, snet.adj = NULL, webmap = FALSE, net.1D 
            scale_colour_gradient(low="orange",
                                  high="red", guide = FALSE)+
            geom_text(data=observations, aes(x = id, y = f, label=from_to), nudge_x = 0, nudge_y = 0.03)+
+           scale_y_continuous(limits = c(round(min(observations$f)-sd(observations$f), 0), round( max(observations$f)+sd(observations$f),0)),
+                              breaks = seq(round(min(observations$f)-sd(observations$f), 0), round( max(observations$f)+sd(observations$f),0),
+                                           by = 0.05))+
            xlab("ID") +
            ylab("Residuals [mm]") +
            ggtitle("GEODETIC 1D NETWORK")+
            labs(colour = "Residuals [mm]")+
-           theme_bw()+
-           ylim(min(observations$f)-sd(observations$f),
-                max(observations$f)+sd(observations$f)), showlegend = TRUE
+           theme_bw(),#+
+           #ylim(min(observations$f)-sd(observations$f),
+           #    max(observations$f)+sd(observations$f)),
+         showlegend = TRUE
        )
        plot.1d.net <- plotly::subplot(style(p.plot, showlegend = FALSE),
                                       style(o.plot, showlegend = TRUE),
@@ -1065,14 +1085,17 @@ plot_surveynet <- function(snet = NULL, snet.adj = NULL, webmap = FALSE, net.1D 
                                     ymin = mean(h),
                                     ymax = h), fill = "blue", alpha=.2)+
                   geom_text(data=points, aes(x = id, y = h, label=Name), nudge_x = 0, nudge_y = 0.55)+
-
+                  scale_y_continuous(limits = c(round(min(points$h)-sd(points$h),0), round(max(points$h)+sd(points$h),0)),
+                                     breaks = seq(round(min(points$h)-sd(points$h),0), round(max(points$h)+sd(points$h),0),
+                                                  by = 1))+
                   xlab("ID") +
                   ylab("h [m]") +
                   ggtitle("GEODETIC 1D NETWORK")+
                   labs(colour = "h [m]", fill = "sd_h [m]")+
-                  theme_bw()+
-                  ylim(min(points$h)-sd(points$h),
-                       max(points$h)+sd(points$h)), showlegend = TRUE
+                  theme_bw(),#+
+                  #ylim(min(points$h)-sd(points$h),
+                  #     max(points$h)+sd(points$h)),
+                  showlegend = TRUE
        )
 
        return(plot.1d.net)

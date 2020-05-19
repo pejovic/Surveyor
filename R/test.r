@@ -69,6 +69,7 @@ gorica1.snet.adj <- adjust.snet(adjust = TRUE, survey.net = gorica1.snet, dim_ty
 file_path <- here::here("Data/Input/With_observations/DNS_1D/DNS_1D_nulta.xlsx")
 dns.snet <- read_surveynet(file = file_path)
 plot_surveynet(snet = dns.snet, webmap = FALSE, net.1D = TRUE, net.2D = FALSE)
+
 dns.snet.adj <- adjust.snet(adjust = FALSE, survey.net = dns.snet, wdh_model = "n_dh", dim_type = "1D", sd.apriori = 0.2 ,  all = FALSE, result.units = "mm")
 plot_surveynet(snet.adj = dns.snet.adj, webmap = FALSE, net.1D = TRUE, net.2D = FALSE)
 
@@ -76,11 +77,14 @@ dns.snet.adj <- adjust.snet(adjust = TRUE, survey.net = dns.snet, wdh_model = "n
 plot_surveynet(snet.adj = dns.snet.adj, webmap = FALSE, net.1D = TRUE, net.2D = FALSE)
 
 
+
+
+
+
+
+
+
 fixed_points <- survey1net$points[(survey1net$points$FIX_1D == TRUE), ]$Name %>% .[!is.na(.)]
-
-
-
-
 
 # proba 1d adjust=T
 dns.snet.adj$Observations$id <- row_number(dns.snet.adj$Observations$from)

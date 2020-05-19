@@ -507,7 +507,104 @@ shinyUI(
                                                 tabPanel("1D ADJUSTMENT",
                                                          p(""),
                                                          tabsetPanel(type = "pills",
-                                                           tabPanel("XLSX INPUT DATA"
+                                                           tabPanel("XLSX INPUT DATA",
+                                                                    p(""),
+                                                                    fluidRow(
+                                                                      column(width = 6, "DATA PREPARATION",
+                                                                             tabsetPanel(
+                                                                               tabPanel("MAIN",
+                                                                                        p(""),
+                                                                                        fileInput(inputId = "fileXLSX_1d.a", label = "Upload points and measurments data file. Choose Excel - xlsx file:",
+                                                                                                  multiple = TRUE, accept = c('.xlsx')),
+                                                                                        p(""),
+                                                                                        navlistPanel(
+                                                                                          tabPanel("STOCHACTIC MODEL",
+                                                                                                   fluidRow(
+                                                                                                     p("Please select one to define the weights", style="text-align: left; font-weight: bold; font-colour: red"),
+                                                                                                   ),
+                                                                                                   fluidRow(
+                                                                                                     checkboxGroupInput("dh.s.model.a", "Stochastic model:", c("Standard deviation for height difference [mm]" = "sd_dh",
+                                                                                                                                                             "Leveling distances [km]" = "d_dh",
+                                                                                                                                                             "Number of stations" = "n_dh",
+                                                                                                                                                             "Unit weights - identity matrix" = "E"))
+                                                                                                   ),
+                                                                                                   fluidRow(
+                                                                                                     p("The selected model must be identical to the input data.", style="text-align: left; font-weight: bold; color: red")
+                                                                                                   )
+                                                                                          ),
+                                                                                          tabPanel("OBSERVATION ACCURACY",
+                                                                                                   numericInput(inputId = "sd_dh.a", "Standard deviation for height difference [mm]: ", value = 1),
+                                                                                                   numericInput(inputId = "sd_rdh.a", "Standard deviation for reference height difference [mm]: ", value = 1),
+                                                                                                   numericInput(inputId = "sd_apriori_dh.a", "'a priori' Standard deviation for height differences: ", value = 0.2)
+                                                                                          ),
+                                                                                          tabPanel("COORDINATE REFERENCE SYSTEM",
+                                                                                                   numericInput(inputId = "epsg_1d.a", "Destination CRS [EPSG code]: ", value = NA)
+                                                                                          ),
+                                                                                          tabPanel("RESULT UNITS AND SCALE",
+                                                                                                   textInput(inputId = "units_1d.a", "Result units: " , value = "mm"),
+                                                                                                   numericInput(inputId = "scale_1d.a", "Result scale: ", value = 10)
+                                                                                          ),
+                                                                                          tabPanel("CRITERIA",
+                                                                                                   p(""),
+                                                                                                   p("MEASURMENT ACCURACY", style="text-align: center; font-weight: bold;"),
+                                                                                                   fluidRow(
+                                                                                                     #column(width = 6, numericInput("sd_h.a", "sd_h: ", value = 0.50)),
+                                                                                                     column(width = 6, numericInput("sd_h.a", "sd_h: ", value = 0.3))
+                                                                                                   ),
+                                                                                                   p(""),
+                                                                                                   p("MEASURMENT RELIABILITY", style="text-align: center; font-weight: bold;"),
+                                                                                                   fluidRow(
+                                                                                                     column(width = 6, numericInput("rii_1d.a", "rii: ", value = 0.3))
+                                                                                                   )
+                                                                                          )
+                                                                                        ),
+                                                                                        p(""),
+                                                                                        actionButton(inputId ='adjust_1d_result.a', label='PREPROCESS DATA', class = "btn-primary btn-block"),
+                                                                                        p(""),
+                                                                                        actionButton(inputId ='update_adjust_1d.a', label='Update data for 1D net adjustment', class = "btn-primary"),
+                                                                                        p(""),
+                                                                                        actionButton(inputId ='adjust_1d.a', label='ADJUST', class = "btn-danger btn-block")
+                                                                               ),
+                                                                               tabPanel("POINTS",
+                                                                                        rHandsontableOutput('p_1d.a') %>% withSpinner(color="#0dc5c1")
+                                                                               ),
+                                                                               tabPanel("OBSERVATIONS",
+                                                                                        rHandsontableOutput('o_1d.a') %>% withSpinner(color="#0dc5c1")
+                                                                               ),
+                                                                               tabPanel("MAP",
+                                                                                        tabsetPanel(
+                                                                                          tabPanel("PLOT",
+                                                                                                   plotlyOutput("netSpatialView_1d.a") %>% withSpinner(color="#0dc5c1")
+                                                                                          )
+                                                                                        )
+                                                                               )
+                                                                             )
+                                                                      ),
+                                                                      column(width = 6, "ADJUSTMENT 1D NET RESULTS",
+                                                                             tabsetPanel(
+                                                                               tabPanel("MAP RESULTS",
+                                                                                        p(""),
+                                                                                        plotlyOutput("netSpatialView_1d_a") %>% withSpinner(color="#0dc5c1")
+                                                                               ),
+                                                                               tabPanel("TAB RESULTS",
+                                                                                        p(""),
+                                                                                        navlistPanel(
+                                                                                          tabPanel("Net points", DT::dataTableOutput('1d_points_a') %>% withSpinner(color="#0dc5c1")),
+                                                                                          tabPanel("Obseravtions", DT::dataTableOutput('1d_observations_a') %>% withSpinner(color="#0dc5c1")),
+                                                                                          tabPanel("Plots", plotlyOutput("netSpatialView_1d_a") %>% withSpinner(color="#0dc5c1"))
+                                                                                        )
+                                                                               ),
+                                                                               tabPanel("EXPORT RESULTS",
+                                                                                        actionButton(inputId ='modal_plot_1d.a', label='PLOT', class = "btn-danger"),
+                                                                                        bsModal("modalExample1d", "Plot - 1D net design", "modal_plot_1d.a", size = "large", plotOutput("netSpatialView_1d_modal.a"), downloadButton('downloadPlot1d', 'Download'))
+                                                                               )
+                                                                             )
+
+                                                                      )
+
+                                                                    )
+
+
                                                                     )
                                                          )
                                                 ),
@@ -569,7 +666,7 @@ shinyUI(
                                                                                          p(""),
                                                                                          actionButton(inputId ='preprocess_2d_adj', label='PREPROCESS DATA', class = "btn-primary btn-block"),
                                                                                          p(""),
-                                                                                         actionButton(inputId ='update_adj_2d_xlsx', label='Update data for 2D adjustment', class = "btn-primary"),
+                                                                                         actionButton(inputId ='update_adj_2d_xlsx', label='Update data for 2D net adjustment', class = "btn-primary"),
                                                                                          p(""),
                                                                                          actionButton(inputId ='adj_2d_adjust_xlsx', label='ADJUST', class = "btn-danger btn-block")
                                                                                 ),
