@@ -160,7 +160,8 @@ shinyUI(
                                                                                  ),
                                                                                  tabPanel("EXPORT RESULTS",
                                                                                           actionButton(inputId ='modal_plot_1d', label='PLOT', class = "btn-danger"),
-                                                                                          bsModal("modalExample1d", "Plot - 1D net design", "modal_plot_1d", size = "large", plotOutput("netSpatialView_1d_modal"), downloadButton('downloadPlot1d', 'Download'))
+                                                                                          bsModal("modalExample1d", "Plot - 1D net design", "modal_plot_1d", size = "large", plotOutput("netSpatialView_1d_modal"), downloadButton('downloadPlot1d', 'Download')),
+                                                                                          downloadButton("report1Ddesign", "Generate report")
                                                                                  )
                                                                                )
 
@@ -514,7 +515,7 @@ shinyUI(
                                                                              tabsetPanel(
                                                                                tabPanel("MAIN",
                                                                                         p(""),
-                                                                                        fileInput(inputId = "fileXLSX_1d.a", label = "Upload points and measurments data file. Choose Excel - xlsx file:",
+                                                                                        fileInput(inputId = "fileXLSX_1d_adj", label = "Upload points and measurments data file. Choose Excel - xlsx file:",
                                                                                                   multiple = TRUE, accept = c('.xlsx')),
                                                                                         p(""),
                                                                                         navlistPanel(
@@ -591,12 +592,12 @@ shinyUI(
                                                                                         navlistPanel(
                                                                                           tabPanel("Net points", DT::dataTableOutput('1d_points_a') %>% withSpinner(color="#0dc5c1")),
                                                                                           tabPanel("Obseravtions", DT::dataTableOutput('1d_observations_a') %>% withSpinner(color="#0dc5c1")),
-                                                                                          tabPanel("Plots", plotlyOutput("netSpatialView_1d_a") %>% withSpinner(color="#0dc5c1"))
+                                                                                          tabPanel("Plots", plotlyOutput("netSpatialView_1d_adj") %>% withSpinner(color="#0dc5c1"))
                                                                                         )
                                                                                ),
-                                                                               tabPanel("EXPORT RESULTS",
-                                                                                        actionButton(inputId ='modal_plot_1d.a', label='PLOT', class = "btn-danger"),
-                                                                                        bsModal("modalExample1d", "Plot - 1D net design", "modal_plot_1d.a", size = "large", plotOutput("netSpatialView_1d_modal.a"), downloadButton('downloadPlot1d', 'Download'))
+                                                                               tabPanel("EXPORT RESULTS"#,
+                                                                                        #actionButton(inputId ='modal_plot_1d.a', label='PLOT', class = "btn-danger"),
+                                                                                        #bsModal("modalExample1d", "Plot - 1D net design", "modal_plot_1d.a", size = "large", plotOutput("netSpatialView_1d_modal.a"), downloadButton('downloadPlot1d', 'Download'))
                                                                                )
                                                                              )
 
