@@ -439,8 +439,8 @@ Amat1D <- function(survey.net){
     Amat[i, survey.net$observations$from[i]] <- -1
     Amat[i, survey.net$observations$to[i]] <- 1
   }
-  fixed_points <- survey.net$points[apply(survey.net$points[, c("FIX_1D")], 1, any), , ]$Name %>% .[!is.na(.)]
-  Amat <- Amat %>% select(-fixed_points)
+  #fixed_points <- survey.net$points[apply(survey.net$points[, c("FIX_1D")], 1, any), , ]$Name %>% .[!is.na(.)]
+  Amat <- Amat[, !survey.net$points$FIX_1D] #%>% select(-fixed_points)
 
   Amat <- as.matrix(Amat)
   return(Amat)
@@ -473,7 +473,7 @@ fmat1D <- function(survey.net, units = units){
 
 
 
-# adjust = TRUE; survey.net = makis.snet; dim_type = "2D"; sd.apriori = 1; wdh_model = list("sd_dh", "d_dh", "n_dh", "E"); n0 = 1; maxiter = 1; prob = 0.95; coord_tolerance = 1e-3; result.units = "mm"; ellipse.scale = 1; teta.unit = "dec"; units.dir = "sec"; units.dist = "mm"; use.sd.estimated = TRUE; all = TRUE
+# adjust = TRUE; survey.net = brose; dim_type = "1D"; sd.apriori = 0.5; wdh_model = "n_dh"; n0 = 1; maxiter = 1; prob = 0.95; coord_tolerance = 1e-3; result.units = "mm"; ellipse.scale = 1; teta.unit = "dec"; units.dir = "sec"; units.dist = "mm"; use.sd.estimated = TRUE; all = TRUE
 
 adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), sd.apriori = 1, wdh_model = list("sd_dh", "d_dh", "n_dh", "E"), n0 = 1, maxiter = 50, prob = 0.95, coord_tolerance = 1e-3, result.units = list("mm", "cm", "m"), ellipse.scale = 1, teta.unit = list("deg", "rad"), units.dir = "sec", units.dist = "mm", use.sd.estimated = TRUE, all = TRUE){
   dim_type <- dim_type[[1]]
