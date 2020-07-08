@@ -141,7 +141,9 @@ shinyServer(function(input, output){
   #  rhandsontable(data.frame(rii = 0, Gii = 0))
   #})
 
+
   # MAPEDIT INPUT DATA
+
   ns <- shiny::NS("map_me")
   lf <- leaflet() %>%
     addTiles() %>%
@@ -376,7 +378,7 @@ shinyServer(function(input, output){
     adj_output_view
   })
 
-  plotInput <- function(){
+  plotInput_design.xlsx <- function(){
     snet.adj <- adjusted_net_design()
     plot_surveynet(snet.adj = snet.adj, webmap = FALSE, net.1D = FALSE, net.2D = TRUE, ellipse.scale = input$adjust_1_ell_scale)
   }
@@ -390,7 +392,7 @@ shinyServer(function(input, output){
   output$downloadPlot <- downloadHandler(
     filename = "plot.png",
     content = function(file) {
-      ggsave(file, plotInput())
+      ggsave(file, plotInput_design.xlsx())
     })
 
   output$net_points_adj <- DT::renderDataTable({
@@ -438,11 +440,11 @@ shinyServer(function(input, output){
         st_drop_geometry() %>%
         as.data.frame() %>%
         mutate(
-          Ql = round(Ql, 2),
-          Qv = round(Qv, 2),
+          Kl = round(Kl, 2),
+          Kv = round(Kv, 2),
           rii = round(rii, 2)
         ) %>%
-        dplyr::select(from, to, type, Ql, Qv, rii),
+        dplyr::select(from, to, type, Kl, Kv, rii),
       escape=F,
       extensions = list('Buttons', 'Scroller'),
       options = list(dom = 'Bfrtip', buttons = I('colvis'),
@@ -583,11 +585,11 @@ shinyServer(function(input, output){
         st_drop_geometry() %>%
         as.data.frame() %>%
         mutate(
-          Ql = round(Ql, 2),
-          Qv = round(Qv, 2),
+          Kl = round(Kl, 2),
+          Kv = round(Kv, 2),
           rii = round(rii, 2)
         ) %>%
-          dplyr::select(from, to, type, Ql, Qv, rii),
+          dplyr::select(from, to, type, Kl, Kv, rii),
         escape = FALSE,
         extensions = list('Buttons', 'Scroller'),
         options = list(dom = 'Bfrtip', buttons = I('colvis'),
@@ -786,7 +788,7 @@ shinyServer(function(input, output){
     adj_output_view
   })
 
-  plotInput <- function(){
+  plotInput_adj <- function(){
     snet.adj <- adjusted_net_adj()
     plot_surveynet(snet.adj = snet.adj, webmap = FALSE, net.1D = FALSE, net.2D = TRUE, ellipse.scale = input$adjust_2_ell_scale)
   }
@@ -795,12 +797,12 @@ shinyServer(function(input, output){
     snet.adj <- adjusted_net_adj()
     adj_output_view <- plot_surveynet(snet.adj = snet.adj, webmap = FALSE, net.1D = FALSE, net.2D = TRUE, ellipse.scale = input$adjust_2_ell_scale)
     adj_output_view
-  }, width = 800, height = 800)
+  })
 
   output$downloadPlot_2d_adj <- downloadHandler(
     filename = "plot.png",
     content = function(file) {
-      ggsave(file, plotInput())
+      ggsave(file, plotInput_adj())
     })
 
   output$net_points_adj_2d_adj <- DT::renderDataTable({
@@ -853,11 +855,11 @@ shinyServer(function(input, output){
         as.data.frame() %>%
         mutate(
           v = round(v, 2),
-          Ql = round(Ql, 2),
-          Qv = round(Qv, 2),
+          Kl = round(Kl, 2),
+          Kv = round(Kv, 2),
           rii = round(rii, 2)
         ) %>%
-        dplyr::select(from, to, type,v ,Ql, Qv, rii, used),
+        dplyr::select(from, to, type, v, Kl, Kv, rii, used),
       escape=F,
       extensions = list('Buttons', 'Scroller'),
       options = list(dom = 'Bfrtip', buttons = I('colvis'),
@@ -926,7 +928,167 @@ shinyServer(function(input, output){
   # 1D DESIGN
   # ===================================================================
 
+  # XLSX INPUT DATA
+
+  xlsx_list_1d <- reactive({
+    req(input$fileXLSX_1d)
+    dest_crs_xlsx = as.numeric(input$epsg_1d)
+    output_xlsx <- read_surveynet(file = input$fileXLSX_1d$datapath, dest_crs = dest_crs_xlsx)
+    output_xlsx
+  })
+
+  values_p1d <- reactiveValues()
+  values_o1d <- reactiveValues()
+
+  output$p_1d <- renderRHandsontable({
+   rhandsontable(as.data.frame(xlsx_list_1d()[[1]] %>%
+                                 mutate(id = as.numeric(round(id, 1)))),
+                 width = 650, height = 650)
+  })
+
+  output$o_1d <- renderRHandsontable({
+    rhandsontable(as.data.frame(xlsx_list_1d()[[2]]),
+                  width = 650, height = 650)
+  })
+
+  updated_xlsx_list_1d <- reactive({
+    values_p1d$data <- hot_to_r(input$p_1d)
+    p_df <- as.data.frame(values_p1d$data)
+    values_o1d$data <- hot_to_r(input$o_1d)
+    o_df <- as.data.frame(values_o1d$data)
+    dest_crs_xlsx = as.numeric(input$epsg_1d)
+    p_xlsx <- xlsx_list_1d()[[1]]
+    output_xlsx <- import_surveynet2D_updated(points = p_df, observations = o_df, dest_crs = dest_crs_xlsx, raw_points = p_xlsx)
+    output_xlsx
+  })
+
+  output$netSpatialView_1d <- renderPlotly({
+    snet <- updated_xlsx_list_1d()
+    output_view_xlsx <- plot_surveynet(snet = snet, webmap = FALSE, net.1D = TRUE, net.2D = FALSE)
+    output_view_xlsx
+  })
+
+
+  # 1D XLSX DESIGN RESULTS
+
+    adjusted_1d.net_design <- eventReactive(input$design_adjust_1d,{
+    data <- xlsx_list_1d()
+    data_up <- updated_xlsx_list_1d()
+    result_units <- input$units_1d
+
+    if(length(data_up) == 0){
+      design_net_out <- adjust.snet(adjust = FALSE, survey.net = data, dim_type = "1D", wdh_model = input$dh.s.model, result.units = result_units, sd.apriori = input$sd_apriori_dh, all = FALSE)
+      design_net_out
+    } else{
+      design_net_out <- adjust.snet(adjust = FALSE, survey.net = data_up, dim_type = "1D", wdh_model = input$dh.s.model, result.units = result_units, sd.apriori = input$sd_apriori_dh, all = FALSE)
+      design_net_out
+    }
+  })
+
+
+  # output$netSpatialView_ell <- renderPlot({
+  #   # ellipses_1 <- adjusted_net_design()[[1]]$ellipse.net
+  #   # observations_1 <- adjusted_net_design()[[2]]
+  #   snet.adj <- adjusted_net_design()
+  #   adj_output_view <- plot_surveynet(snet.adj = snet.adj, webmap = FALSE, net.1D = FALSE, net.2D = TRUE, ellipse.scale = input$adjust_1_ell_scale)
+  #   adj_output_view
+  # })
+  #
+  # plotInput_design.xlsx <- function(){
+  #   snet.adj <- adjusted_net_design()
+  #   plot_surveynet(snet.adj = snet.adj, webmap = FALSE, net.1D = FALSE, net.2D = TRUE, ellipse.scale = input$adjust_1_ell_scale)
+  # }
+  #
+  # output$netSpatialView_ell11 <- renderPlot({
+  #   snet.adj <- adjusted_net_design()
+  #   adj_output_view <- plot_surveynet(snet.adj = snet.adj, webmap = FALSE, net.1D = FALSE, net.2D = TRUE, ellipse.scale = input$adjust_1_ell_scale)
+  #   adj_output_view
+  # })
+
+  # output$downloadPlot <- downloadHandler(
+  #   filename = "plot.png",
+  #   content = function(file) {
+  #     ggsave(file, plotInput_design.xlsx())
+  #   })
+
+  output$netSpatialView_1d_design <- renderPlotly({
+    snet_adj <- adjusted_1d.net_design()
+    output_des_plot <- plot_surveynet(snet.adj = snet_adj, webmap = FALSE, net.1D = TRUE, net.2D = FALSE)
+    output_des_plot
+  })
+
+  output$netSpatialView_1d_des <- renderPlotly({
+    snet_adj <- adjusted_1d.net_design()
+    output_des_plot <- plot_surveynet(snet.adj = snet_adj, webmap = FALSE, net.1D = TRUE, net.2D = FALSE)
+    output_des_plot
+  })
+
+
+
+  output$`1d_points_des` <- DT::renderDataTable({
+    DT::datatable(
+      adjusted_1d.net_design()[[1]] %>%
+        as.data.frame() %>%
+        mutate(
+          h = round(h, 2),
+          sd_h = round(sd_h, 2)
+        ) %>%
+        dplyr:: select(Name, FIX_1D, Point_object, h, sd_h),
+      escape=F,
+      extensions = list('Buttons', 'Scroller'),
+      options = list(dom = 'Bfrtip', buttons = I('colvis'),
+                     deferRender = TRUE,
+                     scrollY = 500,
+                     scrollX = 300,
+                     scroller = TRUE)
+    ) %>%
+      formatStyle(
+        'sd_h',
+        color = styleInterval(c(input$sd_h), c('black', 'aqua')),
+        backgroundColor = styleInterval(input$sd_h, c('lightGray', '#FF6347'))
+      )
+  })
+
+  output$`1d_observations_des` <- DT::renderDataTable({
+    DT::datatable(
+      adjusted_1d.net_design()[[2]] %>%
+        as.data.frame() %>%
+        mutate(
+          Kl = round(Kl, 2),
+          Kv = round(Kv, 2),
+          rii = round(rii, 2)
+        ) %>%
+        dplyr::select(from, to, type, Kl, Kv, rii),
+      escape=F,
+      extensions = list('Buttons', 'Scroller'),
+      options = list(dom = 'Bfrtip', buttons = I('colvis'),
+                     deferRender = TRUE,
+                     scrollY = 500,
+                     scrollX = 300,
+                     scroller = TRUE)
+    )%>%
+      formatStyle(
+        'rii',
+        color = styleInterval(c(input$rii_1d), c('red', 'black')),
+        background = styleColorBar(adjusted_1d.net_design()[[2]]$rii, 'steelblue'),
+        backgroundSize = '100% 90%',
+        backgroundRepeat = 'no-repeat',
+        backgroundPosition = 'center'
+      )
+  })
+
+
+
+
+
+
+
+
+
+
+
   # MAPEDIT INPUT DATA
+
   ns_1d <- shiny::NS("map_me_1d")
   lf_1d <- leaflet() %>%
     addTiles() %>%
@@ -961,7 +1123,193 @@ shinyServer(function(input, output){
                                     Point_object = FALSE
                                   )), width = 650, height = 650)
   })
+
+
+
+
+  ########################################
+  # REPORT 1D design - xlsx inuput data
+  ########################################
+
+  output$report1Ddesign <- downloadHandler(
+    filename = "report1D_design.html",
+    content = function(file) {
+      tempReport <- file.path("D:/R_projects/Surveyer/R/Shiny_app/new_design/Reports/Report_1D_design.R")
+
+      # Set up parameters to pass to Rmd document
+      net1d_design <- adjusted_1d.net_design()
+      sd_h_bound <- input$sd_h
+      rii_bound <- input$rii_1d
+
+      params <- list(net1d_design = net1d_design,
+                     sd_h_bound = sd_h_bound,
+                     rii_bound = rii_bound)
+
+      rmarkdown::render(tempReport, output_file = file,
+                        params = params,
+                        envir = new.env(parent = globalenv())
+      )
+    }
+  )
+
+
+# ===================================================================
+# 1D ADJUSTMENT
+# ===================================================================
+
+# XLSX INPUT DATA
+
+xlsx_list_1d_adj <- reactive({
+  req(input$fileXLSX_1d_adj)
+  dest_crs_xlsx = as.numeric(input$epsg_1d.a)
+  output_xlsx <- read_surveynet(file = input$fileXLSX_1d_adj$datapath, dest_crs = dest_crs_xlsx)
+  output_xlsx
+})
+
+values_p1d.a <- reactiveValues()
+values_o1d.a <- reactiveValues()
+
+output$p_1d.a <- renderRHandsontable({
+  rhandsontable(as.data.frame(xlsx_list_1d_adj()[[1]] %>%
+                                mutate(id = as.numeric(round(id, 1)))),
+                width = 650, height = 650)
+})
+
+output$o_1d.a <- renderRHandsontable({
+  rhandsontable(as.data.frame(xlsx_list_1d_adj()[[2]]),
+                width = 650, height = 650)
+})
+
+updated_xlsx_list_1d.a <- reactive({
+  values_p1d.a$data <- hot_to_r(input$p_1d.a)
+  p_df.a <- as.data.frame(values_p1d.a$data)
+  values_o1d.a$data <- hot_to_r(input$o_1d.a)
+  o_df.a <- as.data.frame(values_o1d.a$data)
+  dest_crs_xlsx.a = as.numeric(input$epsg_1d.a)
+  p_xlsx.a <- xlsx_list_1d_adj()[[1]]
+  output_xlsx <- import_surveynet2D_updated(points = p_df.a, observations = o_df.a, dest_crs = dest_crs_xlsx.a, raw_points = p_xlsx.a)
+  output_xlsx
+})
+
+output$netSpatialView_1d.a <- renderPlotly({
+  snet <- updated_xlsx_list_1d.a()
+  output_view_xlsx <- plot_surveynet(snet = snet, webmap = FALSE, net.1D = TRUE, net.2D = FALSE)
+  output_view_xlsx
+})
+
+
+# 1D XLSX ADJUSTMENT RESULTS
+
+adjusted_1d.net_a <- eventReactive(input$adjust_1d.a,{
+  data <- xlsx_list_1d_adj()
+  data_up <- updated_xlsx_list_1d.a()
+  result_units <- input$units_1d.a
+
+  if(length(data_up) == 0){
+    design_net_out <- adjust.snet(adjust = TRUE, survey.net = data, dim_type = "1D", wdh_model = input$dh.s.model.a, result.units = result_units, sd.apriori = input$sd_apriori_dh.a, all = FALSE)
+    design_net_out
+  } else{
+    design_net_out <- adjust.snet(adjust = TRUE, survey.net = data_up, dim_type = "1D", wdh_model = input$dh.s.model.a, result.units = result_units, sd.apriori = input$sd_apriori_dh.a, all = FALSE)
+    design_net_out
+  }
+})
+
+
+# output$netSpatialView_ell <- renderPlot({
+#   # ellipses_1 <- adjusted_net_design()[[1]]$ellipse.net
+#   # observations_1 <- adjusted_net_design()[[2]]
+#   snet.adj <- adjusted_net_design()
+#   adj_output_view <- plot_surveynet(snet.adj = snet.adj, webmap = FALSE, net.1D = FALSE, net.2D = TRUE, ellipse.scale = input$adjust_1_ell_scale)
+#   adj_output_view
+# })
+#
+# plotInput_design.xlsx <- function(){
+#   snet.adj <- adjusted_net_design()
+#   plot_surveynet(snet.adj = snet.adj, webmap = FALSE, net.1D = FALSE, net.2D = TRUE, ellipse.scale = input$adjust_1_ell_scale)
+# }
+#
+# output$netSpatialView_ell11 <- renderPlot({
+#   snet.adj <- adjusted_net_design()
+#   adj_output_view <- plot_surveynet(snet.adj = snet.adj, webmap = FALSE, net.1D = FALSE, net.2D = TRUE, ellipse.scale = input$adjust_1_ell_scale)
+#   adj_output_view
+# })
+
+# output$downloadPlot <- downloadHandler(
+#   filename = "plot.png",
+#   content = function(file) {
+#     ggsave(file, plotInput_design.xlsx())
+#   })
+
+output$netSpatialView_1d_a <- renderPlotly({
+  snet_adj <- adjusted_1d.net_a()
+  output_des_plot <- plot_surveynet(snet.adj = snet_adj, webmap = FALSE, net.1D = TRUE, net.2D = FALSE)
+  output_des_plot
+})
+
+output$netSpatialView_1d_adj <- renderPlotly({
+  snet_adj <- adjusted_1d.net_a()
+  output_des_plot <- plot_surveynet(snet.adj = snet_adj, webmap = FALSE, net.1D = TRUE, net.2D = FALSE)
+  output_des_plot
+})
+
+
+output$`1d_points_a` <- DT::renderDataTable({
+  DT::datatable(
+    adjusted_1d.net_a()[[1]] %>%
+      as.data.frame() %>%
+      mutate(
+        h0 = round(h0, 2),
+        dh = round(dh, 2),
+        h = round(h, 2),
+        sd_h = round(sd_h, 2)
+      ) %>%
+      dplyr:: select(Name, FIX_1D, Point_object, h0, h, dh, sd_h),
+    escape=F,
+    extensions = list('Buttons', 'Scroller'),
+    options = list(dom = 'Bfrtip', buttons = I('colvis'),
+                   deferRender = TRUE,
+                   scrollY = 500,
+                   scrollX = 300,
+                   scroller = TRUE)
+  ) %>%
+    formatStyle(
+      'sd_h',
+      color = styleInterval(c(input$sd_h.a), c('black', 'aqua')),
+      backgroundColor = styleInterval(input$sd_h.a, c('lightGray', '#FF6347'))
+    )
+})
+
+output$`1d_observations_a` <- DT::renderDataTable({
+  DT::datatable(
+    adjusted_1d.net_a()[[2]] %>%
+      as.data.frame() %>%
+      mutate(
+        f = round(f, 2),
+        Kl = round(Kl, 2),
+        Kv = round(Kv, 2),
+        rii = round(rii, 2)
+      ) %>%
+      dplyr::select(from, to, type, f, Kl, Kv, rii),
+    escape=F,
+    extensions = list('Buttons', 'Scroller'),
+    options = list(dom = 'Bfrtip', buttons = I('colvis'),
+                   deferRender = TRUE,
+                   scrollY = 500,
+                   scrollX = 300,
+                   scroller = TRUE)
+  )%>%
+    formatStyle(
+      'rii',
+      color = styleInterval(c(input$rii_1d.a), c('red', 'black')),
+      background = styleColorBar(adjusted_1d.net_a()[[2]]$rii, 'steelblue'),
+      backgroundSize = '100% 90%',
+      backgroundRepeat = 'no-repeat',
+      backgroundPosition = 'center'
+    )
 })
 
 
 
+
+
+})

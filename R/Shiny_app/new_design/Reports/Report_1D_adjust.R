@@ -1,5 +1,5 @@
 #' ---
-#' title: "Report - 2D geodetic network design"
+#' title: "Report - 1D geodetic network design"
 #' author:
 #'    - "surveyor - R package"
 #' date: "`r format(Sys.time(), '%d %B %Y')`"
@@ -23,7 +23,7 @@
 #'   sy_bound: NA
 #'   ellipse_scale: NA
 #'   result_units: NA
-#'   adjusted_net_design: NA
+#'   adjusted_net_adj: NA
 #' ---
 #'
 #'<img src="Grb_Gradjevinski.png" align="center" alt="logo" width="180" height = "200" style = "border: none; fixed: right;">
@@ -95,14 +95,16 @@ my_theme <- function(base_size = 10, base_family = "sans"){
 theme_set(my_theme())
 mycolors=c("#f32440","#2185ef","#d421ef")
 #+ echo = FALSE, message = FALSE, warning = FALSE
-#' This report provides the main results regarding the design of 2D geodetic network.
+#' This report provides the main results regarding the adjustment of 2D geodetic network.
 #'
 #+ echo = FALSE, message = FALSE, warning = FALSE
-adj.net_map <- plot_surveynet(snet.adj = params$adjusted_net_design, webmap = TRUE, net.1D = FALSE, net.2D = TRUE, sp_bound = params$sp_bound, rii_bound = params$rii_bound, ellipse.scale = params$ellipse_scale, result.units = params$result_units) # DOPUNITI ZA RESULT UNITS
+adj.net_map <- plot_surveynet(snet.adj = params$adjusted_net_adj, webmap = TRUE, net.1D = FALSE, net.2D = TRUE, sp_bound = params$sp_bound, rii_bound = params$rii_bound, ellipse.scale = params$ellipse_scale, result.units = params$result_units) # DOPUNITI ZA RESULT UNITS
+
 #'
 #' # Map results
 #+ echo = FALSE, result = TRUE, eval = TRUE, out.width="100%"
 adj.net_map
+
 
 #'
 #' # Tab results
@@ -110,7 +112,7 @@ adj.net_map
 #'
 #+ echo = FALSE, result = TRUE, eval = TRUE, out.width="100%"
   DT::datatable(
-    params$adjusted_net_design[[1]]$ellipse.net %>%
+    params$ellipses %>%
       st_drop_geometry() %>%
       as.data.frame() %>%
       mutate(
@@ -122,7 +124,7 @@ adj.net_map
         sp = round(sp, 1)
       ), escape = FALSE,
     extensions = list('Buttons', 'Responsive'),
-    options = list(dom = 'Bfrtip', pageLength = 5, lengthMenu = c(5, 10, 15, 20))) %>%
+    options = list(dom = 'Bfrtip', pageLength = 100, lengthMenu = c(5, 10, 15, 20))) %>%
     formatStyle(
       'sx',
       color = styleInterval(c(params$sx_bound), c('black', 'red'))#,
@@ -144,7 +146,7 @@ adj.net_map
 #'
 #+ echo = FALSE, result = TRUE, eval = TRUE, out.width="100%"
   DT::datatable(
-    params$adjusted_net_design[[1]]$net.points %>%
+    params$points %>%
       st_drop_geometry() %>%
       as.data.frame() %>%
       mutate(
@@ -153,12 +155,16 @@ adj.net_map
         teta = round(teta, 1),
         sx = round(sx, 1),
         sy = round(sy, 1),
-        sp = round(sp, 1)
+        sp = round(sp, 1),
+        `dx [mm]` = round(dx, 2),
+        `dy [mm]` = round(dy, 2),
+        X = round(x, 2),
+        Y = round(y, 2)
       ) %>%
-      dplyr:: select(Name, FIX_2D, Point_object, sx, sy, sp),
+      dplyr:: select(Name, `dx [mm]`, `dy [mm]`, X, Y, sx, sy, sp),
     escape = FALSE,
     extensions = list('Buttons', 'Responsive'),
-    options = list(dom = 'Bfrtip', pageLength = 5, lengthMenu = c(5, 10, 15, 20)))%>%
+    options = list(dom = 'Bfrtip', pageLength = 100, lengthMenu = c(5, 10, 15, 20)))%>%
     formatStyle(
       'sx',
       color = styleInterval(c(params$sx_bound), c('black', 'red'))#,
@@ -180,22 +186,23 @@ adj.net_map
 #'
 #+ echo = FALSE, result = TRUE, eval = TRUE, out.width="100%"
   DT::datatable(
-    params$adjusted_net_design[[2]] %>%
+    params$observations %>%
       st_drop_geometry() %>%
       as.data.frame() %>%
       mutate(
+        v = round(v, 2),
         Kl = round(Kl, 2),
         Kv = round(Kv, 2),
         rii = round(rii, 2)
       ) %>%
-      dplyr::select(from, to, type, Kl, Kv, rii),
+      dplyr::select(from, to, type, Kl, Kv, rii, used),
     escape = FALSE,
     extensions = list('Buttons', 'Responsive'),
-    options = list(dom = 'Bfrtip', pageLength = 10, lengthMenu = c(5, 10, 15, 20, 50)))%>%
+    options = list(dom = 'Bfrtip', pageLength = 100, lengthMenu = c(5, 10, 15, 20, 50)))%>%
     formatStyle(
       'rii',
       color = styleInterval(c(params$rii_bound), c('red', 'black')),
-      background = styleColorBar(params$adjusted_net_design[[2]]$rii, 'steelblue'),
+      background = styleColorBar(params$adjusted_net_adj[[2]]$rii, 'steelblue'),
       backgroundSize = '100% 90%',
       backgroundRepeat = 'no-repeat',
       backgroundPosition = 'center'

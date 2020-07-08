@@ -191,11 +191,11 @@ adj.net_map
       as.data.frame() %>%
       mutate(
         v = round(v, 2),
-        Ql = round(Ql, 2),
-        Qv = round(Qv, 2),
+        Kl = round(Kl, 2),
+        Kv = round(Kv, 2),
         rii = round(rii, 2)
       ) %>%
-      dplyr::select(from, to, type, Ql, Qv, rii, used),
+      dplyr::select(from, to, type, Kl, Kv, rii, used),
     escape = FALSE,
     extensions = list('Buttons', 'Responsive'),
     options = list(dom = 'Bfrtip', pageLength = 100, lengthMenu = c(5, 10, 15, 20, 50)))%>%
