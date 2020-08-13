@@ -471,9 +471,10 @@ fmat1D <- function(survey.net, units = units){
 
 
 
-# adjust = TRUE; survey.net = brose; dim_type = "1D"; sd.apriori = 0.5; wdh_model = "n_dh"; n0 = 1; maxiter = 1; prob = 0.95; coord_tolerance = 1e-3; result.units = "mm"; ellipse.scale = 1; teta.unit = "dec"; units.dir = "sec"; units.dist = "mm"; use.sd.estimated = TRUE; all = TRUE
+# adjust = TRUE; survey.net = zadatak1.snet; dim_type = "2D"; sd.apriori = 5; wdh_model = "n_dh"; n0 = 1; maxiter = 1; prob = 0.95; coord_tolerance = 1e-3; result.units = "mm"; ellipse.scale = 1; teta.unit = "dec"; units.dir = "sec"; units.dist = "mm"; use.sd.estimated = TRUE; all = TRUE
 
 adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), sd.apriori = 1, wdh_model = list("sd_dh", "d_dh", "n_dh", "E"), n0 = 1, maxiter = 50, prob = 0.95, coord_tolerance = 1e-3, result.units = list("mm", "cm", "m"), ellipse.scale = 1, teta.unit = list("deg", "rad"), units.dir = "sec", units.dist = "mm", use.sd.estimated = TRUE, all = TRUE){
+
   dim_type <- dim_type[[1]]
   "%!in%" <- Negate("%in%")
   if(!adjust){use.sd.estimated <- FALSE}
@@ -488,9 +489,14 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
 
   # Model
   if(dim_type == "2D"){
-    observations <- tidyr::gather(survey.net[[2]] %>% purrr::when(is(., "sf") ~ st_drop_geometry(.), ~.) %>% dplyr::select(from, to, direction, distance), key = type, value = used, -c(from, to)) %>%
+    observations <- tidyr::pivot_longer(survey.net[[2]] %>% purrr::when(is(., "sf") ~ st_drop_geometry(.), ~.) %>% dplyr::select(from, to, direction, distance), cols = c(direction, distance), names_to = "type", values_to = "used") %>%
+      dplyr::mutate_at(.vars = "type", .funs = ~factor(., levels = c("direction", "distance"))) %>%
+      dplyr::arrange(type) %>% # moguć problem!!
       dplyr::filter(used == TRUE) %>%
-      dplyr::mutate(from_to = str_c(.$from, .$to, sep = "_"))
+      dplyr::mutate(from_to = stringr::str_c(.$from, .$to, sep = "_"))
+
+    # tidyr::gather zamenjeno sa tidyr::pivot_longer
+    #tidyr::gather(survey.net[[2]] %>% purrr::when(is(., "sf") ~ st_drop_geometry(.), ~.) %>% dplyr::select(from, to, direction, distance), key = type, value = used, -c(from, to)) %>% dplyr::filter(used == TRUE) %>% dplyr::mutate(from_to = str_c(.$from, .$to, sep = "_"))
 
     fix.mat2D <- !rep(survey.net[[1]]$FIX_2D, each = 2)
     stations <- observations %>% dplyr::filter(type == "direction") %>% .$from %>% unique()
@@ -622,9 +628,11 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
     points <- list(net.points = survey.net[[1]], ellipse.net = ellipse.net)
 
   }else{
-    observations <- tidyr::gather(survey.net[[2]] %>% purrr::when(is(., "sf") ~ st_drop_geometry(.), ~.) %>% dplyr::select(from, to, diff_level), key = type, value = used, -c(from, to)) %>%
+    observations <- tidyr::pivot_longer(survey.net[[2]] %>% purrr::when(is(., "sf") ~ st_drop_geometry(.), ~.) %>% dplyr::select(from, to, diff_level), cols = diff_level, names_to = "type", values_to = "used") %>%
+      dplyr::mutate_at(.vars = "type", .funs = ~factor(., levels = "diff_level")) %>%
       dplyr::filter(used == TRUE) %>%
-      dplyr::mutate(from_to = str_c(.$from, .$to, sep = "_"))
+      dplyr::mutate(from_to = stringr::str_c(.$from, .$to, sep = "_"))
+
     fix.mat1D <- !(survey.net[[1]]$FIX_1D)
 
     A.mat <- Amat1D(survey.net)
