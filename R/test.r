@@ -34,13 +34,9 @@ plot_surveynet(snet.adj = brana.snet.adj, webmap = TRUE, net.1D = FALSE, net.2D 
 file_path <- here::here("Data/Input/With_observations/Makis/Makis_observations.xlsx")
 makis.snet <- read_surveynet(file = file_path)
 # TO DO: set_srs unutar read_surveynet
-<<<<<<< HEAD
 plot_surveynet(snet = makis.snet, webmap = FALSE, net.1D = FALSE, net.2D = TRUE)
 makis.snet.adj <- adjust.snet(adjust = TRUE, survey.net = makis.snet, dim_type = "2D", sd.apriori = 3 ,  all = FALSE)
-=======
-plot_surveynet(snet = makis.snet, webmap = TRUE, net.1D = FALSE, net.2D = TRUE)
-makis.snet.adj <- adjust.snet(adjust = TRUE, survey.net = makis.snet, dim_type = "2D", sd.apriori = 1 ,  all = FALSE)
->>>>>>> 5ee468f2fb7c71f8b6ad9d41ff486e1d44528b22
+
 
 file_path <- here::here("Data/Input/With_observations/Zadatak 1/Zadatak_1.xlsx")
 zadatak1.snet <- read_surveynet(file = file_path)
