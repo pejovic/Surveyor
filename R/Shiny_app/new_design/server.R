@@ -1310,6 +1310,32 @@ output$`1d_observations_a` <- DT::renderDataTable({
 
 
 
+########################################
+# REPORT 1D adjustment - xlsx input data
+########################################
+
+output$report1Dadjust_xlsx <- downloadHandler(
+  filename = "report1D_adjustment.html",
+  content = function(file) {
+    tempReport <- file.path("D:/R_projects/Surveyer/R/Shiny_app/new_design/Reports/Report_1D_adjust.R")
+
+    # Set up parameters to pass to Rmd document
+    net1d_adj <- adjusted_1d.net_a()
+    sd_h_bound <- input$sd_h.a
+    rii_bound <- input$rii_1d.a
+
+    params <- list(net1d_adj = net1d_adj,
+                   sd_h_bound = sd_h_bound,
+                   rii_bound = rii_bound)
+
+    rmarkdown::render(tempReport, output_file = file,
+                      params = params,
+                      envir = new.env(parent = globalenv())
+    )
+  }
+)
+
+
 
 
 })

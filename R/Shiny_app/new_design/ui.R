@@ -47,9 +47,7 @@ shinyUI(
       theme = shinytheme("flatly"),
                            tabPanel("MAIN",
                                  fluidRow(
-                                   column(width = 6,
-                                          div(img(src ="Grb_Gradjevinski.png", height = 370, width = 297), style="text-align: center;")
-                                            ),
+                                   column(width = 6, div(img(src ="Grb_Gradjevinski.png", height = 370, width = 297), style="text-align: center;")),
                                    column(width = 6,
                                           h3("Project: Surveyor"),
                                           p("Description: Package of Land and Engineering Surveying utilities"),
@@ -77,10 +75,11 @@ shinyUI(
                                                                                           navlistPanel(
                                                                                             tabPanel("STOCHACTIC MODEL",
                                                                                                      fluidRow(
-                                                                                                       p("Please select one to define the weights", style="text-align: left; font-weight: bold; font-colour: red"),
+                                                                                                       p("Please select one to define the weights", style="text-align: left; font-weight: bold; font-colour: red")
                                                                                                      ),
                                                                                                      fluidRow(
-                                                                                                       checkboxGroupInput("dh.s.model", "Stochastic model:", c("Standard deviation for height difference [mm]" = "sd_dh",
+                                                                                                       p(""),
+                                                                                                       checkboxGroupInput(inputId = "dh.s.model", label = "Stochastic model:",choices =  c("Standard deviation for height difference [mm]" = "sd_dh",
                                                                                                                                                                "Leveling distances [km]" = "d_dh",
                                                                                                                                                                "Number of stations" = "n_dh",
                                                                                                                                                                "Unit weights - identity matrix" = "E"))
@@ -172,7 +171,7 @@ shinyUI(
 
                                                                     ),
                                                              tabPanel("MAP INPUT DATA",
-                                                                      p(""),
+                                                                      p("")#,
                                                                       # fluidRow(
                                                                       #  column(width = 6, "DATA PREPARATION",
                                                                       #         tabsetPanel(
@@ -521,9 +520,10 @@ shinyUI(
                                                                                         navlistPanel(
                                                                                           tabPanel("STOCHACTIC MODEL",
                                                                                                    fluidRow(
-                                                                                                     p("Please select one to define the weights", style="text-align: left; font-weight: bold; font-colour: red"),
+                                                                                                     p("Please select one to define the weights", style="text-align: left; font-weight: bold; font-colour: red")
                                                                                                    ),
                                                                                                    fluidRow(
+                                                                                                     p(""),
                                                                                                      checkboxGroupInput("dh.s.model.a", "Stochastic model:", c("Standard deviation for height difference [mm]" = "sd_dh",
                                                                                                                                                              "Leveling distances [km]" = "d_dh",
                                                                                                                                                              "Number of stations" = "n_dh",
@@ -595,7 +595,8 @@ shinyUI(
                                                                                           tabPanel("Plots", plotlyOutput("netSpatialView_1d_adj") %>% withSpinner(color="#0dc5c1"))
                                                                                         )
                                                                                ),
-                                                                               tabPanel("EXPORT RESULTS"#,
+                                                                               tabPanel("EXPORT RESULTS",
+                                                                                        downloadButton("report1Dadjust_xlsx", "Generate report")
                                                                                         #actionButton(inputId ='modal_plot_1d.a', label='PLOT', class = "btn-danger"),
                                                                                         #bsModal("modalExample1d", "Plot - 1D net design", "modal_plot_1d.a", size = "large", plotOutput("netSpatialView_1d_modal.a"), downloadButton('downloadPlot1d', 'Download'))
                                                                                )
