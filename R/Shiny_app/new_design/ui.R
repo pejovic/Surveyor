@@ -33,7 +33,7 @@ library(DT)
 library(leaflet.extras)
 library(rhandsontable)
 library(shinyBS)
-
+library(kableExtra)
 
 shinyUI(
   tagList(
@@ -365,6 +365,18 @@ shinyUI(
                                                                                ),
                                                                         column(width = 6, "DESIGN NET RESULTS",
                                                                                tabsetPanel(
+                                                                                 tabPanel("SUMMARY",
+                                                                                          p(""),
+                                                                                          tableOutput("deisgn2d.summ.des"),
+                                                                                          p(""),
+                                                                                          tableOutput("design2d.summ.stations"),
+                                                                                          p(""),
+                                                                                          tableOutput("design2d.summ.observations"),
+                                                                                          p(""),
+                                                                                          tableOutput("design2d.summ.unknowns"),
+                                                                                          p(""),
+                                                                                          tableOutput("design2d.summ.degrees")
+                                                                                 ),
                                                                                  tabPanel("MAP RESULTS",
                                                                                           p(""),
                                                                                           leafletOutput("map_ellipses_opt", height = 550) %>% withSpinner(color="#0dc5c1")

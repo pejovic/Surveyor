@@ -1,5 +1,5 @@
 #' ---
-#' title: "Report - 2D geodetic network design"
+#' title: "Report - 2D geodetic network adjustment"
 #' author:
 #'    - "surveyor - R package"
 #' date: "`r format(Sys.time(), '%d %B %Y')`"

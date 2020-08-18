@@ -35,6 +35,7 @@ library(shinyBS)
 library(shinyWidgets)
 library(knitr)
 library(rmarkdown)
+library(kableExtra)
 
 shinyServer(function(input, output){
   # ==================================================================
@@ -334,6 +335,158 @@ shinyServer(function(input, output){
       design_net_out
     }
   })
+
+  output$deisgn2d.summ.des <- eventReactive(input$design_adjust_xlsx,{
+
+    data <- xlsx_list()
+    data_up <- updated_xlsx_list()
+
+    if(length(data_up) == 0){
+      summary.adjustment <- data.frame(Parameter = c("Type: ", "Dimension: ", "Number of iterations: ", "Max. coordinate correction in last iteration: ", "Datum definition: "),
+                                       Value = c("Weighted", "2D", 1, "0.0000 m",
+                                                 if(all(data$points$FIX_2D == FALSE)){
+                                                   "Datum defined with a minimal trace of the matrix Qx"
+                                                 }else{"Fixed parameters - classically defined datum"}
+                                       ))
+
+      summary.adjustment %>%
+        kable(caption = "Network design settings", digits = 4, align = "c") %>%
+        kable_styling(bootstrap_options = "striped", full_width = TRUE)
+
+    } else{
+      summary.adjustment <- data.frame(Parameter = c("Type: ", "Dimension: ", "Number of iterations: ", "Max. coordinate correction in last iteration: ", "Datum definition: "),
+                                       Value = c("Weighted", "2D", 1, "0.0000 m",
+                                                 if(all(data_up$points$FIX_2D == FALSE)){
+                                                   "Datum defined with a minimal trace of the matrix Qx"
+                                                 }else{"Fixed parameters - classically defined datum"}
+                                       ))
+
+      summary.adjustment %>%
+        kable(caption = "Network design settings", digits = 4, align = "c") %>%
+        kable_styling(bootstrap_options = "striped", full_width = TRUE)
+      }
+
+  })
+
+
+  output$design2d.summ.stations <- eventReactive(input$design_adjust_xlsx,{
+
+    data <- xlsx_list()
+    data_up <- updated_xlsx_list()
+
+    if(length(data_up) == 0){
+      summary.stations <- data.frame(Parameter = c("Number of (partly) known stations: ", "Number of unknown stations: ", "Total: "),
+                                     Value = c(sum(data$points$FIX_2D == TRUE),
+                                               sum(data$points$FIX_2D == FALSE),
+                                               sum(data$points$FIX_2D == TRUE) + sum(data$points$FIX_2D == FALSE)))
+
+      summary.stations %>%
+        kable(caption = "Stations", digits = 4, align = "c") %>%
+        kable_styling(bootstrap_options = "striped", full_width = TRUE)
+
+    } else{
+      summary.stations <- data.frame(Parameter = c("Number of (partly) known stations: ", "Number of unknown stations: ", "Total: "),
+                                     Value = c(sum(data_up$points$FIX_2D == TRUE),
+                                               sum(data_up$points$FIX_2D == FALSE),
+                                               sum(data_up$points$FIX_2D == TRUE) + sum(data_up$points$FIX_2D == FALSE)))
+
+      summary.stations %>%
+        kable(caption = "Stations", digits = 4, align = "c") %>%
+        kable_styling(bootstrap_options = "striped", full_width = TRUE)
+    }
+
+  })
+
+  output$design2d.summ.observations <- eventReactive(input$design_adjust_xlsx,{
+
+    data <- xlsx_list()
+    data_up <- updated_xlsx_list()
+
+    if(length(data_up) == 0){
+      summary.observations <- data.frame(Parameter = c("Directions: ", "Distances: ", "Known coordinates: ", "Total: "),
+                                         Value = c(sum(data$observations$direction == TRUE),
+                                                   sum(data$observations$distance == TRUE),
+                                                   sum(data$points$FIX_2D == TRUE)*2,
+                                                   sum(data$observations$direction == TRUE)+sum(data$observations$distance == TRUE)+(sum(data$points$FIX_2D == TRUE)*2)))
+
+      summary.observations %>%
+        kable(caption = "Observations", digits = 4, align = "c") %>%
+        kable_styling(bootstrap_options = "striped", full_width = TRUE)
+
+
+    } else{
+      summary.observations <- data.frame(Parameter = c("Directions: ", "Distances: ", "Known coordinates: ", "Total: "),
+                                         Value = c(sum(data_up$observations$direction == TRUE),
+                                                   sum(data_up$observations$distance == TRUE),
+                                                   sum(data_up$points$FIX_2D == TRUE)*2,
+                                                   sum(data_up$observations$direction == TRUE)+sum(data_up$observations$distance == TRUE)+(sum(data_up$points$FIX_2D == TRUE)*2)))
+
+      summary.observations %>%
+        kable(caption = "Observations", digits = 4, align = "c") %>%
+        kable_styling(bootstrap_options = "striped", full_width = TRUE)
+    }
+
+  })
+
+  output$design2d.summ.unknowns <- eventReactive(input$design_adjust_xlsx,{
+
+    data <- xlsx_list()
+    data_up <- updated_xlsx_list()
+
+    if(length(data_up) == 0){
+      summary.unknowns <- data.frame(Parameter = c("Coordinates: ", "Orientations: ", "Total: "),
+                                     Value = c(sum(data$points$FIX_2D == FALSE)*2,
+                                               length(data$observations %>% dplyr::filter(direction == TRUE) %>% .$from %>% unique()),
+                                               (sum(data$points$FIX_2D == FALSE)*2)+length(data$observations %>% dplyr::filter(direction == TRUE) %>% .$from %>% unique())))
+
+      summary.unknowns %>%
+        kable(caption = "Unknowns", digits = 4, align = "c") %>%
+        kable_styling(bootstrap_options = "striped", full_width = TRUE)
+
+
+
+    } else{
+      summary.unknowns <- data.frame(Parameter = c("Coordinates: ", "Orientations: ", "Total: "),
+                                     Value = c(sum(data_up$points$FIX_2D == FALSE)*2,
+                                               length(data_up$observations %>% dplyr::filter(direction == TRUE) %>% .$from %>% unique()),
+                                               (sum(data_up$points$FIX_2D == FALSE)*2)+length(data_up$observations %>% dplyr::filter(direction == TRUE) %>% .$from %>% unique())))
+
+      summary.unknowns %>%
+        kable(caption = "Unknowns", digits = 4, align = "c") %>%
+        kable_styling(bootstrap_options = "striped", full_width = TRUE)
+
+    }
+
+  })
+
+  output$design2d.summ.degrees <- eventReactive(input$design_adjust_xlsx,{
+
+    data <- xlsx_list()
+    data_up <- updated_xlsx_list()
+
+    if(length(data_up) == 0){
+      summary.degrees <- data.frame(Parameter = "Degrees of freedom: ", Value = (sum(data$observations$direction == TRUE)+sum(data$observations$distance == TRUE)+(sum(data$points$FIX_2D == TRUE)*2)) - ((sum(data$points$FIX_2D == FALSE)*2)+length(data$observations %>% dplyr::filter(direction == TRUE) %>% .$from %>% unique())))
+
+      summary.degrees %>%
+        kable(caption = "Degrees of freedom: ", digits = 4, align = "c") %>%
+        kable_styling(bootstrap_options = "striped", full_width = TRUE)
+
+
+
+
+    } else{
+      summary.degrees <- data.frame(Parameter = "Degrees of freedom: ", Value = (sum(data_up$observations$direction == TRUE)+sum(data_up$observations$distance == TRUE)+(sum(data_up$points$FIX_2D == TRUE)*2)) - ((sum(data_up$points$FIX_2D == FALSE)*2)+length(data_up$observations %>% dplyr::filter(direction == TRUE) %>% .$from %>% unique())))
+
+      summary.degrees %>%
+        kable(caption = "Degrees of freedom: ", digits = 4, align = "c") %>%
+        kable_styling(bootstrap_options = "striped", full_width = TRUE)
+
+
+    }
+
+  })
+
+
 
   output$ellipse_error <- DT::renderDataTable({
     DT::datatable(adjusted_net_design()[[1]]$ellipse.net %>%
