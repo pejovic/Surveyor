@@ -41,8 +41,9 @@ summary.adjustment <- data.frame(Parameter = c("Type: ", "Dimension: ", "Number 
                            ))
 
 summary.adjustment %>%
-  kable(caption = "Adjustment settings", digits = 4, align = "c") %>%
-  kable_styling(bootstrap_options = "striped", full_width = TRUE)
+  kable(caption = "Adjustment settings", digits = 4, align = "c", col.names = NULL) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = TRUE)%>%
+  column_spec(1, bold = T, color = "white", background = "#D7261E")
 
 
 summary.stations <- data.frame(Parameter = c("Number of (partly) known stations: ", "Number of unknown stations: ", "Total: "),

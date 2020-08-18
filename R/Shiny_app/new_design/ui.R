@@ -367,15 +367,13 @@ shinyUI(
                                                                                tabsetPanel(
                                                                                  tabPanel("SUMMARY",
                                                                                           p(""),
-                                                                                          tableOutput("deisgn2d.summ.des"),
-                                                                                          p(""),
-                                                                                          tableOutput("design2d.summ.stations"),
-                                                                                          p(""),
-                                                                                          tableOutput("design2d.summ.observations"),
-                                                                                          p(""),
-                                                                                          tableOutput("design2d.summ.unknowns"),
-                                                                                          p(""),
-                                                                                          tableOutput("design2d.summ.degrees")
+                                                                                          navlistPanel(
+                                                                                            tabPanel("Network design settings", tableOutput("deisgn2d.summ.des")),
+                                                                                            tabPanel("Stations", tableOutput("design2d.summ.stations")),
+                                                                                            tabPanel("Observations", tableOutput("design2d.summ.observations")),
+                                                                                            tabPanel("Unknowns", tableOutput("design2d.summ.unknowns")),
+                                                                                            tabPanel("Degrees of freedom", tableOutput("design2d.summ.degrees"))
+                                                                                          )
                                                                                  ),
                                                                                  tabPanel("MAP RESULTS",
                                                                                           p(""),
@@ -481,6 +479,16 @@ shinyUI(
                                                                         ),
                                                                         column(width = 6, "DESIGN NET RESULTS",
                                                                                tabsetPanel(
+                                                                                 tabPanel("SUMMARY",
+                                                                                          p(""),
+                                                                                          navlistPanel(
+                                                                                            tabPanel("Network design settings", tableOutput("deisgn2dme.summ.des")),
+                                                                                            tabPanel("Stations", tableOutput("design2dme.summ.stations")),
+                                                                                            tabPanel("Observations", tableOutput("design2dme.summ.observations")),
+                                                                                            tabPanel("Unknowns", tableOutput("design2dme.summ.unknowns")),
+                                                                                            tabPanel("Degrees of freedom", tableOutput("design2dme.summ.degrees"))
+                                                                                          )
+                                                                                 ),
                                                                                  tabPanel("MAP RESULTS",
                                                                                           p(""),
                                                                                           leafletOutput("map_ellipses_opt_me", height = 550) %>% withSpinner(color="#0dc5c1")
