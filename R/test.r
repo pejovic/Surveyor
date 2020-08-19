@@ -138,10 +138,14 @@ plot_surveynet(snet.adj = dns.snet.adj, webmap = FALSE, net.1D = TRUE, net.2D = 
 
 
 
+length(which(dns.snet$points$FIX_1D))==1
+sum(dns.snet$observations$diff_level == TRUE)
 
+dns.snet$points %<>% dplyr::mutate(FIX_1D = FALSE)
 
-
-
+if(length(which(dns.snet$points$FIX_1D))==1 || length(which(dns.snet$points$FIX_1D))==0){
+  "Free 1D geodetic network"
+}else{"Unfree 1D geodetic network"}
 
 fixed_points <- survey1net$points[(survey1net$points$FIX_1D == TRUE), ]$Name %>% .[!is.na(.)]
 

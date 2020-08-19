@@ -145,6 +145,16 @@ shinyUI(
                                                                         ),
                                                                         column(width = 6, "DESIGN 1D NET RESULTS",
                                                                                tabsetPanel(
+                                                                                 tabPanel("SUMMARY",
+                                                                                          p(""),
+                                                                                          navlistPanel(
+                                                                                            tabPanel("Network design settings", tableOutput("design1d.summ.des")),
+                                                                                            tabPanel("Stations", tableOutput("design1d.summ.stations")),
+                                                                                            tabPanel("Observations", tableOutput("design1d.summ.observations")),
+                                                                                            tabPanel("Unknowns", tableOutput("design1d.summ.unknowns")),
+                                                                                            tabPanel("Degrees of freedom", tableOutput("design1d.summ.degrees"))
+                                                                                          )
+                                                                                 ),
                                                                                  tabPanel("MAP RESULTS",
                                                                                           p(""),
                                                                                           plotlyOutput("netSpatialView_1d_design") %>% withSpinner(color="#0dc5c1")
@@ -169,9 +179,9 @@ shinyUI(
                                                                       )
 
 
-                                                                    ),
-                                                             tabPanel("MAP INPUT DATA",
-                                                                      p("")#,
+                                                                    )#,
+                                                             #tabPanel("MAP INPUT DATA",
+                                                                      #p("")#,
                                                                       # fluidRow(
                                                                       #  column(width = 6, "DATA PREPARATION",
                                                                       #         tabsetPanel(
@@ -280,7 +290,7 @@ shinyUI(
                                                                       #  )
 #
                                                                       #)
-                                                                    )
+                                                                    #)
                                                            )
                                                 ),
                                                 tabPanel("2D DESIGN",
@@ -603,6 +613,16 @@ shinyUI(
                                                                       ),
                                                                       column(width = 6, "ADJUSTMENT 1D NET RESULTS",
                                                                              tabsetPanel(
+                                                                               tabPanel("SUMMARY",
+                                                                                        p(""),
+                                                                                        navlistPanel(
+                                                                                          tabPanel("Network adjustment settings", tableOutput("adj1d.summ.adj")),
+                                                                                          tabPanel("Stations", tableOutput("adj1d.summ.stations")),
+                                                                                          tabPanel("Observations", tableOutput("adj1d.summ.observations")),
+                                                                                          tabPanel("Unknowns", tableOutput("adj1d.summ.unknowns")),
+                                                                                          tabPanel("Degrees of freedom", tableOutput("adj1d.summ.degrees"))
+                                                                                        )
+                                                                               ),
                                                                                tabPanel("MAP RESULTS",
                                                                                         p(""),
                                                                                         plotlyOutput("netSpatialView_1d_a") %>% withSpinner(color="#0dc5c1")
@@ -712,6 +732,16 @@ shinyUI(
                                                                        ),
                                                                        column(width = 6, "ADJUSTMENT RESULTS",
                                                                               tabsetPanel(
+                                                                                tabPanel("SUMMARY",
+                                                                                         p(""),
+                                                                                         navlistPanel(
+                                                                                           tabPanel("Network adjustment settings", tableOutput("adj2d.summ.adj")),
+                                                                                           tabPanel("Stations", tableOutput("adj2d.summ.stations")),
+                                                                                           tabPanel("Observations", tableOutput("adj2d.summ.observations")),
+                                                                                           tabPanel("Unknowns", tableOutput("adj2d.summ.unknowns")),
+                                                                                           tabPanel("Degrees of freedom", tableOutput("adj2d.summ.degrees"))
+                                                                                         )
+                                                                                ),
                                                                                 tabPanel("MAP RESULTS",
                                                                                          p(""),
                                                                                          #verbatimTextOutput('tekstputanja'),
