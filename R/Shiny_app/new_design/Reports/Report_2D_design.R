@@ -26,6 +26,7 @@
 #'   ellipse_scale: NA
 #'   result_units: NA
 #'   adjusted_net_design: NA
+#'   epsg: NA
 #' ---
 #'
 #'<img src="Grb_Gradjevinski.png" align="center" alt="logo" width="180" height = "220" style = "border: none; fixed: right;">
@@ -117,7 +118,7 @@ summary.adjustment <- data.frame(Parameter = c("Type: ", "Dimension: ", "Number 
                                  ))
 
 summary.adjustment %>%
-  kable(caption = "Network design settings", digits = 4, align = "c", col.names = NULL) %>%
+  kable(caption = "Network design", digits = 4, align = "c", col.names = NULL) %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = TRUE)
 
 summary.stations <- data.frame(Parameter = c("Number of (partly) known stations: ", "Number of unknown stations: ", "Total: "),
@@ -159,7 +160,7 @@ summary.degrees %>%
 
 #'
 #+ echo = FALSE, message = FALSE, warning = FALSE
-adj.net_map <- plot_surveynet(snet.adj = params$adjusted_net_design, webmap = TRUE, net.1D = FALSE, net.2D = TRUE, sp_bound = params$sp_bound, rii_bound = params$rii_bound, ellipse.scale = params$ellipse_scale, result.units = params$result_units) # DOPUNITI ZA RESULT UNITS
+adj.net_map <- plot_surveynet(snet.adj = params$adjusted_net_design, webmap = TRUE, net.1D = FALSE, net.2D = TRUE, sp_bound = params$sp_bound, rii_bound = params$rii_bound, ellipse.scale = params$ellipse_scale, result.units = params$result_units, epsg = params$epsg) # DOPUNITI ZA RESULT UNITS
 #'
 #' # Map results
 #+ echo = FALSE, result = TRUE, eval = TRUE, out.width="100%"

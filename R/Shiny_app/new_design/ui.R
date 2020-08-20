@@ -148,11 +148,11 @@ shinyUI(
                                                                                  tabPanel("SUMMARY",
                                                                                           p(""),
                                                                                           navlistPanel(
-                                                                                            tabPanel("Network design settings", tableOutput("design1d.summ.des")),
-                                                                                            tabPanel("Stations", tableOutput("design1d.summ.stations")),
-                                                                                            tabPanel("Observations", tableOutput("design1d.summ.observations")),
-                                                                                            tabPanel("Unknowns", tableOutput("design1d.summ.unknowns")),
-                                                                                            tabPanel("Degrees of freedom", tableOutput("design1d.summ.degrees"))
+                                                                                            tabPanel("Network design", tableOutput("design1d.summ.des")%>% withSpinner(color="#0dc5c1")),
+                                                                                            tabPanel("Stations", tableOutput("design1d.summ.stations")%>% withSpinner(color="#0dc5c1")),
+                                                                                            tabPanel("Observations", tableOutput("design1d.summ.observations")%>% withSpinner(color="#0dc5c1")),
+                                                                                            tabPanel("Unknowns", tableOutput("design1d.summ.unknowns")%>% withSpinner(color="#0dc5c1")),
+                                                                                            tabPanel("Degrees of freedom", tableOutput("design1d.summ.degrees")%>% withSpinner(color="#0dc5c1"))
                                                                                           )
                                                                                  ),
                                                                                  tabPanel("MAP RESULTS",
@@ -378,11 +378,11 @@ shinyUI(
                                                                                  tabPanel("SUMMARY",
                                                                                           p(""),
                                                                                           navlistPanel(
-                                                                                            tabPanel("Network design settings", tableOutput("deisgn2d.summ.des")),
-                                                                                            tabPanel("Stations", tableOutput("design2d.summ.stations")),
-                                                                                            tabPanel("Observations", tableOutput("design2d.summ.observations")),
-                                                                                            tabPanel("Unknowns", tableOutput("design2d.summ.unknowns")),
-                                                                                            tabPanel("Degrees of freedom", tableOutput("design2d.summ.degrees"))
+                                                                                            tabPanel("Network design", tableOutput("deisgn2d.summ.des")%>% withSpinner(color="#0dc5c1")),
+                                                                                            tabPanel("Stations", tableOutput("design2d.summ.stations")%>% withSpinner(color="#0dc5c1")),
+                                                                                            tabPanel("Observations", tableOutput("design2d.summ.observations")%>% withSpinner(color="#0dc5c1")),
+                                                                                            tabPanel("Unknowns", tableOutput("design2d.summ.unknowns")%>% withSpinner(color="#0dc5c1")),
+                                                                                            tabPanel("Degrees of freedom", tableOutput("design2d.summ.degrees")%>% withSpinner(color="#0dc5c1"))
                                                                                           )
                                                                                  ),
                                                                                  tabPanel("MAP RESULTS",
@@ -492,11 +492,11 @@ shinyUI(
                                                                                  tabPanel("SUMMARY",
                                                                                           p(""),
                                                                                           navlistPanel(
-                                                                                            tabPanel("Network design settings", tableOutput("deisgn2dme.summ.des")),
-                                                                                            tabPanel("Stations", tableOutput("design2dme.summ.stations")),
-                                                                                            tabPanel("Observations", tableOutput("design2dme.summ.observations")),
-                                                                                            tabPanel("Unknowns", tableOutput("design2dme.summ.unknowns")),
-                                                                                            tabPanel("Degrees of freedom", tableOutput("design2dme.summ.degrees"))
+                                                                                            tabPanel("Network design", tableOutput("deisgn2dme.summ.des")%>% withSpinner(color="#0dc5c1")),
+                                                                                            tabPanel("Stations", tableOutput("design2dme.summ.stations")%>% withSpinner(color="#0dc5c1")),
+                                                                                            tabPanel("Observations", tableOutput("design2dme.summ.observations")%>% withSpinner(color="#0dc5c1")),
+                                                                                            tabPanel("Unknowns", tableOutput("design2dme.summ.unknowns")%>% withSpinner(color="#0dc5c1")),
+                                                                                            tabPanel("Degrees of freedom", tableOutput("design2dme.summ.degrees")%>% withSpinner(color="#0dc5c1"))
                                                                                           )
                                                                                  ),
                                                                                  tabPanel("MAP RESULTS",
@@ -616,11 +616,11 @@ shinyUI(
                                                                                tabPanel("SUMMARY",
                                                                                         p(""),
                                                                                         navlistPanel(
-                                                                                          tabPanel("Network adjustment settings", tableOutput("adj1d.summ.adj")),
-                                                                                          tabPanel("Stations", tableOutput("adj1d.summ.stations")),
-                                                                                          tabPanel("Observations", tableOutput("adj1d.summ.observations")),
-                                                                                          tabPanel("Unknowns", tableOutput("adj1d.summ.unknowns")),
-                                                                                          tabPanel("Degrees of freedom", tableOutput("adj1d.summ.degrees"))
+                                                                                          tabPanel("Network adjustment", tableOutput("adj1d.summ.adj")%>% withSpinner(color="#0dc5c1")),
+                                                                                          tabPanel("Stations", tableOutput("adj1d.summ.stations")%>% withSpinner(color="#0dc5c1")),
+                                                                                          tabPanel("Observations", tableOutput("adj1d.summ.observations")%>% withSpinner(color="#0dc5c1")),
+                                                                                          tabPanel("Unknowns", tableOutput("adj1d.summ.unknowns")%>% withSpinner(color="#0dc5c1")),
+                                                                                          tabPanel("Degrees of freedom", tableOutput("adj1d.summ.degrees")%>% withSpinner(color="#0dc5c1"))
                                                                                         )
                                                                                ),
                                                                                tabPanel("MAP RESULTS",
@@ -735,11 +735,11 @@ shinyUI(
                                                                                 tabPanel("SUMMARY",
                                                                                          p(""),
                                                                                          navlistPanel(
-                                                                                           tabPanel("Network adjustment settings", tableOutput("adj2d.summ.adj")),
-                                                                                           tabPanel("Stations", tableOutput("adj2d.summ.stations")),
-                                                                                           tabPanel("Observations", tableOutput("adj2d.summ.observations")),
-                                                                                           tabPanel("Unknowns", tableOutput("adj2d.summ.unknowns")),
-                                                                                           tabPanel("Degrees of freedom", tableOutput("adj2d.summ.degrees"))
+                                                                                           tabPanel("Network adjustment", tableOutput("adj2d.summ.adj") %>% withSpinner(color="#0dc5c1")),
+                                                                                           tabPanel("Stations", tableOutput("adj2d.summ.stations")%>% withSpinner(color="#0dc5c1")),
+                                                                                           tabPanel("Observations", tableOutput("adj2d.summ.observations")%>% withSpinner(color="#0dc5c1")),
+                                                                                           tabPanel("Unknowns", tableOutput("adj2d.summ.unknowns")%>% withSpinner(color="#0dc5c1")),
+                                                                                           tabPanel("Degrees of freedom", tableOutput("adj2d.summ.degrees")%>% withSpinner(color="#0dc5c1"))
                                                                                          )
                                                                                 ),
                                                                                 tabPanel("MAP RESULTS",

@@ -25,6 +25,10 @@
 #'   ellipse_scale: NA
 #'   result_units: NA
 #'   adjusted_net_adj: NA
+#'   epsg: NA
+#'   sd.apriori: NA
+#'   sd.estimated: NA
+#'   df: NA
 #' ---
 #'
 #'<img src="Grb_Gradjevinski.png" align="center" alt="logo" width="180" height = "220" style = "border: none; fixed: right;">
@@ -101,17 +105,25 @@ mycolors=c("#f32440","#2185ef","#d421ef")
 #' # Summary
 #'
 #+ echo = FALSE, message = FALSE, warning = FALSE
+model <- model_adequacy_test.shiny(sd.apriori = params$sd.apriori, sd.estimated = params$sd.estimated, df = params$df, prob = 0.95)
 
-summary.adjustment <- data.frame(Parameter = c("Type: ", "Dimension: ", "Number of iterations: ", "Max. coordinate correction in last iteration: ", "Datum definition: "),
+summary.adjustment <- data.frame(Parameter = c("Type: ", "Dimension: ", "Number of iterations: ", "Max. coordinate correction in last iteration: ", "Datum definition: ", "Sd apriori: ", "Sd aposteriori: ", "Probability: ", "F estimated: ", "F quantile: ", "Model adequacy test: "),
                                  Value = c("Weighted", "2D", 1, "0.0000 m",
                                            if(all(params$data$points$FIX_2D == FALSE)){
                                              "Datum defined with a minimal trace of the matrix Qx"
-                                           }else{"Fixed parameters - classically defined datum"}
+                                           }else{"Fixed parameters - classically defined datum"},
+                                           params$sd.apriori,
+                                           round(params$sd.estimated,5),
+                                           0.95,
+                                           round(model$F.estimated, 5),
+                                           round(model$F.quantile, 5),
+                                           model$model
                                  ))
 
 summary.adjustment %>%
-  kable(caption = "Network adjustment settings", digits = 4, align = "c", col.names = NULL) %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = TRUE)
+  kable(caption = "Network adjustment", digits = 4, align = "c", col.names = NULL) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = TRUE)%>%
+  row_spec(11, bold = T, color = "white", background = "#D7261E")
 
 
 summary.stations <- data.frame(Parameter = c("Number of (partly) known stations: ", "Number of unknown stations: ", "Total: "),
@@ -153,7 +165,7 @@ summary.degrees %>%
 
 #'
 #+ echo = FALSE, message = FALSE, warning = FALSE
-adj.net_map <- plot_surveynet(snet.adj = params$adjusted_net_adj, webmap = TRUE, net.1D = FALSE, net.2D = TRUE, sp_bound = params$sp_bound, rii_bound = params$rii_bound, ellipse.scale = params$ellipse_scale, result.units = params$result_units) # DOPUNITI ZA RESULT UNITS
+adj.net_map <- plot_surveynet(snet.adj = params$adjusted_net_adj, webmap = TRUE, net.1D = FALSE, net.2D = TRUE, sp_bound = params$sp_bound, rii_bound = params$rii_bound, ellipse.scale = params$ellipse_scale, result.units = params$result_units, epsg = params$epsg) # DOPUNITI ZA RESULT UNITS
 
 #'
 #' # Map results

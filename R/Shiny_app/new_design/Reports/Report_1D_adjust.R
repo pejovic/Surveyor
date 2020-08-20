@@ -20,6 +20,9 @@
 #'   net1d_adj: NA,
 #'   sd_h_bound: NA,
 #'   rii_bound: NA
+#'   sd.apriori: NA
+#'   sd.estimated: NA
+#'   df: NA
 #' ---
 #'
 #'<img src="Grb_Gradjevinski.png" align="center" alt="logo" width="180" height = "220" style = "border: none; fixed: right;">
@@ -98,17 +101,28 @@ if(length(params$data_up) == 0){
   data = params$data_up
 }
 
-summary.adjustment <- data.frame(Parameter = c("Type: ", "Dimension: ", "Number of iterations: ", "Max. coordinate correction in last iteration: ", "Datum definition: ", "Stochastic model: "),
+modeltest <- model_adequacy_test.shiny(sd.apriori = params$sd.apriori, sd.estimated = params$sd.estimated, df = params$df, prob = 0.95)
+
+
+summary.adjustment <- data.frame(Parameter = c("Type: ", "Dimension: ", "Number of iterations: ", "Max. coordinate correction in last iteration: ", "Datum definition: ", "Stochastic model: ", "Sd apriori: ", "Sd aposteriori: ", "Probability: ", "F estimated: ", "F quantile: ", "Model adequacy test: "),
                                  Value = c("Weighted", "1D", 1, "0.0000 m",
                                            if(length(which(data$points$FIX_1D))==1 || length(which(data$points$FIX_1D))==0){
                                              "Free 1D geodetic network"
                                            }else{"Unfree 1D geodetic network"},
-                                           params$model
+                                           params$model,
+                                           params$sd.apriori,
+                                           round(params$sd.estimated,5),
+                                           0.95,
+                                           round(modeltest$F.estimated, 5),
+                                           round(modeltest$F.quantile, 5),
+                                           modeltest$model
+
                                  ))
 
 summary.adjustment %>%
-  kable(caption = "Network adjustment settings", digits = 4, align = "c", col.names = NULL) %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = TRUE)
+  kable(caption = "Network adjustment", digits = 4, align = "c", col.names = NULL) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = TRUE)%>%
+  row_spec(12, bold = T, color = "white", background = "#D7261E")
 
 summary.stations <- data.frame(Parameter = c("Number of (partly) known stations: ", "Number of unknown stations: ", "Total: "),
                                Value = c(sum(data$points$FIX_1D == TRUE),

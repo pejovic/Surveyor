@@ -355,6 +355,7 @@ shinyServer(function(input, output){
     data <- xlsx_list()
     data_up <- updated_xlsx_list()
 
+
     if(length(data_up) == 0){
       summary.adjustment <- data.frame(Parameter = c("Type: ", "Dimension: ", "Number of iterations: ", "Max. coordinate correction in last iteration: ", "Datum definition: "),
                                        Value = c("Weighted", "2D", 1, "0.0000 m",
@@ -364,7 +365,7 @@ shinyServer(function(input, output){
                                        ))
 
       summary.adjustment %>%
-        kable(caption = "Network design settings", digits = 4, align = "c", col.names = NULL) %>%
+        kable(caption = "Network design", digits = 4, align = "c", col.names = NULL) %>%
         kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = TRUE)
 
     } else{
@@ -376,7 +377,7 @@ shinyServer(function(input, output){
                                        ))
 
       summary.adjustment %>%
-        kable(caption = "Network design settings", digits = 4, align = "c", col.names = NULL) %>%
+        kable(caption = "Network design", digits = 4, align = "c", col.names = NULL) %>%
         kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = TRUE)
       }
 
@@ -541,18 +542,18 @@ shinyServer(function(input, output){
     # ellipses_1 <- adjusted_net_design()[[1]]$ellipse.net
     # observations_1 <- adjusted_net_design()[[2]]
     snet.adj <- adjusted_net_design()
-    adj_output_view <- plot_surveynet(snet.adj = snet.adj, webmap = FALSE, net.1D = FALSE, net.2D = TRUE, ellipse.scale = input$adjust_1_ell_scale)
+    adj_output_view <- plot_surveynet(snet.adj = snet.adj, webmap = FALSE, net.1D = FALSE, net.2D = TRUE, ellipse.scale = input$adjust_1_ell_scale, epsg = input$epsg_xlsx)
     adj_output_view
   })
 
   plotInput_design.xlsx <- function(){
     snet.adj <- adjusted_net_design()
-    plot_surveynet(snet.adj = snet.adj, webmap = FALSE, net.1D = FALSE, net.2D = TRUE, ellipse.scale = input$adjust_1_ell_scale)
+    plot_surveynet(snet.adj = snet.adj, webmap = FALSE, net.1D = FALSE, net.2D = TRUE, ellipse.scale = input$adjust_1_ell_scale, epsg = input$epsg_xlsx)
   }
 
   output$netSpatialView_ell11 <- renderPlot({
     snet.adj <- adjusted_net_design()
-    adj_output_view <- plot_surveynet(snet.adj = snet.adj, webmap = FALSE, net.1D = FALSE, net.2D = TRUE, ellipse.scale = input$adjust_1_ell_scale)
+    adj_output_view <- plot_surveynet(snet.adj = snet.adj, webmap = FALSE, net.1D = FALSE, net.2D = TRUE, ellipse.scale = input$adjust_1_ell_scale, epsg = input$epsg_xlsx)
     adj_output_view
   })
 
@@ -632,7 +633,7 @@ shinyServer(function(input, output){
   # DA li elipse plotovati sa centrom u pribliznim ili ocenjenim koordinatama?
   output$map_ellipses_opt <- renderLeaflet({
     snet.adj <- adjusted_net_design()
-    adj.net_map <- plot_surveynet(snet.adj = snet.adj, webmap = TRUE, net.1D = FALSE, net.2D = TRUE, ellipse.scale = input$adjust_1_ell_scale, result.units = input$adjust_1_units, sp_bound = input$sp_xlsx, rii_bound = input$rii_xlsx)
+    adj.net_map <- plot_surveynet(snet.adj = snet.adj, webmap = TRUE, net.1D = FALSE, net.2D = TRUE, ellipse.scale = input$adjust_1_ell_scale, result.units = input$adjust_1_units, sp_bound = input$sp_xlsx, rii_bound = input$rii_xlsx, epsg = input$epsg_xlsx)
     adj.net_map@map
   })
 
@@ -659,7 +660,7 @@ shinyServer(function(input, output){
                                        ))
 
     summary.adjustment %>%
-        kable(caption = "Network design settings", digits = 4, align = "c", col.names = NULL) %>%
+        kable(caption = "Network design", digits = 4, align = "c", col.names = NULL) %>%
         kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = TRUE)
   })
 
@@ -846,7 +847,7 @@ shinyServer(function(input, output){
 
 
   ########################################
-  # REPORT 2D design - mapedit inuput data
+  # REPORT 2D design - mapedit input data
   ########################################
 
   output$report2Ddesign_me_input <- downloadHandler(
@@ -871,6 +872,8 @@ shinyServer(function(input, output){
       result_units <- input$adjust_1_units_me
       points <- adjusted_net_design_me()[[1]]$net.points
       adjusted_net_design <- adjusted_net_design_me()
+      epsg <- input$epsg_me
+
 
       params <- list(data = data,
                      data_up = data_up,
@@ -883,7 +886,8 @@ shinyServer(function(input, output){
                      points = points,
                      adjusted_net_design = adjusted_net_design,
                      ellipse_scale = ellipse_scale,
-                     result_units = result_units)
+                     result_units = result_units,
+                     epsg = epsg)
 
       # Knit the document, passing in the `params` list, and eval it in a
       # child of the global environment (this isolates the code in the document
@@ -918,6 +922,7 @@ shinyServer(function(input, output){
       adjusted_net_design <- adjusted_net_design()
       ellipse_scale <- input$adjust_1_ell_scale
       result_units <- input$adjust_1_units
+      epsg <- epsg = input$epsg_xlsx
 
       params <- list(data = data,
                      data_up = data_up,
@@ -930,7 +935,8 @@ shinyServer(function(input, output){
                      points = points,
                      adjusted_net_design = adjusted_net_design,
                      ellipse_scale = ellipse_scale,
-                     result_units = result_units)
+                     result_units = result_units,
+                     epsg = epsg)
 
       rmarkdown::render(tempReport, output_file = file,
                         params = params,
@@ -984,7 +990,22 @@ shinyServer(function(input, output){
 
 
 
+
+
   output$adj2d.summ.adj <- eventReactive(input$adj_2d_adjust_xlsx,{
+
+    if(is.null(adjusted_net_adj()$test$df)){
+      summary.adjustment <- data.frame(Observation = adjusted_net_adj()$Observation,
+                                       Statistics =  adjusted_net_adj()$statistics
+      )
+
+      summary.adjustment %>%
+        kable(caption = "Check the statistics for individual observations. Suggestion: Remove the observation with the highest value of statistics:", digits = 4, align = "c") %>%
+        kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = TRUE)
+
+
+    }else{
+
     out_points_xlsx_wO <- surveynet.wO()[[1]]
     out_observations_xlsx_wO <- surveynet.wO()[[2]]
 
@@ -997,17 +1018,29 @@ shinyServer(function(input, output){
     edited_points_xlsx_wO <- st_as_sf(edited_points_xlsx_wO)
 
     data <- list("points" = edited_points_xlsx_wO, "observations" = edited_observations_xlsx_wO)
+    sd.estimated <- adjusted_net_adj()$test$sd.aposteriori
+    df <- adjusted_net_adj()$test$df
 
-    summary.adjustment <- data.frame(Parameter = c("Type: ", "Dimension: ", "Number of iterations: ", "Max. coordinate correction in last iteration: ", "Datum definition: "),
+    model <- model_adequacy_test.shiny(sd.apriori = input$st_apriori_adj_xlsx, sd.estimated = sd.estimated, df = df, prob = 0.95)
+
+    summary.adjustment <- data.frame(Parameter = c("Type: ", "Dimension: ", "Number of iterations: ", "Max. coordinate correction in last iteration: ", "Datum definition: ", "Sd apriori: ", "Sd aposteriori: ", "Probability: ", "F estimated: ", "F quantile: ", "Model adequacy test: "),
                                      Value = c("Weighted", "2D", 1, "0.0000 m",
                                                if(all(data$points$FIX_2D == FALSE)){
                                                  "Datum defined with a minimal trace of the matrix Qx"
-                                               }else{"Fixed parameters - classically defined datum"}
+                                               }else{"Fixed parameters - classically defined datum"},
+                                               input$st_apriori_adj_xlsx,
+                                               round(adjusted_net_adj()$test$sd.aposteriori,5),
+                                               0.95,
+                                               round(model$F.estimated, 5),
+                                               round(model$F.quantile, 5),
+                                               model$model
                                      ))
 
     summary.adjustment %>%
-      kable(caption = "Network adjustment settings", digits = 4, align = "c", col.names = NULL) %>%
-      kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = TRUE)
+      kable(caption = "Network adjustment", digits = 4, align = "c", col.names = NULL) %>%
+      kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = TRUE) %>%
+      row_spec(11, bold = T, color = "white", background = "#D7261E")
+    }
   })
 
 
@@ -1158,18 +1191,18 @@ shinyServer(function(input, output){
 
   output$netSpatialView_ell_2d_adj <- renderPlot({
     snet.adj <- adjusted_net_adj()
-    adj_output_view <- plot_surveynet(snet.adj = snet.adj, webmap = FALSE, net.1D = FALSE, net.2D = TRUE, ellipse.scale = input$adjust_2_ell_scale)
+    adj_output_view <- plot_surveynet(snet.adj = snet.adj, webmap = FALSE, net.1D = FALSE, net.2D = TRUE, ellipse.scale = input$adjust_2_ell_scale, epsg = input$epsg_xlsx_adj)
     adj_output_view
   })
 
   plotInput_adj <- function(){
     snet.adj <- adjusted_net_adj()
-    plot_surveynet(snet.adj = snet.adj, webmap = FALSE, net.1D = FALSE, net.2D = TRUE, ellipse.scale = input$adjust_2_ell_scale)
+    plot_surveynet(snet.adj = snet.adj, webmap = FALSE, net.1D = FALSE, net.2D = TRUE, ellipse.scale = input$adjust_2_ell_scale, epsg = input$epsg_xlsx_adj)
   }
 
   output$netSpatialView_ell11_2d_adj <- renderPlot({
     snet.adj <- adjusted_net_adj()
-    adj_output_view <- plot_surveynet(snet.adj = snet.adj, webmap = FALSE, net.1D = FALSE, net.2D = TRUE, ellipse.scale = input$adjust_2_ell_scale)
+    adj_output_view <- plot_surveynet(snet.adj = snet.adj, webmap = FALSE, net.1D = FALSE, net.2D = TRUE, ellipse.scale = input$adjust_2_ell_scale, epsg = input$epsg_xlsx_adj)
     adj_output_view
   })
 
@@ -1254,7 +1287,7 @@ shinyServer(function(input, output){
 
   output$map_ellipses_2d_adj <- renderLeaflet({
     snet.adj <- adjusted_net_adj()
-    adj.net_map <- plot_surveynet(snet.adj = snet.adj, webmap = TRUE, net.1D = FALSE, net.2D = TRUE, ellipse.scale = input$adjust_2_ell_scale, sp_bound = input$sp_xlsx_adj, rii_bound = input$rii_xlsx_adj, result.units = input$adjust_2_units)
+    adj.net_map <- plot_surveynet(snet.adj = snet.adj, webmap = TRUE, net.1D = FALSE, net.2D = TRUE, ellipse.scale = input$adjust_2_ell_scale, sp_bound = input$sp_xlsx_adj, rii_bound = input$rii_xlsx_adj, result.units = input$adjust_2_units, epsg = input$epsg_xlsx_adj)
     adj.net_map@map
   })
 
@@ -1292,6 +1325,11 @@ shinyServer(function(input, output){
       adjusted_net_adj <- adjusted_net_adj()
       ellipse_scale <- input$adjust_2_ell_scale
       result_units <- input$adjust_2_units
+      epsg <- input$epsg_xlsx_adj
+
+      sd.estimated <- adjusted_net_adj()$test$sd.aposteriori
+      df <- adjusted_net_adj()$test$df
+      sd.apriori <- input$st_apriori_adj_xlsx
 
       params <- list(data = data,
                      ellipses = ellipses,
@@ -1303,7 +1341,11 @@ shinyServer(function(input, output){
                      points = points,
                      adjusted_net_adj = adjusted_net_adj,
                      ellipse_scale = ellipse_scale,
-                     result_units = result_units)
+                     result_units = result_units,
+                     epsg = epsg,
+                     sd.estimated = sd.estimated,
+                     sd.apriori = sd.apriori,
+                     df = df)
 
       rmarkdown::render(tempReport, output_file = file,
                         params = params,
@@ -1391,7 +1433,7 @@ shinyServer(function(input, output){
                                          ))
 
         summary.adjustment %>%
-          kable(caption = "Network design settings", digits = 4, align = "c", col.names = NULL) %>%
+          kable(caption = "Network design", digits = 4, align = "c", col.names = NULL) %>%
           kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = TRUE)
 
       } else{
@@ -1404,7 +1446,7 @@ shinyServer(function(input, output){
                                          ))
 
         summary.adjustment %>%
-          kable(caption = "Network design settings", digits = 4, align = "c", col.names = NULL) %>%
+          kable(caption = "Network design", digits = 4, align = "c", col.names = NULL) %>%
           kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = TRUE)
       }
 
@@ -1754,36 +1796,75 @@ adjusted_1d.net_a <- eventReactive(input$adjust_1d.a,{
 
 output$adj1d.summ.adj <- eventReactive(input$adjust_1d.a,{
 
-  data <- xlsx_list_1d_adj()
-  data_up <- updated_xlsx_list_1d.a()
+  #data <- xlsx_list_1d_adj()
+  #data_up <- updated_xlsx_list_1d.a()
+
+
+  #sd.estimated <- adjusted_1d.net_a()$test$sd.aposteriori
+  #df <- adjusted_1d.net_a()$test$df
+  #model <- model_adequacy_test.shiny(sd.apriori = input$sd_apriori_dh.a, sd.estimated = sd.estimated, df = df, prob = 0.95)
+
+  if(is.null(adjusted_1d.net_a()$test$df)){
+    summary.adjustment <- data.frame(Observation = adjusted_1d.net_a()$Observation,
+                                     Statistics =  adjusted_1d.net_a()$statistics
+                                     )
+
+    summary.adjustment %>%
+      kable(caption = "Check the statistics for individual observations. Suggestion: Remove the observation with the highest value of statistics:", digits = 4, align = "c") %>%
+      kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = TRUE)
+
+
+  }else{
+    data <- xlsx_list_1d_adj()
+    data_up <- updated_xlsx_list_1d.a()
+
+
+    sd.estimated <- adjusted_1d.net_a()$test$sd.aposteriori
+    df <- adjusted_1d.net_a()$test$df
+    model <- model_adequacy_test.shiny(sd.apriori = input$sd_apriori_dh.a, sd.estimated = sd.estimated, df = df, prob = 0.95)
 
   if(length(data_up) == 0){
-    summary.adjustment <- data.frame(Parameter = c("Type: ", "Dimension: ", "Number of iterations: ", "Max. coordinate correction in last iteration: ", "Datum definition: ", "Stochastic model: "),
+    summary.adjustment <- data.frame(Parameter = c("Type: ", "Dimension: ", "Number of iterations: ", "Max. coordinate correction in last iteration: ", "Datum definition: ", "Stochastic model: ", "Sd apriori: ", "Sd aposteriori: ", "Probability: ", "F estimated: ", "F quantile: ", "Model adequacy test: "),
                                      Value = c("Weighted", "1D", 1, "0.0000 m",
                                                if(length(which(data$points$FIX_1D))==1 || length(which(data$points$FIX_1D))==0){
                                                  "Free 1D geodetic network"
                                                }else{"Unfree 1D geodetic network"},
-                                               input$dh.s.model.a
+                                               input$dh.s.model.a,
+                                               input$sd_apriori_dh.a,
+                                               round(adjusted_1d.net_a()$test$sd.aposteriori,5),
+                                               0.95,
+                                               round(model$F.estimated, 5),
+                                               round(model$F.quantile, 5),
+                                               model$model
+
                                      ))
 
     summary.adjustment %>%
-      kable(caption = "Network adjustment settings", digits = 4, align = "c", col.names = NULL) %>%
-      kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = TRUE)
+      kable(caption = "Network adjustment", digits = 4, align = "c", col.names = NULL) %>%
+      kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = TRUE)%>%
+      row_spec(12, bold = T, color = "white", background = "#D7261E")
 
   } else{
-    summary.adjustment <- data.frame(Parameter = c("Type: ", "Dimension: ", "Number of iterations: ", "Max. coordinate correction in last iteration: ", "Datum definition: ", "Stochastic model: "),
+    summary.adjustment <- data.frame(Parameter = c("Type: ", "Dimension: ", "Number of iterations: ", "Max. coordinate correction in last iteration: ", "Datum definition: ", "Stochastic model: ", "Sd apriori: ", "Sd aposteriori: ", "Probability: ", "F estimated: ", "F quantile: ", "Model adequacy test: "),
                                      Value = c("Weighted", "1D", 1, "0.0000 m",
                                                if(length(which(data_up$points$FIX_1D))==1 || length(which(data_up$points$FIX_1D))==0){
                                                  "Free 1D geodetic network"
                                                }else{"Unfree 1D geodetic network"},
-                                               input$dh.s.model.a
+                                               input$dh.s.model.a,
+                                               input$sd_apriori_dh.a,
+                                               round(adjusted_1d.net_a()$test$sd.aposteriori,5),
+                                               0.95,
+                                               round(model$F.estimated, 5),
+                                               round(model$F.quantile, 5),
+                                               model$model
                                      ))
 
     summary.adjustment %>%
-      kable(caption = "Network adjustment settings", digits = 4, align = "c", col.names = NULL) %>%
-      kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = TRUE)
+      kable(caption = "Network adjustment", digits = 4, align = "c", col.names = NULL) %>%
+      kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = TRUE)%>%
+      row_spec(12, bold = T, color = "white", background = "#D7261E")
   }
-
+  }
 })
 
 
@@ -2012,13 +2093,20 @@ output$report1Dadjust_xlsx <- downloadHandler(
     net1d_adj <- adjusted_1d.net_a()
     sd_h_bound <- input$sd_h.a
     rii_bound <- input$rii_1d.a
+    sd.estimated <- adjusted_1d.net_a()$test$sd.aposteriori
+    df <- adjusted_1d.net_a()$test$df
+    sd.apriori <- input$sd_apriori_dh.a
+
 
     params <- list(model = model,
                    data = data,
                    data_up = data_up,
                    net1d_adj = net1d_adj,
                    sd_h_bound = sd_h_bound,
-                   rii_bound = rii_bound)
+                   rii_bound = rii_bound,
+                   sd.estimated = sd.estimated,
+                   df = df,
+                   sd.apriori = sd.apriori)
 
     rmarkdown::render(tempReport, output_file = file,
                       params = params,
