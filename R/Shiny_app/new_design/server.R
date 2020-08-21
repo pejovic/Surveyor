@@ -922,7 +922,7 @@ shinyServer(function(input, output){
       adjusted_net_design <- adjusted_net_design()
       ellipse_scale <- input$adjust_1_ell_scale
       result_units <- input$adjust_1_units
-      epsg <- epsg = input$epsg_xlsx
+      epsg <- input$epsg_xlsx
 
       params <- list(data = data,
                      data_up = data_up,
