@@ -23,6 +23,7 @@
 #'   sd.apriori: NA
 #'   sd.estimated: NA
 #'   df: NA
+#'   iter: NA
 #' ---
 #'
 #'<img src="Grb_Gradjevinski.png" align="center" alt="logo" width="180" height = "220" style = "border: none; fixed: right;">
@@ -105,7 +106,7 @@ modeltest <- model_adequacy_test.shiny(sd.apriori = params$sd.apriori, sd.estima
 
 
 summary.adjustment <- data.frame(Parameter = c("Type: ", "Dimension: ", "Number of iterations: ", "Max. coordinate correction in last iteration: ", "Datum definition: ", "Stochastic model: ", "Sd apriori: ", "Sd aposteriori: ", "Probability: ", "F estimated: ", "F quantile: ", "Model adequacy test: "),
-                                 Value = c("Weighted", "1D", 1, "0.0000 m",
+                                 Value = c("Weighted", "1D", params$iter, "0.001 m",
                                            if(length(which(data$points$FIX_1D))==1 || length(which(data$points$FIX_1D))==0){
                                              "Free 1D geodetic network"
                                            }else{"Unfree 1D geodetic network"},

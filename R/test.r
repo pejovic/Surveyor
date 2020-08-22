@@ -105,6 +105,7 @@ file_path <- here::here("Data/Input/Without_observations/xlsx/TETO_plan opazanja
 teto.snet <- read_surveynet(file = file_path)
 plot_surveynet(snet = teto.snet, webmap = TRUE, net.1D = FALSE, net.2D = TRUE)
 teto.snet.adj <- adjust.snet(adjust = FALSE, survey.net = teto.snet, dim_type = "2D", sd.apriori = 1 ,  all = FALSE)
+plot_surveynet(snet.adj = teto.snet.adj, webmap = TRUE, net.1D = FALSE, net.2D = TRUE)
 
 
 adj.net_spatial_view_web(ellipses = brana.snet.adj[[1]]$ellipse.net, observations = brana.snet.adj[[2]], points = brana.snet.adj[[1]]$net.points, sp_bound = 2, rii_bound = 1)
@@ -121,6 +122,10 @@ gorica1.snet <- read_surveynet(file = file_path)
 plot_surveynet(snet = gorica1.snet, webmap = FALSE, net.1D = FALSE, net.2D = TRUE)
 gorica1.snet.adj <- adjust.snet(adjust = TRUE, survey.net = gorica1.snet, dim_type = "2D", sd.apriori = 1 ,  all = FALSE)
 
+file_path <- here::here("Data/Input/With_observations/Avala/Avala_mreza.xlsx")
+avala.snet <- read_surveynet(file = file_path)
+plot_surveynet(snet = gorica0.snet, webmap = FALSE, net.1D = FALSE, net.2D = TRUE)
+gorica0.snet.adj <- adjust.snet(adjust = TRUE, survey.net = gorica0.snet, dim_type = "2D", sd.apriori = 1 ,  all = FALSE)
 
 
 

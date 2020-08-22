@@ -1020,11 +1020,12 @@ shinyServer(function(input, output){
     data <- list("points" = edited_points_xlsx_wO, "observations" = edited_observations_xlsx_wO)
     sd.estimated <- adjusted_net_adj()$test$sd.aposteriori
     df <- adjusted_net_adj()$test$df
+    iter <- adjusted_net_adj()$test$iter
 
     model <- model_adequacy_test.shiny(sd.apriori = input$st_apriori_adj_xlsx, sd.estimated = sd.estimated, df = df, prob = 0.95)
 
     summary.adjustment <- data.frame(Parameter = c("Type: ", "Dimension: ", "Number of iterations: ", "Max. coordinate correction in last iteration: ", "Datum definition: ", "Sd apriori: ", "Sd aposteriori: ", "Probability: ", "F estimated: ", "F quantile: ", "Model adequacy test: "),
-                                     Value = c("Weighted", "2D", 1, "0.0000 m",
+                                     Value = c("Weighted", "2D", iter, "0.001 m",
                                                if(all(data$points$FIX_2D == FALSE)){
                                                  "Datum defined with a minimal trace of the matrix Qx"
                                                }else{"Fixed parameters - classically defined datum"},
@@ -1330,6 +1331,7 @@ shinyServer(function(input, output){
       sd.estimated <- adjusted_net_adj()$test$sd.aposteriori
       df <- adjusted_net_adj()$test$df
       sd.apriori <- input$st_apriori_adj_xlsx
+      iter <- adjusted_net_adj()$test$iter
 
       params <- list(data = data,
                      ellipses = ellipses,
@@ -1345,7 +1347,8 @@ shinyServer(function(input, output){
                      epsg = epsg,
                      sd.estimated = sd.estimated,
                      sd.apriori = sd.apriori,
-                     df = df)
+                     df = df,
+                     iter = iter)
 
       rmarkdown::render(tempReport, output_file = file,
                         params = params,
@@ -1822,10 +1825,11 @@ output$adj1d.summ.adj <- eventReactive(input$adjust_1d.a,{
     sd.estimated <- adjusted_1d.net_a()$test$sd.aposteriori
     df <- adjusted_1d.net_a()$test$df
     model <- model_adequacy_test.shiny(sd.apriori = input$sd_apriori_dh.a, sd.estimated = sd.estimated, df = df, prob = 0.95)
+    iter <- adjusted_1d.net_a()$test$iter
 
   if(length(data_up) == 0){
     summary.adjustment <- data.frame(Parameter = c("Type: ", "Dimension: ", "Number of iterations: ", "Max. coordinate correction in last iteration: ", "Datum definition: ", "Stochastic model: ", "Sd apriori: ", "Sd aposteriori: ", "Probability: ", "F estimated: ", "F quantile: ", "Model adequacy test: "),
-                                     Value = c("Weighted", "1D", 1, "0.0000 m",
+                                     Value = c("Weighted", "1D", iter, "0.001 m",
                                                if(length(which(data$points$FIX_1D))==1 || length(which(data$points$FIX_1D))==0){
                                                  "Free 1D geodetic network"
                                                }else{"Unfree 1D geodetic network"},
@@ -1846,7 +1850,7 @@ output$adj1d.summ.adj <- eventReactive(input$adjust_1d.a,{
 
   } else{
     summary.adjustment <- data.frame(Parameter = c("Type: ", "Dimension: ", "Number of iterations: ", "Max. coordinate correction in last iteration: ", "Datum definition: ", "Stochastic model: ", "Sd apriori: ", "Sd aposteriori: ", "Probability: ", "F estimated: ", "F quantile: ", "Model adequacy test: "),
-                                     Value = c("Weighted", "1D", 1, "0.0000 m",
+                                     Value = c("Weighted", "1D", iter, "0.001 m",
                                                if(length(which(data_up$points$FIX_1D))==1 || length(which(data_up$points$FIX_1D))==0){
                                                  "Free 1D geodetic network"
                                                }else{"Unfree 1D geodetic network"},
@@ -2096,6 +2100,7 @@ output$report1Dadjust_xlsx <- downloadHandler(
     sd.estimated <- adjusted_1d.net_a()$test$sd.aposteriori
     df <- adjusted_1d.net_a()$test$df
     sd.apriori <- input$sd_apriori_dh.a
+    iter <- adjusted_1d.net_a()$test$iter
 
 
     params <- list(model = model,
@@ -2106,7 +2111,8 @@ output$report1Dadjust_xlsx <- downloadHandler(
                    rii_bound = rii_bound,
                    sd.estimated = sd.estimated,
                    df = df,
-                   sd.apriori = sd.apriori)
+                   sd.apriori = sd.apriori,
+                   iter = iter)
 
     rmarkdown::render(tempReport, output_file = file,
                       params = params,

@@ -29,6 +29,7 @@
 #'   sd.apriori: NA
 #'   sd.estimated: NA
 #'   df: NA
+#'   iter: NA
 #' ---
 #'
 #'<img src="Grb_Gradjevinski.png" align="center" alt="logo" width="180" height = "220" style = "border: none; fixed: right;">
@@ -108,7 +109,7 @@ mycolors=c("#f32440","#2185ef","#d421ef")
 model <- model_adequacy_test.shiny(sd.apriori = params$sd.apriori, sd.estimated = params$sd.estimated, df = params$df, prob = 0.95)
 
 summary.adjustment <- data.frame(Parameter = c("Type: ", "Dimension: ", "Number of iterations: ", "Max. coordinate correction in last iteration: ", "Datum definition: ", "Sd apriori: ", "Sd aposteriori: ", "Probability: ", "F estimated: ", "F quantile: ", "Model adequacy test: "),
-                                 Value = c("Weighted", "2D", 1, "0.0000 m",
+                                 Value = c("Weighted", "2D", params$iter, "0.001 m",
                                            if(all(params$data$points$FIX_2D == FALSE)){
                                              "Datum defined with a minimal trace of the matrix Qx"
                                            }else{"Fixed parameters - classically defined datum"},

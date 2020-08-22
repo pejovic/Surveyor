@@ -755,7 +755,7 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
 
   # OVO JE DODATO ZA SHINY
   if(adjust){
-    results <- list(design_matrices = list(A = A.mat, W = W.mat, Qx = Qx.mat, Ql = Ql.mat, Qv = Qv.mat), Points = points, Observations = observations, test = list(sd.aposteriori = sd.estimated, sd.apriori = sd.apriori, df = df, prob = 0.95))
+    results <- list(design_matrices = list(A = A.mat, W = W.mat, Qx = Qx.mat, Ql = Ql.mat, Qv = Qv.mat), Points = points, Observations = observations, test = list(sd.aposteriori = sd.estimated, sd.apriori = sd.apriori, df = df, prob = 0.95, iter = iter))
   }else{
     results <- list(design_matrices = list(A = A.mat, W = W.mat, Qx = Qx.mat, Ql = Ql.mat, Qv = Qv.mat), Points = points, Observations = observations)
   }
@@ -987,12 +987,24 @@ plot_surveynet <- function(snet = NULL, snet.adj = NULL, webmap = FALSE, net.1D 
           sp == sp_bound ~  paste("=",sp_bound)))
 
         observations %<>% dplyr::mutate(fill = dplyr::case_when(
-          rii > rii_bound ~  paste(">",rii_bound),
           rii < rii_bound ~  paste("<",rii_bound),
+          rii > rii_bound ~  paste(">",rii_bound),
           rii == rii_bound ~  paste("=",rii_bound)
           ))
 
-        webmap.net.adj <- mapview(points, zcol = "Point_type", col.regions = c("red","grey"), layer.name = "Points_type") + mapview(ellipses, zcol = "fill", col.regions = c("yellow", "red"), layer.name = paste("StDev Position [",result.units,"]", sep = "")) + mapview(observations, zcol = "fill", color = c("orange", "red"), layer.name = "Reliability measure rii [/]")
+        pink2 = colorRampPalette(c('deeppink', 'orange'))
+
+        observation.dir <- observations %>%
+          dplyr::filter(type == "direction")
+        observation.dis <- observations %>%
+          dplyr::filter(type == "distance")
+
+
+        webmap.net.adj <- mapview(points, zcol = "Point_type", col.regions = c("red","grey"), layer.name = "Points_type") +
+          mapview(ellipses, zcol = "fill", col.regions = c("yellow", "red"), layer.name = paste("StDev Position [",result.units,"]", sep = ""))+ #+
+          #mapview(observations, zcol = "fill", color = c("red", "orange"), layer.name = "Reliability measure rii [/]")+
+          mapview(observation.dir, zcol = "fill", color = pink2, at = seq(0,1,rii_bound), layer.name = "Reliability measure rii [/] - direction")+
+          mapview(observation.dis, zcol = "fill", color = pink2, at = seq(0,1,rii_bound), layer.name = "Reliability measure rii [/] - distance")
 
         return(webmap.net.adj)
 
