@@ -33,7 +33,7 @@ library(DT)
 library(leaflet.extras)
 library(rhandsontable)
 library(shinyBS)
-
+library(kableExtra)
 
 shinyUI(
   tagList(
@@ -47,9 +47,7 @@ shinyUI(
       theme = shinytheme("flatly"),
                            tabPanel("MAIN",
                                  fluidRow(
-                                   column(width = 6,
-                                          div(img(src ="Grb_Gradjevinski.png", height = 370, width = 297), style="text-align: center;")
-                                            ),
+                                   column(width = 6, div(img(src ="Grb_Gradjevinski.png", height = 370, width = 297), style="text-align: center;")),
                                    column(width = 6,
                                           h3("Project: Surveyor"),
                                           p("Description: Package of Land and Engineering Surveying utilities"),
@@ -77,10 +75,11 @@ shinyUI(
                                                                                           navlistPanel(
                                                                                             tabPanel("STOCHACTIC MODEL",
                                                                                                      fluidRow(
-                                                                                                       p("Please select one to define the weights", style="text-align: left; font-weight: bold; font-colour: red"),
+                                                                                                       p("Please select one to define the weights", style="text-align: left; font-weight: bold; font-colour: red")
                                                                                                      ),
                                                                                                      fluidRow(
-                                                                                                       checkboxGroupInput("dh.s.model", "Stochastic model:", c("Standard deviation for height difference [mm]" = "sd_dh",
+                                                                                                       p(""),
+                                                                                                       checkboxGroupInput(inputId = "dh.s.model", label = "Stochastic model:",choices =  c("Standard deviation for height difference [mm]" = "sd_dh",
                                                                                                                                                                "Leveling distances [km]" = "d_dh",
                                                                                                                                                                "Number of stations" = "n_dh",
                                                                                                                                                                "Unit weights - identity matrix" = "E"))
@@ -146,6 +145,16 @@ shinyUI(
                                                                         ),
                                                                         column(width = 6, "DESIGN 1D NET RESULTS",
                                                                                tabsetPanel(
+                                                                                 tabPanel("SUMMARY",
+                                                                                          p(""),
+                                                                                          navlistPanel(
+                                                                                            tabPanel("Network design", tableOutput("design1d.summ.des")%>% withSpinner(color="#0dc5c1")),
+                                                                                            tabPanel("Stations", tableOutput("design1d.summ.stations")%>% withSpinner(color="#0dc5c1")),
+                                                                                            tabPanel("Observations", tableOutput("design1d.summ.observations")%>% withSpinner(color="#0dc5c1")),
+                                                                                            tabPanel("Unknowns", tableOutput("design1d.summ.unknowns")%>% withSpinner(color="#0dc5c1")),
+                                                                                            tabPanel("Degrees of freedom", tableOutput("design1d.summ.degrees")%>% withSpinner(color="#0dc5c1"))
+                                                                                          )
+                                                                                 ),
                                                                                  tabPanel("MAP RESULTS",
                                                                                           p(""),
                                                                                           plotlyOutput("netSpatialView_1d_design") %>% withSpinner(color="#0dc5c1")
@@ -170,9 +179,9 @@ shinyUI(
                                                                       )
 
 
-                                                                    ),
-                                                             tabPanel("MAP INPUT DATA",
-                                                                      p(""),
+                                                                    )#,
+                                                             #tabPanel("MAP INPUT DATA",
+                                                                      #p("")#,
                                                                       # fluidRow(
                                                                       #  column(width = 6, "DATA PREPARATION",
                                                                       #         tabsetPanel(
@@ -281,7 +290,7 @@ shinyUI(
                                                                       #  )
 #
                                                                       #)
-                                                                    )
+                                                                    #)
                                                            )
                                                 ),
                                                 tabPanel("2D DESIGN",
@@ -366,6 +375,16 @@ shinyUI(
                                                                                ),
                                                                         column(width = 6, "DESIGN NET RESULTS",
                                                                                tabsetPanel(
+                                                                                 tabPanel("SUMMARY",
+                                                                                          p(""),
+                                                                                          navlistPanel(
+                                                                                            tabPanel("Network design", tableOutput("deisgn2d.summ.des")%>% withSpinner(color="#0dc5c1")),
+                                                                                            tabPanel("Stations", tableOutput("design2d.summ.stations")%>% withSpinner(color="#0dc5c1")),
+                                                                                            tabPanel("Observations", tableOutput("design2d.summ.observations")%>% withSpinner(color="#0dc5c1")),
+                                                                                            tabPanel("Unknowns", tableOutput("design2d.summ.unknowns")%>% withSpinner(color="#0dc5c1")),
+                                                                                            tabPanel("Degrees of freedom", tableOutput("design2d.summ.degrees")%>% withSpinner(color="#0dc5c1"))
+                                                                                          )
+                                                                                 ),
                                                                                  tabPanel("MAP RESULTS",
                                                                                           p(""),
                                                                                           leafletOutput("map_ellipses_opt", height = 550) %>% withSpinner(color="#0dc5c1")
@@ -470,6 +489,16 @@ shinyUI(
                                                                         ),
                                                                         column(width = 6, "DESIGN NET RESULTS",
                                                                                tabsetPanel(
+                                                                                 tabPanel("SUMMARY",
+                                                                                          p(""),
+                                                                                          navlistPanel(
+                                                                                            tabPanel("Network design", tableOutput("deisgn2dme.summ.des")%>% withSpinner(color="#0dc5c1")),
+                                                                                            tabPanel("Stations", tableOutput("design2dme.summ.stations")%>% withSpinner(color="#0dc5c1")),
+                                                                                            tabPanel("Observations", tableOutput("design2dme.summ.observations")%>% withSpinner(color="#0dc5c1")),
+                                                                                            tabPanel("Unknowns", tableOutput("design2dme.summ.unknowns")%>% withSpinner(color="#0dc5c1")),
+                                                                                            tabPanel("Degrees of freedom", tableOutput("design2dme.summ.degrees")%>% withSpinner(color="#0dc5c1"))
+                                                                                          )
+                                                                                 ),
                                                                                  tabPanel("MAP RESULTS",
                                                                                           p(""),
                                                                                           leafletOutput("map_ellipses_opt_me", height = 550) %>% withSpinner(color="#0dc5c1")
@@ -521,9 +550,10 @@ shinyUI(
                                                                                         navlistPanel(
                                                                                           tabPanel("STOCHACTIC MODEL",
                                                                                                    fluidRow(
-                                                                                                     p("Please select one to define the weights", style="text-align: left; font-weight: bold; font-colour: red"),
+                                                                                                     p("Please select one to define the weights", style="text-align: left; font-weight: bold; font-colour: red")
                                                                                                    ),
                                                                                                    fluidRow(
+                                                                                                     p(""),
                                                                                                      checkboxGroupInput("dh.s.model.a", "Stochastic model:", c("Standard deviation for height difference [mm]" = "sd_dh",
                                                                                                                                                              "Leveling distances [km]" = "d_dh",
                                                                                                                                                              "Number of stations" = "n_dh",
@@ -583,6 +613,16 @@ shinyUI(
                                                                       ),
                                                                       column(width = 6, "ADJUSTMENT 1D NET RESULTS",
                                                                              tabsetPanel(
+                                                                               tabPanel("SUMMARY",
+                                                                                        p(""),
+                                                                                        navlistPanel(
+                                                                                          tabPanel("Network adjustment", tableOutput("adj1d.summ.adj")%>% withSpinner(color="#0dc5c1")),
+                                                                                          tabPanel("Stations", tableOutput("adj1d.summ.stations")%>% withSpinner(color="#0dc5c1")),
+                                                                                          tabPanel("Observations", tableOutput("adj1d.summ.observations")%>% withSpinner(color="#0dc5c1")),
+                                                                                          tabPanel("Unknowns", tableOutput("adj1d.summ.unknowns")%>% withSpinner(color="#0dc5c1")),
+                                                                                          tabPanel("Degrees of freedom", tableOutput("adj1d.summ.degrees")%>% withSpinner(color="#0dc5c1"))
+                                                                                        )
+                                                                               ),
                                                                                tabPanel("MAP RESULTS",
                                                                                         p(""),
                                                                                         plotlyOutput("netSpatialView_1d_a") %>% withSpinner(color="#0dc5c1")
@@ -595,7 +635,8 @@ shinyUI(
                                                                                           tabPanel("Plots", plotlyOutput("netSpatialView_1d_adj") %>% withSpinner(color="#0dc5c1"))
                                                                                         )
                                                                                ),
-                                                                               tabPanel("EXPORT RESULTS"#,
+                                                                               tabPanel("EXPORT RESULTS",
+                                                                                        downloadButton("report1Dadjust_xlsx", "Generate report")
                                                                                         #actionButton(inputId ='modal_plot_1d.a', label='PLOT', class = "btn-danger"),
                                                                                         #bsModal("modalExample1d", "Plot - 1D net design", "modal_plot_1d.a", size = "large", plotOutput("netSpatialView_1d_modal.a"), downloadButton('downloadPlot1d', 'Download'))
                                                                                )
@@ -691,6 +732,16 @@ shinyUI(
                                                                        ),
                                                                        column(width = 6, "ADJUSTMENT RESULTS",
                                                                               tabsetPanel(
+                                                                                tabPanel("SUMMARY",
+                                                                                         p(""),
+                                                                                         navlistPanel(
+                                                                                           tabPanel("Network adjustment", tableOutput("adj2d.summ.adj") %>% withSpinner(color="#0dc5c1")),
+                                                                                           tabPanel("Stations", tableOutput("adj2d.summ.stations")%>% withSpinner(color="#0dc5c1")),
+                                                                                           tabPanel("Observations", tableOutput("adj2d.summ.observations")%>% withSpinner(color="#0dc5c1")),
+                                                                                           tabPanel("Unknowns", tableOutput("adj2d.summ.unknowns")%>% withSpinner(color="#0dc5c1")),
+                                                                                           tabPanel("Degrees of freedom", tableOutput("adj2d.summ.degrees")%>% withSpinner(color="#0dc5c1"))
+                                                                                         )
+                                                                                ),
                                                                                 tabPanel("MAP RESULTS",
                                                                                          p(""),
                                                                                          #verbatimTextOutput('tekstputanja'),

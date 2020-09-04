@@ -426,6 +426,27 @@ model_adequacy_test <- function(sd.apriori, sd.estimated, df, prob){
     # print(paste(round(F.estimated, 2), "<", round(F.quantile, 2), "Model is correct", sep = " "))
 }
 
+model_adequacy_test.shiny <- function(sd.apriori, sd.estimated, df, prob){
+  if(sd.estimated > sd.apriori){
+    F.estimated <- sd.estimated^2/sd.apriori^2
+    F.quantile <- qf(p = prob, df1 = df, df2 = 10^1000)
+  }else{
+    F.estimated <- sd.apriori^2/sd.estimated^2
+    F.quantile <- qf(p = prob, df1 = 10^1000, df2 = df)
+  }
+
+  mlist <- list(F.estimated = F.estimated, F.quantile = F.quantile,
+                model = if(F.estimated < F.quantile){
+                  paste("sd.estimated =", round(sd.estimated, 2), "/ sd.apriori =", round(sd.apriori, 2), "/ Model is correct", sep = " ")} else{
+                  paste("sd.estimated =", round(sd.estimated, 2), "/ sd.apriori =", round(sd.apriori, 2), "/ Model is not correct", sep = " ")
+                }
+                  )
+  return(mlist)
+  # print(paste(round(F.estimated, 2), ">", round(F.quantile, 2), "Model is not correct", sep = " "))
+  # Data snooping and others have to be put in the list
+  # print(paste(round(F.estimated, 2), "<", round(F.quantile, 2), "Model is correct", sep = " "))
+}
+
 
 Amat1D <- function(survey.net){
   used_points <- unique(c(survey.net$observations$from, survey.net$observations$to))
@@ -550,6 +571,7 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
         tds <- data.frame(Observation = rownames(A.mat), statistics = as.numeric(abs(v.mat)/(sd.apriori*sqrt(diag(Qv.mat))))) %>% dplyr::arrange(., desc(statistics))
         print("Check the statistics for individual observations. Suggestion: Remove the observation with the highest value of the statistics:")
         print(tds)
+        return(tds)
         stop()
       }
       if(use.sd.estimated){sd.apriori <- sd.estimated}
@@ -673,6 +695,7 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
         tds <- data.frame(Observation = rownames(A.mat), statistics = as.numeric(abs(v.mat)/(sd.apriori*sqrt(diag(Qv.mat))))) %>% dplyr::arrange(., desc(statistics))
         print("Check the statistics for individual observations. Suggestion: Remove the observation with the highest value of statistics:")
         print(tds)
+        return(tds)
         stop()
       }
       if(use.sd.estimated){sd.apriori <- sd.estimated}
@@ -727,7 +750,12 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
     # results$net.points <- sf::st_set_crs(results$net.points, value = st_crs(survey.net[[2]])) TODO: gubi se projekcija pa ovo ne moze da se uradi.
   }
 
-  results <- list(design_matrices = list(A = A.mat, W = W.mat, Qx = Qx.mat, Ql = Ql.mat, Qv = Qv.mat), Points = points, Observations = observations)
+  # OVO JE DODATO ZA SHINY
+  if(adjust){
+    results <- list(design_matrices = list(A = A.mat, W = W.mat, Qx = Qx.mat, Ql = Ql.mat, Qv = Qv.mat), Points = points, Observations = observations, test = list(sd.aposteriori = sd.estimated, sd.apriori = sd.apriori, df = df, prob = 0.95, iter = iter))
+  }else{
+    results <- list(design_matrices = list(A = A.mat, W = W.mat, Qx = Qx.mat, Ql = Ql.mat, Qv = Qv.mat), Points = points, Observations = observations)
+  }
 
 
   if(all){
@@ -761,7 +789,7 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
 # net.2D = TRUE
 # snet.adj = brana.snet.adj
 
-plot_surveynet <- function(snet = NULL, snet.adj = NULL, webmap = FALSE, net.1D = FALSE, net.2D = FALSE, ellipse.scale = 10, result.units = "mm", sp_bound = 2, rii_bound = 0.3){
+plot_surveynet <- function(snet = NULL, snet.adj = NULL, webmap = FALSE, net.1D = FALSE, net.2D = FALSE, ellipse.scale = 10, result.units = "mm", sp_bound = 2, rii_bound = 0.3, epsg = 3857){
 
   if(!is.null(snet)){
 
@@ -779,15 +807,15 @@ plot_surveynet <- function(snet = NULL, snet.adj = NULL, webmap = FALSE, net.1D 
     if(webmap == TRUE){
 
       if(is.na(sf::st_crs(points)) == TRUE) {
-        points %<>% sf::st_set_crs(., 3857)
+        points %<>% sf::st_set_crs(., epsg)
       }
 
       if(is.na(sf::st_crs(observations)) == TRUE) {
-        observations %<>% sf::st_set_crs(., 3857)
+        observations %<>% sf::st_set_crs(., epsg)
       }
 
-      points <- st_transform(points, 3857)
-      observations <- st_transform(observations, 3857)
+      points <- st_transform(points, epsg)
+      observations <- st_transform(observations, epsg)
 
       webmap.net <- mapview(points, zcol = "Point_type", col.regions = c("red","grey")) + mapview(observations, zcol = "Observation_type")
       return(webmap.net)
@@ -932,20 +960,20 @@ plot_surveynet <- function(snet = NULL, snet.adj = NULL, webmap = FALSE, net.1D 
       if(webmap == TRUE){
 
         if(is.na(sf::st_crs(points)) == TRUE) {
-          points %<>% sf::st_set_crs(., 3857)
+          points %<>% sf::st_set_crs(., epsg)
         }
 
         if(is.na(sf::st_crs(observations)) == TRUE) {
-          observations %<>% sf::st_set_crs(., 3857)
+          observations %<>% sf::st_set_crs(., epsg)
         }
 
         if(is.na(sf::st_crs(ellipses)) == TRUE) {
-          ellipses %<>% sf::st_set_crs(., 3857)
+          ellipses %<>% sf::st_set_crs(., epsg)
         }
 
-        points %<>% sf::st_transform(., 3857)
-        observations %<>% sf::st_transform(., 3857)
-        ellipses %<>% sf::st_transform(., 3857)
+        points %<>% sf::st_transform(., epsg)
+        observations %<>% sf::st_transform(., epsg)
+        ellipses %<>% sf::st_transform(., epsg)
 
         points %<>% dplyr::mutate(Point_type = dplyr::case_when(Point_object == FALSE ~ "Geodetic network",
                                                                 Point_object == TRUE ~ "Points at object"))
@@ -956,12 +984,24 @@ plot_surveynet <- function(snet = NULL, snet.adj = NULL, webmap = FALSE, net.1D 
           sp == sp_bound ~  paste("=",sp_bound)))
 
         observations %<>% dplyr::mutate(fill = dplyr::case_when(
-          rii > rii_bound ~  paste(">",rii_bound),
           rii < rii_bound ~  paste("<",rii_bound),
+          rii > rii_bound ~  paste(">",rii_bound),
           rii == rii_bound ~  paste("=",rii_bound)
           ))
 
-        webmap.net.adj <- mapview(points, zcol = "Point_type", col.regions = c("red","grey"), layer.name = "Points_type") + mapview(ellipses, zcol = "fill", col.regions = c("yellow", "red"), layer.name = paste("StDev Position [",result.units,"]", sep = "")) + mapview(observations, zcol = "fill", color = c("orange", "red"), layer.name = "Reliability measure rii [/]")
+        pink2 = colorRampPalette(c('deeppink', 'orange'))
+
+        observation.dir <- observations %>%
+          dplyr::filter(type == "direction")
+        observation.dis <- observations %>%
+          dplyr::filter(type == "distance")
+
+
+        webmap.net.adj <- mapview(points, zcol = "Point_type", col.regions = c("red","grey"), layer.name = "Points_type") +
+          mapview(ellipses, zcol = "fill", col.regions = c("yellow", "red"), layer.name = paste("StDev Position [",result.units,"]", sep = ""))+ #+
+          #mapview(observations, zcol = "fill", color = c("red", "orange"), layer.name = "Reliability measure rii [/]")+
+          mapview(observation.dir, zcol = "fill", color = pink2, at = seq(0,1,rii_bound), layer.name = "Reliability measure rii [/] - direction")+
+          mapview(observation.dis, zcol = "fill", color = pink2, at = seq(0,1,rii_bound), layer.name = "Reliability measure rii [/] - distance")
 
         return(webmap.net.adj)
 

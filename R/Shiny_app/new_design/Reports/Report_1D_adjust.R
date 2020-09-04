@@ -1,5 +1,5 @@
 #' ---
-#' title: "Report - 1D geodetic network design"
+#' title: "Report - 1D geodetic network adjustment"
 #' author:
 #'    - "surveyor - R package"
 #' date: "`r format(Sys.time(), '%d %B %Y')`"
@@ -14,24 +14,22 @@
 #'      fig_caption: yes
 #'
 #' params:
-#'   ellipses: NA,
-#'   observations: NA,
-#'   points: NA,
-#'   sp_bound: NA,
+#'   model: NA,
+#'   data: NA,
+#'   data_up: NA,
+#'   net1d_adj: NA,
+#'   sd_h_bound: NA,
 #'   rii_bound: NA
-#'   sx_bound: NA
-#'   sy_bound: NA
-#'   ellipse_scale: NA
-#'   result_units: NA
-#'   adjusted_net_adj: NA
+#'   sd.apriori: NA
+#'   sd.estimated: NA
+#'   df: NA
+#'   iter: NA
 #' ---
 #'
-#'<img src="Grb_Gradjevinski.png" align="center" alt="logo" width="180" height = "200" style = "border: none; fixed: right;">
+#'<img src="Grb_Gradjevinski.png" align="center" alt="logo" width="180" height = "220" style = "border: none; fixed: right;">
 #'
 #'
 #+ include = TRUE, echo = FALSE, results = 'hide', warning = FALSE, message = FALSE
-source(here::here("R/deprecated/input_functions.r"))
-source(here::here("R/deprecated/inputFunction_withObservations.R"))
 source(here::here("R/functions.r"))
 
 #+ include = TRUE, echo = FALSE, results = 'hide', warning = FALSE, message = FALSE
@@ -41,14 +39,11 @@ library(leaflet)
 library(tidyverse)
 library(magrittr)
 library(ggplot2)
-#library(geomnet)
-#library(ggnetwork)
 library(sf)
 library(ggmap)
 library(sp)
 library(rgdal)
 library(leaflet)
-#library(xlsx)
 library(readxl)
 library(data.table)
 library(plotly)
@@ -68,6 +63,7 @@ library(knitr)
 library(rmarkdown)
 library(knitr)
 library(kableExtra)
+
 
 
 #'
@@ -95,122 +91,145 @@ my_theme <- function(base_size = 10, base_family = "sans"){
 theme_set(my_theme())
 mycolors=c("#f32440","#2185ef","#d421ef")
 #+ echo = FALSE, message = FALSE, warning = FALSE
-#' This report provides the main results regarding the adjustment of 2D geodetic network.
+#' This report provides the main results regarding the design of 1D geodetic network.
+#'
+#' # Summary
+#+ echo = FALSE, message = FALSE, warning = FALSE
+
+if(length(params$data_up) == 0){
+  data = params$data
+}else{
+  data = params$data_up
+}
+
+modeltest <- model_adequacy_test.shiny(sd.apriori = params$sd.apriori, sd.estimated = params$sd.estimated, df = params$df, prob = 0.95)
+
+
+summary.adjustment <- data.frame(Parameter = c("Type: ", "Dimension: ", "Number of iterations: ", "Max. coordinate correction in last iteration: ", "Datum definition: ", "Stochastic model: ", "Sd apriori: ", "Sd aposteriori: ", "Probability: ", "F estimated: ", "F quantile: ", "Model adequacy test: "),
+                                 Value = c("Weighted", "1D", params$iter, "0.001 m",
+                                           if(length(which(data$points$FIX_1D))==1 || length(which(data$points$FIX_1D))==0){
+                                             "Free 1D geodetic network"
+                                           }else{"Unfree 1D geodetic network"},
+                                           params$model,
+                                           params$sd.apriori,
+                                           round(params$sd.estimated,5),
+                                           0.95,
+                                           round(modeltest$F.estimated, 5),
+                                           round(modeltest$F.quantile, 5),
+                                           modeltest$model
+
+                                 ))
+
+summary.adjustment %>%
+  kable(caption = "Network adjustment", digits = 4, align = "c", col.names = NULL) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = TRUE)%>%
+  row_spec(12, bold = T, color = "white", background = "#D7261E")
+
+summary.stations <- data.frame(Parameter = c("Number of (partly) known stations: ", "Number of unknown stations: ", "Total: "),
+                               Value = c(sum(data$points$FIX_1D == TRUE),
+                                         sum(data$points$FIX_1D == FALSE),
+                                         sum(data$points$FIX_1D == TRUE) + sum(data$points$FIX_1D == FALSE)))
+
+summary.stations %>%
+  kable(caption = "Stations", digits = 4, align = "c", col.names = NULL) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = TRUE)
+
+summary.observations <- data.frame(Parameter = c("Leveled Height Differences: ", "Known coordinates: ", "Total: "),
+                                   Value = c(sum(data$observations$diff_level == TRUE),
+                                             sum(data$points$FIX_1D == TRUE)*1,
+                                             sum(data$observations$diff_level == TRUE)+sum(data$points$FIX_1D == TRUE)*1))
+
+summary.observations %>%
+  kable(caption = "Observations", digits = 4, align = "c", col.names = NULL) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = TRUE)
+
+summary.unknowns <- data.frame(Parameter = c("Coordinates: ", "Total: "),
+                               Value = c(sum(data$points$FIX_1D == FALSE)*1,
+                                         sum(data$points$FIX_1D == FALSE)*1))
+
+summary.unknowns %>%
+  kable(caption = "Unknowns", digits = 4, align = "c", col.names = NULL) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = TRUE)
+
+summary.degrees <- data.frame(Parameter = "Degrees of freedom: ",
+                              Value = (sum(data$observations$diff_level == TRUE)+sum(data$points$FIX_1D == TRUE))-sum(data$points$FIX_1D == FALSE))
+
+summary.degrees %>%
+  kable(caption = "Degrees of freedom: ", digits = 4, align = "c", col.names = NULL) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = TRUE)
+
+
+#'
+#'
 #'
 #+ echo = FALSE, message = FALSE, warning = FALSE
-adj.net_map <- plot_surveynet(snet.adj = params$adjusted_net_adj, webmap = TRUE, net.1D = FALSE, net.2D = TRUE, sp_bound = params$sp_bound, rii_bound = params$rii_bound, ellipse.scale = params$ellipse_scale, result.units = params$result_units) # DOPUNITI ZA RESULT UNITS
-
+adj.1dnet_map <- plot_surveynet(snet.adj = params$net1d_adj, webmap = FALSE, net.1D = TRUE, net.2D = FALSE)
 #'
-#' # Map results
+#' # Plot results
 #+ echo = FALSE, result = TRUE, eval = TRUE, out.width="100%"
-adj.net_map
-
+adj.1dnet_map
 
 #'
 #' # Tab results
-#' ## Error ellipse
-#'
-#+ echo = FALSE, result = TRUE, eval = TRUE, out.width="100%"
-  DT::datatable(
-    params$ellipses %>%
-      st_drop_geometry() %>%
-      as.data.frame() %>%
-      mutate(
-        A = round(A, 1),
-        B = round(B, 1),
-        teta = round(teta, 1),
-        sx = round(sx, 1),
-        sy = round(sy, 1),
-        sp = round(sp, 1)
-      ), escape = FALSE,
-    extensions = list('Buttons', 'Responsive'),
-    options = list(dom = 'Bfrtip', pageLength = 100, lengthMenu = c(5, 10, 15, 20))) %>%
-    formatStyle(
-      'sx',
-      color = styleInterval(c(params$sx_bound), c('black', 'red'))#,
-      #backgroundColor = styleInterval(input$sx_map, c('lightGray', 'tomato'))
-    ) %>%
-    formatStyle(
-      'sy',
-      color = styleInterval(c(params$sy_bound), c('black', 'red'))#,
-      #backgroundColor = styleInterval(input$sy_map, c('lightGray', 'tomato'))
-    ) %>%
-    formatStyle(
-      'sp',
-      color = styleInterval(c(params$sp_bound), c('black', 'red'))#,
-      #backgroundColor = styleInterval(input$sp_map, c('lightGray', 'tomato'))
-    )
-
-#'
 #' ## Net points
 #'
 #+ echo = FALSE, result = TRUE, eval = TRUE, out.width="100%"
-  DT::datatable(
-    params$points %>%
-      st_drop_geometry() %>%
+DT::datatable(
+    params$net1d_adj[[1]] %>%
       as.data.frame() %>%
       mutate(
-        A = round(A, 1),
-        B = round(B, 1),
-        teta = round(teta, 1),
-        sx = round(sx, 1),
-        sy = round(sy, 1),
-        sp = round(sp, 1),
-        `dx [mm]` = round(dx, 2),
-        `dy [mm]` = round(dy, 2),
-        X = round(x, 2),
-        Y = round(y, 2)
+        h0 = round(h0, 2),
+        dh = round(dh, 2),
+        h = round(h, 2),
+        sd_h = round(sd_h, 2)
       ) %>%
-      dplyr:: select(Name, `dx [mm]`, `dy [mm]`, X, Y, sx, sy, sp),
-    escape = FALSE,
-    extensions = list('Buttons', 'Responsive'),
-    options = list(dom = 'Bfrtip', pageLength = 100, lengthMenu = c(5, 10, 15, 20)))%>%
+      dplyr:: select(Name, FIX_1D, Point_object, h0, h, dh, sd_h),
+    escape=F,
+    extensions = list('Buttons', 'Scroller'),
+    options = list(dom = 'Bfrtip', buttons = I('colvis'), pageLength = 100,
+                   deferRender = TRUE,
+                   scrollY = 500,
+                   scrollX = 300,
+                   scroller = TRUE)
+  ) %>%
     formatStyle(
-      'sx',
-      color = styleInterval(c(params$sx_bound), c('black', 'red'))#,
-      #backgroundColor = styleInterval(input$sx_map, c('lightGray', 'tomato'))
-    ) %>%
-    formatStyle(
-      'sy',
-      color = styleInterval(c(params$sy_bound), c('black', 'red'))#,
-      #backgroundColor = styleInterval(input$sy_map, c('lightGray', 'tomato'))
-    ) %>%
-    formatStyle(
-      'sp',
-      color = styleInterval(c(params$sp_bound), c('black', 'red'))#,
-      #backgroundColor = styleInterval(input$sp_map, c('lightGray', 'tomato'))
+      'sd_h',
+      color = styleInterval(c(params$sd_h_bound), c('black', 'aqua')),
+      backgroundColor = styleInterval(params$sd_h_bound, c('lightGray', '#FF6347'))
     )
 
+
+
+
+
 #'
-#' ## Obseravtions
+#' ## Observations
 #'
 #+ echo = FALSE, result = TRUE, eval = TRUE, out.width="100%"
-  DT::datatable(
-    params$observations %>%
-      st_drop_geometry() %>%
+DT::datatable(
+    params$net1d_adj[[2]] %>%
       as.data.frame() %>%
       mutate(
-        v = round(v, 2),
+        f = round(f, 2),
         Kl = round(Kl, 2),
         Kv = round(Kv, 2),
         rii = round(rii, 2)
       ) %>%
-      dplyr::select(from, to, type, Kl, Kv, rii, used),
-    escape = FALSE,
-    extensions = list('Buttons', 'Responsive'),
-    options = list(dom = 'Bfrtip', pageLength = 100, lengthMenu = c(5, 10, 15, 20, 50)))%>%
+      dplyr::select(from, to, type, f, Kl, Kv, rii),
+    escape=F,
+    extensions = list('Buttons', 'Scroller'),
+    options = list(dom = 'Bfrtip', buttons = I('colvis'), pageLength = 100,
+                   deferRender = TRUE,
+                   scrollY = 500,
+                   scrollX = 300,
+                   scroller = TRUE)
+  )%>%
     formatStyle(
       'rii',
       color = styleInterval(c(params$rii_bound), c('red', 'black')),
-      background = styleColorBar(params$adjusted_net_adj[[2]]$rii, 'steelblue'),
+      background = styleColorBar(params$net1d_adj[[2]]$rii, 'steelblue'),
       backgroundSize = '100% 90%',
       backgroundRepeat = 'no-repeat',
       backgroundPosition = 'center'
     )
-
-
-
-
-
-
 
