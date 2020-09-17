@@ -736,7 +736,6 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
                     y_to = survey.net[[1]]$y[match(observations$to, survey.net[[1]]$Name)])
 
     observations <- observations %>%
-      as.data.table(.) %>%
       dplyr::mutate(id = seq.int(nrow(.))) %>%
       split(., f = as.factor(.$id)) %>%
       lapply(., function(row) {lmat <- matrix(unlist(dplyr::select(row, x_from, y_from, x_to, y_to)), ncol = 2, byrow = TRUE)
