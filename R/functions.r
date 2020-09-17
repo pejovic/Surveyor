@@ -492,7 +492,7 @@ fmat1D <- function(survey.net, units = units){
 
 
 
-# adjust = TRUE; survey.net = brose; dim_type = "1D"; sd.apriori = 0.5; wdh_model = "n_dh"; n0 = 1; maxiter = 1; prob = 0.95; coord_tolerance = 1e-3; result.units = "mm"; ellipse.scale = 1; teta.unit = "dec"; units.dir = "sec"; units.dist = "mm"; use.sd.estimated = TRUE; all = TRUE
+# adjust = TRUE; survey.net = ispit; dim_type = "1D"; sd.apriori = 0.5; wdh_model = "n_dh"; n0 = 1; maxiter = 1; prob = 0.95; coord_tolerance = 1e-3; result.units = "mm"; ellipse.scale = 1; teta.unit = "dec"; units.dir = "sec"; units.dist = "mm"; use.sd.estimated = TRUE; all = TRUE
 
 adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), sd.apriori = 1, wdh_model = list("sd_dh", "d_dh", "n_dh", "E"), n0 = 1, maxiter = 50, prob = 0.95, coord_tolerance = 1e-3, result.units = list("mm", "cm", "m"), ellipse.scale = 1, teta.unit = list("deg", "rad"), units.dir = "sec", units.dist = "mm", use.sd.estimated = TRUE, all = TRUE){
   dim_type <- dim_type[[1]]
@@ -557,7 +557,7 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
         survey.net[[2]]$y_from <- survey.net[[1]]$y[match(survey.net[[2]]$from, survey.net[[1]]$Name)]
         survey.net[[2]]$x_to <- survey.net[[1]]$x[match(survey.net[[2]]$to, survey.net[[1]]$Name)]
         survey.net[[2]]$y_to <- survey.net[[1]]$y[match(survey.net[[2]]$to, survey.net[[1]]$Name)]
-        survey.net[[2]] <- as.data.table(survey.net[[2]]) %>% dplyr::mutate(id = seq.int(nrow(.))) %>% split(., f = as.factor(.$id)) %>%
+        survey.net[[2]] <- survey.net[[2]] %>% dplyr::mutate(id = seq.int(nrow(.))) %>% split(., f = as.factor(.$id)) %>%
           lapply(., function(row) {lmat <- matrix(unlist(row[c("x_from", "y_from", "x_to", "y_to")]), ncol = 2, byrow = TRUE)
           st_linestring(lmat)}) %>%
           sf::st_sfc() %>%
@@ -739,7 +739,7 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
       as.data.table(.) %>%
       dplyr::mutate(id = seq.int(nrow(.))) %>%
       split(., f = as.factor(.$id)) %>%
-      lapply(., function(row) {lmat <- matrix(unlist(row[c("x_from", "y_from", "x_to", "y_to")]), ncol = 2, byrow = TRUE)
+      lapply(., function(row) {lmat <- matrix(unlist(dplyr::select(row, x_from, y_from, x_to, y_to)), ncol = 2, byrow = TRUE)
       st_linestring(lmat)}) %>%
       sf::st_sfc() %>%
       sf::st_sf('ID' = seq.int(nrow(observations)), observations, 'geometry' = .) %>%
