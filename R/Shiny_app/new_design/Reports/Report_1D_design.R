@@ -14,12 +14,15 @@
 #'      fig_caption: yes
 #'
 #' params:
+#'   model: NA,
+#'   data: NA,
+#'   data_up: NA,
 #'   net1d_design: NA,
 #'   sd_h_bound: NA,
 #'   rii_bound: NA
 #' ---
 #'
-#'<img src="Grb_Gradjevinski.png" align="center" alt="logo" width="180" height = "200" style = "border: none; fixed: right;">
+#'<img src="Grb_Gradjevinski.png" align="center" alt="logo" width="180" height = "220" style = "border: none; fixed: right;">
 #'
 #'
 #+ include = TRUE, echo = FALSE, results = 'hide', warning = FALSE, message = FALSE
@@ -85,6 +88,63 @@ mycolors=c("#f32440","#2185ef","#d421ef")
 #+ echo = FALSE, message = FALSE, warning = FALSE
 #' This report provides the main results regarding the design of 1D geodetic network.
 #'
+#' # Summary
+#+ echo = FALSE, message = FALSE, warning = FALSE
+
+if(length(params$data_up) == 0){
+  data = params$data
+}else{
+  data = params$data_up
+}
+
+summary.adjustment <- data.frame(Parameter = c("Type: ", "Dimension: ", "Number of iterations: ", "Max. coordinate correction in last iteration: ", "Datum definition: ", "Stochastic model: "),
+                                 Value = c("Weighted", "1D", 1, "0.0000 m",
+                                           if(length(which(data$points$FIX_1D))==1 || length(which(data$points$FIX_1D))==0){
+                                             "Free 1D geodetic network"
+                                           }else{"Unfree 1D geodetic network"},
+                                           params$model
+                                 ))
+
+summary.adjustment %>%
+  kable(caption = "Network design", digits = 4, align = "c", col.names = NULL) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = TRUE)
+
+summary.stations <- data.frame(Parameter = c("Number of (partly) known stations: ", "Number of unknown stations: ", "Total: "),
+                               Value = c(sum(data$points$FIX_1D == TRUE),
+                                         sum(data$points$FIX_1D == FALSE),
+                                         sum(data$points$FIX_1D == TRUE) + sum(data$points$FIX_1D == FALSE)))
+
+summary.stations %>%
+  kable(caption = "Stations", digits = 4, align = "c", col.names = NULL) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = TRUE)
+
+summary.observations <- data.frame(Parameter = c("Leveled Height Differences: ", "Known coordinates: ", "Total: "),
+                                   Value = c(sum(data$observations$diff_level == TRUE),
+                                             sum(data$points$FIX_1D == TRUE)*1,
+                                             sum(data$observations$diff_level == TRUE)+sum(data$points$FIX_1D == TRUE)*1))
+
+summary.observations %>%
+  kable(caption = "Observations", digits = 4, align = "c", col.names = NULL) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = TRUE)
+
+summary.unknowns <- data.frame(Parameter = c("Coordinates: ", "Total: "),
+                               Value = c(sum(data$points$FIX_1D == FALSE)*1,
+                                         sum(data$points$FIX_1D == FALSE)*1))
+
+summary.unknowns %>%
+  kable(caption = "Unknowns", digits = 4, align = "c", col.names = NULL) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = TRUE)
+
+
+summary.degrees <- data.frame(Parameter = "Degrees of freedom: ",
+                              Value = (sum(data$observations$diff_level == TRUE)+sum(data$points$FIX_1D == TRUE))-sum(data$points$FIX_1D == FALSE))
+
+summary.degrees %>%
+  kable(caption = "Degrees of freedom: ", digits = 4, align = "c", col.names = NULL) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = TRUE)
+
+#'
+#'
 #+ echo = FALSE, message = FALSE, warning = FALSE
 adj.1dnet_map <- plot_surveynet(snet.adj = params$net1d_design, webmap = FALSE, net.1D = TRUE, net.2D = FALSE)
 #'
@@ -107,7 +167,7 @@ DT::datatable(
     dplyr:: select(Name, FIX_1D, Point_object, h, sd_h),
   escape=F,
   extensions = list('Buttons', 'Scroller'),
-  options = list(dom = 'Bfrtip', buttons = I('colvis'),
+  options = list(dom = 'Bfrtip', buttons = I('colvis'), pageLength = 100,
                  deferRender = TRUE,
                  scrollY = 500,
                  scrollX = 300,
@@ -135,7 +195,7 @@ DT::datatable(
     dplyr::select(from, to, type, Kl, Kv, rii),
   escape=F,
   extensions = list('Buttons', 'Scroller'),
-  options = list(dom = 'Bfrtip', buttons = I('colvis'),
+  options = list(dom = 'Bfrtip', buttons = I('colvis'), pageLength = 100,
                  deferRender = TRUE,
                  scrollY = 500,
                  scrollX = 300,
