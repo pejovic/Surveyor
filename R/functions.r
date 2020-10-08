@@ -256,7 +256,8 @@ Amat <- function(survey.net, units){
 
 # Weights matrix
 # Wmat je ista, samo je promenjen naziv standarda. Stavljeni su "sd_Hz" i "sd_dist".
-Wmat <- function(survey.net, sd.apriori = 1){
+Wmat <- function(survey.net, sd.apriori = 1, res.units = "cm"){
+  res.unit.lookup <- c("mm" = 1, "cm" = 10, "m" = 1000)
   #TODO: Omoguciti zadavanje i drugih kovariacionih formi izmedju merenja.
   obs.data <- rbind(survey.net[[2]] %>% st_drop_geometry() %>%
                       dplyr::filter(direction) %>%
@@ -265,7 +266,7 @@ Wmat <- function(survey.net, sd.apriori = 1){
                     survey.net[[2]] %>% st_drop_geometry() %>%
                       dplyr::filter(distance) %>%
                       dplyr::select(from, to, standard = sd_dist) %>%
-                      dplyr::mutate(type = "distance")
+                      dplyr::mutate(type = "distance", standard = standard/res.unit.lookup[res.units])
   )
   return(diag(sd.apriori^2/obs.data$standard^2))
 }
@@ -354,12 +355,14 @@ sigma.xy <- function(Qxy.mat, sd.apriori){
 }
 
 # st.survey.net <- makis.snet[[2]] %>% dplyr::filter(from == "OM20")
-# st.survey.net <- brana[[2]] %>% dplyr::filter(from == "T1")
+# st.survey.net <- brana.snet[[2]] %>% dplyr::filter(from == "T1")
 # st.survey.net <- avala[[2]] %>% dplyr::filter(from == "S2")
 # st.survey.net <- A.survey.net[[2]] %>% dplyr::filter(from == "C")
 # st.survey.net <- Gorica.survey.net[[2]] %>% dplyr::filter(from == "1")
 # st.survey.net <- ab[[2]] %>% dplyr::filter(from == "P2")
 #  st.survey.net <- mreza_sim[[2]] %>% dplyr::filter(from == "M10")
+#  st.survey.net <- zadatak1.snet[[2]] %>% dplyr::filter(from == "T2")
+# st.survey.net <- cut45[[2]] %>% dplyr::filter(from == "C53")
 
 fdir_st <- function(st.survey.net, units.dir = "sec"){
   units.table <- c("sec" = 3600, "min" = 60, "deg" = 1)
@@ -368,6 +371,7 @@ fdir_st <- function(st.survey.net, units.dir = "sec"){
     do.call(rbind,.) %>%
     dplyr::mutate(z = Hz-ni) %>%
     dplyr::arrange(ID)
+  #st.survey.net$z <- ifelse(st.survey.net$z < 0 & st.survey.net$z < -0.01, st.survey.net$z + 360, st.survey.net$z)
   st.survey.net$z <- ifelse(st.survey.net$z < 0, st.survey.net$z + 360, st.survey.net$z)
   z0_mean <- mean(st.survey.net$z)
   f <-  st.survey.net$ni + z0_mean - st.survey.net$Hz
@@ -447,9 +451,6 @@ model_adequacy_test.shiny <- function(sd.apriori, sd.estimated, df, prob){
                 }
                   )
   return(mlist)
-  # print(paste(round(F.estimated, 2), ">", round(F.quantile, 2), "Model is not correct", sep = " "))
-  # Data snooping and others have to be put in the list
-  # print(paste(round(F.estimated, 2), "<", round(F.quantile, 2), "Model is correct", sep = " "))
 }
 
 
@@ -498,15 +499,17 @@ fmat1D <- function(survey.net, units = units){
 
 
 # adjust = TRUE; survey.net = ispit; dim_type = "2D"; sd.apriori = 5; wdh_model = "n_dh"; n0 = 1; maxiter = 1; prob = 0.95; coord_tolerance = 1e-3; result.units = "mm"; ellipse.scale = 1; output = "spatial"; teta.unit = "dec"; units.dir = "sec"; units.dist = "mm"; use.sd.estimated = TRUE; all = TRUE
-adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), sd.apriori = 1, wdh_model = list("n_dh", "sd_dh", "d_dh", "E"), n0 = 1, maxiter = 50, prob = 0.95, output = list("spatial", "report"), coord_tolerance = 1e-3, result.units = list("mm", "cm", "m"), ellipse.scale = 1, teta.unit = list("deg", "rad"), units.dir = "sec", units.dist = "mm", use.sd.estimated = TRUE, all = TRUE){
+adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), sd.apriori = 1, wdh_model = list("n_dh", "sd_dh", "d_dh", "E"), n0 = 1, maxiter = 50, prob = 0.95, output = list("spatial", "report"), coord_tolerance = 1e-3, result.units = list("mm", "cm", "m"), ellipse.scale = 1, teta.unit = list("deg", "rad"), units.dir = "sec", use.sd.estimated = TRUE, all = TRUE){
+
   dim_type <- dim_type[[1]]
+  output <- output[[1]]
   "%!in%" <- Negate("%in%")
   if(!adjust){use.sd.estimated <- FALSE}
   units <- result.units[[1]]
   res.unit.lookup <- c("mm" = 1000, "cm" = 100, "m" = 1)
   disp.unit.lookup <- c("mm" = 2, "cm" = 3, "m" = 4)
   dir.unit.lookup <- c("sec" = 3600, "min" = 60, "deg" = 1)
-  output <- output[[1]]
+
 
   # TODO: This has to be solved within the read.surveynet function
   used.points <- survey.net[[1]]$Name[survey.net[[1]]$Name %in% unique(c(survey.net[[2]]$from, survey.net[[2]]$to))]
@@ -538,8 +541,8 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
       while (max.coord.corr > coord_tolerance && iter < maxiter) {
         iter <- iter + 1
         coords.iter.inc <- as.vector(t(cbind(survey.net[[1]]$x, survey.net[[1]]$y)))[fix.mat]
-        A.mat <- Amat(survey.net, units = units) # Nije dobro u drugoj iteraciji
-        W.mat <- Wmat(survey.net, sd.apriori = sd.apriori)
+        A.mat <- Amat(survey.net, units = units)
+        W.mat <- Wmat(survey.net, sd.apriori = sd.apriori, res.units = units)
         rownames(A.mat) <- observations$from_to
         colnames(W.mat) <- observations$from_to
         rownames(W.mat) <- observations$from_to
@@ -772,7 +775,7 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
       }
   }
 
-  matrices = list(A = A.mat, W = W.mat, Qx = Qx.mat, Ql = Ql.mat, Qv = Qv.mat)
+  matrices = list(A = A.mat, W = W.mat, Qx = Qx.mat, Ql = Ql.mat, Qv = Qv.mat, f = f.mat)
 
 
 
@@ -810,7 +813,7 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
                                 "Degrees of freedom" = df,
                                 "Number of iterations" = iter,
                                 "Max.coordinate correction in last iteration:" = max.coord.corr,
-                                "sigma apriori" = sigma_apriori,
+                                "sigma apriori" = if(model_adequacy[[1]] & use.sd.estimated){sigma_apriori}else{sd.apriori},
                                 "sigma aposteriori" = sd.estimated,
                                 "Testing Probabity" = prob,
                                 "F-test" = model_adequacy[[2]],
@@ -837,13 +840,13 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
       Adjustment_summary = list(Type = if(sum(!fix.mat) == 0){"inner constrained"}else{"constrained"},
                                 Dimensions = dim_type,
                                 "Fixed points" = if(sum(survey.net[[1]]$FIX_1D) != 0){survey.net[[1]]$Name[survey.net[[1]]$FIX_1D]}else{"None"},
-                                "Weightening model" = wdh_model,
+                                "Weightening model" = wdh_model[[1]],
                                 "Number of measured height differences" = dim(observations)[1],
                                 "Unknown heights" = sum(fix.mat),
                                 "Degrees of freedom" = df,
                                 "Number of iterations" = iter,
                                 "Max.coordinate correction in last iteration:" = max.coord.corr,
-                                "sigma apriori" = sigma_apriori,
+                                "sigma apriori" = if(model_adequacy[[1]] & use.sd.estimated){sigma_apriori}else{sd.apriori},
                                 "sigma aposteriori" = sd.estimated,
                                 "Testing Probabity" = prob,
                                 "F-test" = model_adequacy[[2]],
