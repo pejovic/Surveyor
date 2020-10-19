@@ -256,7 +256,7 @@ Amat <- function(survey.net, units){
 
 # Weights matrix
 # Wmat je ista, samo je promenjen naziv standarda. Stavljeni su "sd_Hz" i "sd_dist".
-Wmat <- function(survey.net, sd.apriori = 1, res.units = "cm"){
+Wmat <- function(survey.net, sd.apriori = 1, res.units = "mm"){
   res.unit.lookup <- c("mm" = 1, "cm" = 10, "m" = 1000)
   #TODO: Omoguciti zadavanje i drugih kovariacionih formi izmedju merenja.
   obs.data <- rbind(survey.net[[2]] %>% st_drop_geometry() %>%
@@ -471,7 +471,8 @@ Amat1D <- function(survey.net){
   return(Amat)
 }
 
-Wmat1D <- function(survey.net, wdh_model = list("sd_dh", "d_dh", "n_dh", "E"), sd0 = 1, d0 = NA, n0 = 1){
+Wmat1D <- function(survey.net, wdh_model = list("sd_dh", "d_dh", "n_dh", "E"), sd0 = 1, d0 = NA, n0 = 1, res.units = "mm"){
+  res.unit.lookup <- c("mm" = 1, "cm" = 10, "m" = 1000)
   "%!in%" <- Negate("%in%")
   if(wdh_model %!in% c("sd_dh", "d_dh", "n_dh", "E")){stop("Model of weigths is not properly specified, see help")}
   wdh_model <- wdh_model[[1]]
@@ -479,7 +480,7 @@ Wmat1D <- function(survey.net, wdh_model = list("sd_dh", "d_dh", "n_dh", "E"), s
 
   survey.net[[2]] %<>%
     dplyr::mutate(weigth = case_when(
-      wdh_model == "sd_dh" ~ sd0/sd_dh,
+      wdh_model == "sd_dh" ~ (sd0/res.unit.lookup[res.units])^2/sd_dh^2,
       wdh_model == "d_dh" ~ 1/d_dh,
       wdh_model == "n_dh" ~ n0/n_dh,
       wdh_model == "E" ~ 1
@@ -498,7 +499,7 @@ fmat1D <- function(survey.net, units = units){
 
 
 
-# adjust = TRUE; survey.net = ispit; dim_type = "2D"; sd.apriori = 5; wdh_model = "n_dh"; n0 = 1; maxiter = 1; prob = 0.95; coord_tolerance = 1e-3; result.units = "mm"; ellipse.scale = 1; output = "spatial"; teta.unit = "dec"; units.dir = "sec"; units.dist = "mm"; use.sd.estimated = TRUE; all = TRUE
+# adjust = TRUE; survey.net = prva; dim_type = "1D"; sd.apriori = 0.7; wdh_model = "n_dh"; n0 = 1; maxiter = 1; prob = 0.95; coord_tolerance = 1e-3; result.units = "mm"; ellipse.scale = 1; output = "spatial"; teta.unit = "dec"; units.dir = "sec"; units.dist = "mm"; use.sd.estimated = TRUE; all = TRUE
 adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), sd.apriori = 1, wdh_model = list("n_dh", "sd_dh", "d_dh", "E"), n0 = 1, maxiter = 50, prob = 0.95, output = list("spatial", "report"), coord_tolerance = 1e-3, result.units = list("mm", "cm", "m"), ellipse.scale = 1, teta.unit = list("deg", "rad"), units.dir = "sec", use.sd.estimated = TRUE, all = TRUE){
 
   dim_type <- dim_type[[1]]
@@ -698,7 +699,7 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
     fix.mat <- !(survey.net[[1]]$FIX_1D)
 
     A.mat <- Amat1D(survey.net)
-    W.mat <- Wmat1D(survey.net = survey.net, wdh_model = wdh, n0 = 1)
+    W.mat <- Wmat1D(survey.net = survey.net, wdh_model = wdh, n0 = 1, res.units = units)
     rownames(A.mat) <- observations$from_to
     colnames(W.mat) <- observations$from_to
     rownames(W.mat) <- observations$from_to
@@ -738,6 +739,7 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
       x.mat <- x.mat[1:sum(fix.mat)]  #
       h.inc <- (survey.net[[1]]$h[fix.mat]-coords.iter_0)*res.unit.lookup[units]
       sd.estimated <- sqrt((crossprod(v.mat, W.mat) %*% v.mat)/(df))
+      sd.apriori <- sd.apriori/(1000/res.unit.lookup[units])
       model_adequacy <- model_adequacy_test(sd.apriori, sd.estimated, df, prob = prob)
       if(use.sd.estimated){sigma_apriori <- sd.apriori; sd.apriori <- sd.estimated}
     }
