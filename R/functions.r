@@ -774,10 +774,11 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
           dplyr::mutate(across(where(is.numeric), ~round(.x, disp.unit.lookup[units])))
       }
   }
-
-  matrices = list(A = A.mat, W = W.mat, Qx = Qx.mat, Ql = Ql.mat, Qv = Qv.mat, f = f.mat)
-
-
+  if(adjust){
+    matrices = list(A = A.mat, W = W.mat, Qx = Qx.mat, Ql = Ql.mat, Qv = Qv.mat, f = f.mat)
+  }else{
+    matrices = list(A = A.mat, W = W.mat, Qx = Qx.mat, Ql = Ql.mat, Qv = Qv.mat)
+  }
 
   if(output == "spatial"){
     if(sum(rowSums(is.na(survey.net[[1]][, c("x", "y")])) != 0) == 0){
@@ -1114,12 +1115,30 @@ plot_surveynet <- function(snet = NULL, snet.adj = NULL, webmap = FALSE, net.1D 
         observation.dis <- observations %>%
           dplyr::filter(type == "distance")
 
+        if(length(observation.dis$ID) == 0){
+          webmap.net.adj <- mapview(points, zcol = "Point_type", col.regions = c("red","grey"), layer.name = "Points_type") +
+            mapview(ellipses, zcol = "fill", col.regions = c("yellow", "red"), layer.name = paste("StDev Position [",result.units,"]", sep = ""))+ #+
+            #mapview(observations, zcol = "fill", color = c("red", "orange"), layer.name = "Reliability measure rii [/]")+
+            mapview(observation.dir, zcol = "fill", color = pink2, at = seq(0,1,rii_bound), layer.name = "Reliability measure rii [/] - direction")
+        }else if(length(observation.dir$ID) == 0){
+          webmap.net.adj <- mapview(points, zcol = "Point_type", col.regions = c("red","grey"), layer.name = "Points_type") +
+            mapview(ellipses, zcol = "fill", col.regions = c("yellow", "red"), layer.name = paste("StDev Position [",result.units,"]", sep = ""))+ #+
+            #mapview(observations, zcol = "fill", color = c("red", "orange"), layer.name = "Reliability measure rii [/]")+
+            mapview(observation.dis, zcol = "fill", color = pink2, at = seq(0,1,rii_bound), layer.name = "Reliability measure rii [/] - distance")
+        }else{
+          webmap.net.adj <- mapview(points, zcol = "Point_type", col.regions = c("red","grey"), layer.name = "Points_type") +
+            mapview(ellipses, zcol = "fill", col.regions = c("yellow", "red"), layer.name = paste("StDev Position [",result.units,"]", sep = ""))+ #+
+            #mapview(observations, zcol = "fill", color = c("red", "orange"), layer.name = "Reliability measure rii [/]")+
+            mapview(observation.dir, zcol = "fill", color = pink2, at = seq(0,1,rii_bound), layer.name = "Reliability measure rii [/] - direction")+
+            mapview(observation.dis, zcol = "fill", color = pink2, at = seq(0,1,rii_bound), layer.name = "Reliability measure rii [/] - distance")
+        }
 
-        webmap.net.adj <- mapview(points, zcol = "Point_type", col.regions = c("red","grey"), layer.name = "Points_type") +
-          mapview(ellipses, zcol = "fill", col.regions = c("yellow", "red"), layer.name = paste("StDev Position [",result.units,"]", sep = ""))+ #+
-          #mapview(observations, zcol = "fill", color = c("red", "orange"), layer.name = "Reliability measure rii [/]")+
-          mapview(observation.dir, zcol = "fill", color = pink2, at = seq(0,1,rii_bound), layer.name = "Reliability measure rii [/] - direction")+
-          mapview(observation.dis, zcol = "fill", color = pink2, at = seq(0,1,rii_bound), layer.name = "Reliability measure rii [/] - distance")
+
+        # webmap.net.adj <- mapview(points, zcol = "Point_type", col.regions = c("red","grey"), layer.name = "Points_type") +
+        #   mapview(ellipses, zcol = "fill", col.regions = c("yellow", "red"), layer.name = paste("StDev Position [",result.units,"]", sep = ""))+ #+
+        #   #mapview(observations, zcol = "fill", color = c("red", "orange"), layer.name = "Reliability measure rii [/]")+
+        #   mapview(observation.dir, zcol = "fill", color = pink2, at = seq(0,1,rii_bound), layer.name = "Reliability measure rii [/] - direction")+
+        #   mapview(observation.dis, zcol = "fill", color = pink2, at = seq(0,1,rii_bound), layer.name = "Reliability measure rii [/] - distance")
 
         return(webmap.net.adj)
 

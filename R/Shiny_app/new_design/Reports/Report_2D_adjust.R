@@ -279,7 +279,7 @@ adj.net_map
     formatStyle(
       'rii',
       color = styleInterval(c(params$rii_bound), c('red', 'black')),
-      background = styleColorBar(params$adjusted_net_adj[[2]]$rii, 'steelblue'),
+      background = styleColorBar(params$observations$rii, 'steelblue'),
       backgroundSize = '100% 90%',
       backgroundRepeat = 'no-repeat',
       backgroundPosition = 'center'

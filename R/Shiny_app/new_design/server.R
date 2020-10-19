@@ -37,6 +37,7 @@ library(knitr)
 library(rmarkdown)
 library(kableExtra)
 
+
 shinyServer(function(input, output){
   # ==================================================================
   # 2D NET DESIGN
@@ -504,7 +505,7 @@ shinyServer(function(input, output){
 
 
   output$ellipse_error <- DT::renderDataTable({
-    DT::datatable(adjusted_net_design()[[1]]$ellipse.net %>%
+    DT::datatable(adjusted_net_design()$Points$ellipse.net %>%
                     st_drop_geometry() %>%
                     as.data.frame() %>%
                     mutate(
@@ -565,7 +566,7 @@ shinyServer(function(input, output){
 
   output$net_points_adj <- DT::renderDataTable({
     DT::datatable(
-        adjusted_net_design()[[1]]$net.points %>%
+        adjusted_net_design()$Points$net.points %>%
         st_drop_geometry() %>%
         as.data.frame() %>%
         mutate(
@@ -604,7 +605,7 @@ shinyServer(function(input, output){
 
   output$net_observations_adj <- DT::renderDataTable({
     DT::datatable(
-      adjusted_net_design()[[2]] %>%
+      adjusted_net_design()$Observations %>%
         st_drop_geometry() %>%
         as.data.frame() %>%
         mutate(
@@ -624,7 +625,7 @@ shinyServer(function(input, output){
       formatStyle(
         'rii',
         color = styleInterval(c(input$rii_xlsx), c('red', 'black')),
-        background = styleColorBar(adjusted_net_design()[[2]]$rii, 'steelblue'),
+        background = styleColorBar(adjusted_net_design()$Observations$rii, 'steelblue'),
         backgroundSize = '100% 90%',
         backgroundRepeat = 'no-repeat',
         backgroundPosition = 'center'
@@ -716,7 +717,7 @@ shinyServer(function(input, output){
 
   output$ellipse_error_me <- DT::renderDataTable({
     DT::datatable(
-        adjusted_net_design_me()[[1]]$ellipse.net %>%
+        adjusted_net_design_me()$Points$ellipse.net %>%
         st_drop_geometry() %>%
         as.data.frame() %>%
         mutate(
@@ -775,7 +776,7 @@ shinyServer(function(input, output){
 
   output$net_points_adj_me <- DT::renderDataTable({
     DT::datatable(
-        adjusted_net_design_me()[[1]]$net.points %>%
+        adjusted_net_design_me()$Points$net.points %>%
         st_drop_geometry() %>%
         as.data.frame() %>%
         mutate(
@@ -813,7 +814,7 @@ shinyServer(function(input, output){
 
   output$net_observations_adj_me <- DT::renderDataTable({
     DT::datatable(
-        adjusted_net_design_me()[[2]] %>%
+        adjusted_net_design_me()$Observations %>%
         st_drop_geometry() %>%
         as.data.frame() %>%
         mutate(
@@ -832,7 +833,7 @@ shinyServer(function(input, output){
       formatStyle(
         'rii',
         color = styleInterval(c(input$rii_map), c('red', 'black')),
-        background = styleColorBar(adjusted_net_design_me()[[2]]$rii, 'steelblue'),
+        background = styleColorBar(adjusted_net_design_me()$Observations$rii, 'steelblue'),
         backgroundSize = '100% 90%',
         backgroundRepeat = 'no-repeat',
         backgroundPosition = 'center'
@@ -862,15 +863,15 @@ shinyServer(function(input, output){
       # Set up parameters to pass to Rmd document
       data <- mapEdit_list()
       data_up <- mapEdit_list()
-      ellipses <- adjusted_net_design_me()[[1]]$ellipse.net
-      observations <- adjusted_net_design_me()[[2]]
+      ellipses <- adjusted_net_design_me()$Points$ellipse.net
+      observations <- adjusted_net_design_me()$Observations
       sp_bound = input$sp_map
       rii_bound = input$rii_map
       sx_bound <- input$sx_map
       sy_bound <- input$sy_map
       ellipse_scale <- input$adjust_1_ell_scale_me
       result_units <- input$adjust_1_units_me
-      points <- adjusted_net_design_me()[[1]]$net.points
+      points <- adjusted_net_design_me()$Points$net.points
       adjusted_net_design <- adjusted_net_design_me()
       epsg <- input$epsg_me
 
@@ -912,13 +913,13 @@ shinyServer(function(input, output){
       # Set up parameters to pass to Rmd document
       data <- xlsx_list()
       data_up <- updated_xlsx_list()
-      ellipses <- adjusted_net_design()[[1]]$ellipse.net
-      observations <- adjusted_net_design()[[2]]
+      ellipses <- adjusted_net_design()$Points$ellipse.net
+      observations <- adjusted_net_design()$Observations
       sp_bound = input$sp_xlsx
       rii_bound = input$rii_xlsx
       sx_bound <- input$sx_xlsx
       sy_bound <- input$sy_xlsx
-      points <- adjusted_net_design()[[1]]$net.points
+      points <- adjusted_net_design()$Points$net.points
       adjusted_net_design <- adjusted_net_design()
       ellipse_scale <- input$adjust_1_ell_scale
       result_units <- input$adjust_1_units
@@ -1156,7 +1157,7 @@ shinyServer(function(input, output){
     #    sy = round(sy, 4),
     #    sp = round(sp, 4)
     #  )
-    DT::datatable(adjusted_net_adj()[[1]]$ellipse.net %>%
+    DT::datatable(adjusted_net_adj()$Points$ellipse.net %>%
                     st_drop_geometry() %>%
                     as.data.frame() %>%
                     mutate(
@@ -1215,7 +1216,7 @@ shinyServer(function(input, output){
 
   output$net_points_adj_2d_adj <- DT::renderDataTable({
     DT::datatable(
-      adjusted_net_adj()[[1]]$net.points %>%
+      adjusted_net_adj()$Points$net.points %>%
         st_drop_geometry() %>%
         as.data.frame() %>%
         mutate(
@@ -1258,7 +1259,7 @@ shinyServer(function(input, output){
 
   output$net_observations_adj_2d_adj <- DT::renderDataTable({
     DT::datatable(
-      adjusted_net_adj()[[2]] %>%
+      adjusted_net_adj()$Observations %>%
         st_drop_geometry() %>%
         as.data.frame() %>%
         mutate(
@@ -1279,7 +1280,7 @@ shinyServer(function(input, output){
       formatStyle(
         'rii',
         color = styleInterval(c(input$rii_xlsx_adj), c('red', 'black')),
-        background = styleColorBar(adjusted_net_adj()[[2]]$rii, 'steelblue'),
+        background = styleColorBar(adjusted_net_adj()$Observations$rii, 'steelblue'),
         backgroundSize = '100% 90%',
         backgroundRepeat = 'no-repeat',
         backgroundPosition = 'center'
@@ -1316,13 +1317,13 @@ shinyServer(function(input, output){
       edited_points_xlsx_wO <- st_as_sf(edited_points_xlsx_wO)
 
       data <- list("points" = edited_points_xlsx_wO, "observations" = edited_observations_xlsx_wO)
-      ellipses <- adjusted_net_adj()[[1]]$ellipse.net
+      ellipses <- adjusted_net_adj()$Points$ellipse.net
       observations <- adjusted_net_adj()[[2]]
       sp_bound = input$sp_xlsx_adj
       rii_bound = input$rii_xlsx_adj
       sx_bound <- input$sx_xlsx_adj
       sy_bound <- input$sy_xlsx_adj
-      points <- adjusted_net_adj()[[1]]$net.points
+      points <- adjusted_net_adj()$Points$net.points
       adjusted_net_adj <- adjusted_net_adj()
       ellipse_scale <- input$adjust_2_ell_scale
       result_units <- input$adjust_2_units

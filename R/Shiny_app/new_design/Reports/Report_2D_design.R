@@ -172,7 +172,7 @@ adj.net_map
 #'
 #+ echo = FALSE, result = TRUE, eval = TRUE, out.width="100%"
   DT::datatable(
-    params$adjusted_net_design[[1]]$ellipse.net %>%
+    params$adjusted_net_design$Points$ellipse.net %>%
       st_drop_geometry() %>%
       as.data.frame() %>%
       mutate(
@@ -209,7 +209,7 @@ adj.net_map
 #'
 #+ echo = FALSE, result = TRUE, eval = TRUE, out.width="100%"
   DT::datatable(
-    params$adjusted_net_design[[1]]$net.points %>%
+    params$adjusted_net_design$Points$net.points %>%
       st_drop_geometry() %>%
       as.data.frame() %>%
       mutate(
@@ -248,7 +248,7 @@ adj.net_map
 #'
 #+ echo = FALSE, result = TRUE, eval = TRUE, out.width="100%"
   DT::datatable(
-    params$adjusted_net_design[[2]] %>%
+    params$adjusted_net_design$Observations %>%
       st_drop_geometry() %>%
       as.data.frame() %>%
       mutate(
@@ -267,7 +267,7 @@ adj.net_map
     formatStyle(
       'rii',
       color = styleInterval(c(params$rii_bound), c('red', 'black')),
-      background = styleColorBar(params$adjusted_net_design[[2]]$rii, 'steelblue'),
+      background = styleColorBar(params$adjusted_net_design$Observations$rii, 'steelblue'),
       backgroundSize = '100% 90%',
       backgroundRepeat = 'no-repeat',
       backgroundPosition = 'center'

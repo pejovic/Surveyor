@@ -859,8 +859,8 @@ surveynet.mapedit <- function(points_raw = points_raw, points = points, observat
 
       points <- points %>% as.data.frame() %>% sf::st_as_sf(coords = c("x","y"), remove = FALSE)
       if(which(axes == "Easting") == 2){points <- points %>% dplyr::rename(x = y,  y = x)}
-
-      observations <- as.data.table(observations) %>% dplyr::mutate(id = seq.int(nrow(.))) %>% split(., f = as.factor(.$id)) %>%
+      # as.data.table(observations) %>%
+      observations <- observations %>%  dplyr::mutate(id = seq.int(nrow(.))) %>% split(., f = as.factor(.$id)) %>%
         lapply(., function(row) {lmat <- matrix(unlist(row[c("x_from", "y_from", "x_to", "y_to")]), ncol = 2, byrow = TRUE)
         st_linestring(lmat)}) %>%
         sf::st_sfc() %>%
