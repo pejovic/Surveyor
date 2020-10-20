@@ -99,11 +99,14 @@ makis.snet <- read_surveynet(file = file_path)
 # TO DO: set_srs unutar read_surveynet
 plot_surveynet(snet = makis.snet, webmap = FALSE, net.1D = FALSE, net.2D = TRUE)
 makis.snet.adj <- adjust.snet(adjust = TRUE, survey.net = makis.snet, dim_type = "2D", sd.apriori = 3 ,  all = FALSE)
+plot_surveynet(snet.adj = makis.snet.adj, webmap = FALSE, net.1D = FALSE, net.2D = TRUE)
 
 
 file_path <- here::here("Data/Input/With_observations/Zadatak 1/Zadatak_1.xlsx")
 zadatak1.snet <- read_surveynet(file = file_path)
 plot_surveynet(snet = zadatak1.snet, webmap = FALSE, net.1D = FALSE, net.2D = TRUE)
+zadatak1.snet$observations$sd_Hz <- 5
+zadatak1.snet$observations$HD[2] <- 12500
 zadatak1.snet.adj <- adjust.snet(adjust = TRUE, survey.net = zadatak1.snet, dim_type = "2D", sd.apriori = 1 ,  all = FALSE)
 
 file_path <- here::here("Data/Input/Without_observations/xlsx/TETO_plan opazanja1.xlsx")
@@ -137,6 +140,13 @@ gorica0.snet.adj <- adjust.snet(adjust = TRUE, survey.net = gorica0.snet, dim_ty
 # 1D design and adjustment
 file_path <- here::here("Data/Input/With_observations/DNS_1D/DNS_1D_nulta.xlsx")
 dns.snet <- read_surveynet(file = file_path)
+
+points <- dns.snet$points
+observations <- dns.snet$observations
+names(observations)
+observations$id <- row_number(observations$from)
+
+
 plot_surveynet(snet = dns.snet, webmap = FALSE, net.1D = TRUE, net.2D = FALSE)
 
 dns.snet.adj <- adjust.snet(adjust = FALSE, survey.net = dns.snet, wdh_model = "n_dh", dim_type = "1D", sd.apriori = 0.2 ,  all = FALSE, result.units = "mm")

@@ -816,7 +816,7 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
                                 "Max.coordinate correction in last iteration:" = max.coord.corr,
                                 "sigma apriori" = if(model_adequacy[[1]] & use.sd.estimated){sigma_apriori}else{sd.apriori},
                                 "sigma aposteriori" = sd.estimated,
-                                "Testing Probabity" = prob,
+                                "Testing Probability" = prob,
                                 "F-test" = model_adequacy[[2]],
                                 "Crital value F-test" = model_adequacy[[3]],
                                 "Test decision" = model_adequacy[[4]])
@@ -849,7 +849,7 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
                                 "Max.coordinate correction in last iteration:" = max.coord.corr,
                                 "sigma apriori" = if(model_adequacy[[1]] & use.sd.estimated){sigma_apriori}else{sd.apriori},
                                 "sigma aposteriori" = sd.estimated,
-                                "Testing Probabity" = prob,
+                                "Testing Probability" = prob,
                                 "F-test" = model_adequacy[[2]],
                                 "Crital value F-test" = model_adequacy[[3]],
                                 "Test decision" = model_adequacy[[4]])
@@ -862,15 +862,15 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
                                 "Weightening model" = wdh_model,
                                 "Number of measured height differences" = dim(observations)[1],
                                 "Unknown heights" = sum(fix.mat),
-                                "Degrees of freedom" = df,
-                                "Number of iterations" = iter,
-                                "Max.height correction in last iteration:" = max.coord.corr,
-                                "sigma apriori" = sigma_apriori,
-                                "sigma aposteriori" = sd.estimated,
-                                "Testing Probabity" = prob,
-                                "F-test" = model_adequacy[[2]],
-                                "Crital value F-test" = model_adequacy[[3]],
-                                "Test decision" = model_adequacy[[4]])
+                                "Degrees of freedom" = df)
+                                #"Number of iterations" = iter,
+                                #"Max.height correction in last iteration:" = max.coord.corr,
+                                #"sigma apriori" = sigma_apriori,
+                                #"sigma aposteriori" = sd.estimated,
+                                #"Testing Probability" = prob,
+                                #"F-test" = model_adequacy[[2]],
+                                #"Crital value F-test" = model_adequacy[[3]],
+                                #"Test decision" = model_adequacy[[4]])
       results <- list(Summary = Adjustment_summary, Points = points, Observations = observations, Matrices = matrices)
 
     }
@@ -1119,18 +1119,18 @@ plot_surveynet <- function(snet = NULL, snet.adj = NULL, webmap = FALSE, net.1D 
           webmap.net.adj <- mapview(points, zcol = "Point_type", col.regions = c("red","grey"), layer.name = "Points_type") +
             mapview(ellipses, zcol = "fill", col.regions = c("yellow", "red"), layer.name = paste("StDev Position [",result.units,"]", sep = ""))+ #+
             #mapview(observations, zcol = "fill", color = c("red", "orange"), layer.name = "Reliability measure rii [/]")+
-            mapview(observation.dir, zcol = "fill", color = pink2, at = seq(0,1,rii_bound), layer.name = "Reliability measure rii [/] - direction")
+            mapview(observation.dir, zcol = "fill", color = pink2, layer.name = "Reliability measure rii [/] - direction") # , at = seq(0,1,rii_bound)
         }else if(length(observation.dir$ID) == 0){
           webmap.net.adj <- mapview(points, zcol = "Point_type", col.regions = c("red","grey"), layer.name = "Points_type") +
             mapview(ellipses, zcol = "fill", col.regions = c("yellow", "red"), layer.name = paste("StDev Position [",result.units,"]", sep = ""))+ #+
             #mapview(observations, zcol = "fill", color = c("red", "orange"), layer.name = "Reliability measure rii [/]")+
-            mapview(observation.dis, zcol = "fill", color = pink2, at = seq(0,1,rii_bound), layer.name = "Reliability measure rii [/] - distance")
+            mapview(observation.dis, zcol = "fill", color = pink2, layer.name = "Reliability measure rii [/] - distance") # , at = seq(0,1,rii_bound)
         }else{
           webmap.net.adj <- mapview(points, zcol = "Point_type", col.regions = c("red","grey"), layer.name = "Points_type") +
             mapview(ellipses, zcol = "fill", col.regions = c("yellow", "red"), layer.name = paste("StDev Position [",result.units,"]", sep = ""))+ #+
             #mapview(observations, zcol = "fill", color = c("red", "orange"), layer.name = "Reliability measure rii [/]")+
-            mapview(observation.dir, zcol = "fill", color = pink2, at = seq(0,1,rii_bound), layer.name = "Reliability measure rii [/] - direction")+
-            mapview(observation.dis, zcol = "fill", color = pink2, at = seq(0,1,rii_bound), layer.name = "Reliability measure rii [/] - distance")
+            mapview(observation.dir, zcol = "fill", color = pink2, layer.name = "Reliability measure rii [/] - direction")+ # , at = seq(0,1,rii_bound)
+            mapview(observation.dis, zcol = "fill", color = pink2, layer.name = "Reliability measure rii [/] - distance") # , at = seq(0,1,rii_bound)
         }
 
 
@@ -1165,15 +1165,15 @@ plot_surveynet <- function(snet = NULL, snet.adj = NULL, webmap = FALSE, net.1D 
       points <- snet.adj$Points
       observations <- snet.adj$Observations
       observations$id <- row_number(observations$from_to)
-     if(!is.null(points$h0)){
+     if(!is.null(points$h)){
        # ADJUST PLOT
-       p.plot <- ggplotly(ggplot()+
+       p.plot <- plotly::ggplotly(ggplot()+
                             geom_crossbar(data = points,
                                           aes(x = id,
                                               y = h,
-                                              ymin = h-sd_h/2,
-                                              ymax = h+sd_h/2,
-                                              fill = sd_h), fatten = 0)+
+                                              ymin = h-sd(h)/2,
+                                              ymax = h+sd(h)/2,
+                                              fill = sd(h)), fatten = 0)+
                             scale_fill_gradient(low="green",
                                                 high="red")+
                             geom_point(data = points,
@@ -1205,16 +1205,16 @@ plot_surveynet <- function(snet = NULL, snet.adj = NULL, webmap = FALSE, net.1D 
          ggplot()+
            geom_point(data = observations,
                      aes(x = id,
-                         y = f,
-                         colour = f))+
+                         y = dh,
+                         colour = dh))+
            geom_area(data = observations,
                       aes(x = id,
-                          y = f),fill="blue", alpha=.2)+
+                          y = dh),fill="blue", alpha=.2)+
            scale_colour_gradient(low="orange",
                                  high="red", guide = FALSE)+
-           geom_text(data=observations, aes(x = id, y = f, label=from_to), nudge_x = 0, nudge_y = 0.03)+
-           scale_y_continuous(limits = c(round(min(observations$f)-sd(observations$f), 0), round( max(observations$f)+sd(observations$f),0)),
-                              breaks = seq(round(min(observations$f)-sd(observations$f), 0), round( max(observations$f)+sd(observations$f),0),
+           geom_text(data=observations, aes(x = id, y = dh, label=from_to), nudge_x = 0, nudge_y = 0.03)+
+           scale_y_continuous(limits = c(round(min(observations$dh)-sd(observations$dh), 0), round( max(observations$dh)+sd(observations$dh),0)),
+                              breaks = seq(round(min(observations$dh)-sd(observations$dh), 0), round( max(observations$dh)+sd(observations$dh),0),
                                            by = 0.05))+
            xlab("ID") +
            ylab("Residuals [mm]") +
@@ -1238,14 +1238,15 @@ plot_surveynet <- function(snet = NULL, snet.adj = NULL, webmap = FALSE, net.1D 
 
 
      }else{
+
        # DESIGN PLOT
        plot.1d.net <- ggplotly(ggplot()+
                   geom_crossbar(data = points,
                                 aes(x = id,
                                     y = h,
-                                    ymin = h-sd_h/2,
-                                    ymax = h+sd_h/2,
-                                    fill = sd_h), fatten = 0)+
+                                    ymin = h-sd(h)/2,
+                                    ymax = h+sd(h)/2,
+                                    fill = sd(h)), fatten = 0)+
                   scale_fill_gradient(low="green",
                                       high="red")+
                   geom_point(data = points,

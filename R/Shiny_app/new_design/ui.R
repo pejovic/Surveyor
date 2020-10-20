@@ -1,6 +1,6 @@
 options(encoding="UTF-8")
 source(here::here("R/deprecated/input_functions.r"))
-source(here::here("R/deprecated/inputFunction_withObservations.R"))
+# source(here::here("R/deprecated/inputFunction_withObservations.R"))
 source(here::here("R/functions.r"))
 
 
