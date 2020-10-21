@@ -509,8 +509,12 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
   res.unit.lookup <- c("mm" = 1000, "cm" = 100, "m" = 1)
   disp.unit.lookup <- c("mm" = 2, "cm" = 3, "m" = 4)
   dir.unit.lookup <- c("sec" = 3600, "min" = 60, "deg" = 1)
-
-
+  if(is.na(sf::st_crs(survey.net$points) == TRUE)) {
+    net.crs <- 3857
+  }else(
+    net.crs <- st_crs(survey.net$points)
+  )
+    
   # TODO: This has to be solved within the read.surveynet function
   used.points <- survey.net[[1]]$Name[survey.net[[1]]$Name %in% unique(c(survey.net[[2]]$from, survey.net[[2]]$to))]
   if(!!any(used.points %!in% survey.net[[1]]$Name)) stop(paste("There is no coordinates for point", used.points[which(used.points %!in% survey.net[[1]]$Name)]), sep = " ")
@@ -661,14 +665,14 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
     if(adjust){
       if(output == "spatial"){
         points <- merge(point.adj.results, ellipses, by = "Name") %>% merge(., sigmas) %>% dplyr::arrange(id)
-        points <- sf::st_set_crs(points, value = st_crs(survey.net[[2]]))
+        points %<>% sf::st_set_crs(., net.crs)#st_crs(survey.net[[2]]))
       }else{
         points <- merge(sf::st_drop_geometry(point.adj.results), ellipses, by = "Name") %>% merge(., sigmas) %>% dplyr::arrange(id)
       }
     }else{
       if(output == "spatial"){
         points <- merge(survey.net[[1]], ellipses, by = "Name") %>% merge(., sigmas) %>% dplyr::arrange(id)
-        points <- sf::st_set_crs(points, value = st_crs(survey.net[[2]]))
+        points %<>% sf::st_set_crs(., net.crs)#st_crs(survey.net[[2]]))
       }else{
         points <- merge(sf::st_drop_geometry(survey.net[[1]]), ellipses, by = "Name") %>% merge(., sigmas) %>% dplyr::arrange(id)
       }
@@ -679,7 +683,7 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
       # TODO Proveriti da li elipse uzimaju definitivne koordinate ili priblizne!
       ellipse.net <- do.call(rbind, lapply(split(points, factor(survey.net[[1]]$Name, levels = points$Name)), function(x) sf.ellipse(x, scale = ellipse.scale)))
       ellipse.net <- merge(ellipse.net, sigmas)
-      ellipse.net <- sf::st_set_crs(ellipse.net, value = st_crs(survey.net[[2]]))
+      ellipse.net %<>% sf::st_set_crs(., net.crs)#st_crs(survey.net[[2]]))
 
       points <- list(net.points = points, ellipse.net = ellipse.net)
     }
@@ -796,7 +800,7 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
         sf::st_sfc() %>%
         sf::st_sf('ID' = seq.int(nrow(observations)), observations, 'geometry' = .) %>%
         dplyr::select(-c(x_from, y_from, x_to, y_to))
-      observations %<>% sf::st_set_crs(value = st_crs(survey.net[[2]]))
+      observations %<>% sf::st_set_crs(.,net.crs)#st_crs(survey.net[[2]]))
 
     }
   }

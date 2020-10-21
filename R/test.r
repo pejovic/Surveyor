@@ -98,7 +98,7 @@ file_path <- here::here("Data/Input/With_observations/Makis/Makis_observations.x
 makis.snet <- read_surveynet(file = file_path)
 # TO DO: set_srs unutar read_surveynet
 plot_surveynet(snet = makis.snet, webmap = FALSE, net.1D = FALSE, net.2D = TRUE)
-makis.snet.adj <- adjust.snet(adjust = TRUE, survey.net = makis.snet, dim_type = "2D", sd.apriori = 3 ,  all = FALSE)
+makis.snet.adj <- adjust.snet(adjust = FALSE, survey.net = makis.snet, dim_type = "2D", sd.apriori = 3 ,  all = FALSE)
 plot_surveynet(snet.adj = makis.snet.adj, webmap = FALSE, net.1D = FALSE, net.2D = TRUE)
 
 
@@ -135,6 +135,10 @@ avala.snet <- read_surveynet(file = file_path)
 plot_surveynet(snet = gorica0.snet, webmap = FALSE, net.1D = FALSE, net.2D = TRUE)
 gorica0.snet.adj <- adjust.snet(adjust = TRUE, survey.net = gorica0.snet, dim_type = "2D", sd.apriori = 1 ,  all = FALSE)
 
+file_path <- here::here("Data/Input/With_observations/Grdelica/Grdelica.xlsx")
+grdelica.snet <- read_surveynet(file = file_path)
+plot_surveynet(snet = grdelica.snet, webmap = FALSE, net.1D = FALSE, net.2D = TRUE)
+grdelica.snet.adj <- adjust.snet(adjust = TRUE, survey.net = grdelica.snet, dim_type = "2D", sd.apriori = 1 ,  all = FALSE)
 
 
 # 1D design and adjustment
