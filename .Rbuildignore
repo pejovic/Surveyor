@@ -3,3 +3,4 @@
 ^Avala\.r$
 ^README\.Rmd$
 ^LICENSE\.md$
+^\./R/deprecated$
