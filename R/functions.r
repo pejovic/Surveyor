@@ -510,8 +510,12 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
   res.unit.lookup <- c("mm" = 1000, "cm" = 100, "m" = 1)
   disp.unit.lookup <- c("mm" = 2, "cm" = 3, "m" = 4)
   dir.unit.lookup <- c("sec" = 3600, "min" = 60, "deg" = 1)
-
-
+  if(is.na(sf::st_crs(survey.net$points) == TRUE)) {
+    net.crs <- 3857
+  }else(
+    net.crs <- st_crs(survey.net$points)
+  )
+    
   # TODO: This has to be solved within the read.surveynet function
   used.points <- survey.net[[1]]$Name[survey.net[[1]]$Name %in% unique(c(survey.net[[2]]$from, survey.net[[2]]$to))]
   if(!!any(used.points %!in% survey.net[[1]]$Name)) stop(paste("There is no coordinates for point", used.points[which(used.points %!in% survey.net[[1]]$Name)]), sep = " ")
@@ -662,14 +666,14 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
     if(adjust){
       if(output == "spatial"){
         points <- merge(point.adj.results, ellipses, by = "Name") %>% merge(., sigmas) %>% dplyr::arrange(id)
-        points <- sf::st_set_crs(points, value = st_crs(survey.net[[2]]))
+        points %<>% sf::st_set_crs(., net.crs)#st_crs(survey.net[[2]]))
       }else{
         points <- merge(sf::st_drop_geometry(point.adj.results), ellipses, by = "Name") %>% merge(., sigmas) %>% dplyr::arrange(id)
       }
     }else{
       if(output == "spatial"){
         points <- merge(survey.net[[1]], ellipses, by = "Name") %>% merge(., sigmas) %>% dplyr::arrange(id)
-        points <- sf::st_set_crs(points, value = st_crs(survey.net[[2]]))
+        points %<>% sf::st_set_crs(., net.crs)#st_crs(survey.net[[2]]))
       }else{
         points <- merge(sf::st_drop_geometry(survey.net[[1]]), ellipses, by = "Name") %>% merge(., sigmas) %>% dplyr::arrange(id)
       }
@@ -680,7 +684,7 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
       # TODO Proveriti da li elipse uzimaju definitivne koordinate ili priblizne!
       ellipse.net <- do.call(rbind, lapply(split(points, factor(survey.net[[1]]$Name, levels = points$Name)), function(x) sf.ellipse(x, scale = ellipse.scale)))
       ellipse.net <- merge(ellipse.net, sigmas)
-      ellipse.net <- sf::st_set_crs(ellipse.net, value = st_crs(survey.net[[2]]))
+      ellipse.net %<>% sf::st_set_crs(., net.crs)#st_crs(survey.net[[2]]))
 
       points <- list(net.points = points, ellipse.net = ellipse.net)
     }
@@ -776,10 +780,11 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
           dplyr::mutate(across(where(is.numeric), ~round(.x, disp.unit.lookup[units])))
       }
   }
-
-  matrices = list(A = A.mat, W = W.mat, Qx = Qx.mat, Ql = Ql.mat, Qv = Qv.mat, f = f.mat)
-
-
+  if(adjust){
+    matrices = list(A = A.mat, W = W.mat, Qx = Qx.mat, Ql = Ql.mat, Qv = Qv.mat, f = f.mat)
+  }else{
+    matrices = list(A = A.mat, W = W.mat, Qx = Qx.mat, Ql = Ql.mat, Qv = Qv.mat)
+  }
 
   if(output == "spatial"){
     if(sum(rowSums(is.na(survey.net[[1]][, c("x", "y")])) != 0) == 0){
@@ -797,7 +802,7 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
         sf::st_sfc() %>%
         sf::st_sf('ID' = seq.int(nrow(observations)), observations, 'geometry' = .) %>%
         dplyr::select(-c(x_from, y_from, x_to, y_to))
-      observations %<>% sf::st_set_crs(value = st_crs(survey.net[[2]]))
+      observations %<>% sf::st_set_crs(.,net.crs)#st_crs(survey.net[[2]]))
 
     }
   }
@@ -817,7 +822,7 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
                                 "Max.coordinate correction in last iteration:" = max.coord.corr,
                                 "sigma apriori" = if(model_adequacy[[1]] & use.sd.estimated){sigma_apriori}else{sd.apriori},
                                 "sigma aposteriori" = sd.estimated,
-                                "Testing Probabity" = prob,
+                                "Testing Probability" = prob,
                                 "F-test" = model_adequacy[[2]],
                                 "Crital value F-test" = model_adequacy[[3]],
                                 "Test decision" = model_adequacy[[4]])
@@ -850,7 +855,7 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
                                 "Max.coordinate correction in last iteration:" = max.coord.corr,
                                 "sigma apriori" = if(model_adequacy[[1]] & use.sd.estimated){sigma_apriori}else{sd.apriori},
                                 "sigma aposteriori" = sd.estimated,
-                                "Testing Probabity" = prob,
+                                "Testing Probability" = prob,
                                 "F-test" = model_adequacy[[2]],
                                 "Crital value F-test" = model_adequacy[[3]],
                                 "Test decision" = model_adequacy[[4]])
@@ -863,15 +868,15 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
                                 "Weightening model" = wdh_model,
                                 "Number of measured height differences" = dim(observations)[1],
                                 "Unknown heights" = sum(fix.mat),
-                                "Degrees of freedom" = df,
-                                "Number of iterations" = iter,
-                                "Max.height correction in last iteration:" = max.coord.corr,
-                                "sigma apriori" = sigma_apriori,
-                                "sigma aposteriori" = sd.estimated,
-                                "Testing Probabity" = prob,
-                                "F-test" = model_adequacy[[2]],
-                                "Crital value F-test" = model_adequacy[[3]],
-                                "Test decision" = model_adequacy[[4]])
+                                "Degrees of freedom" = df)
+                                #"Number of iterations" = iter,
+                                #"Max.height correction in last iteration:" = max.coord.corr,
+                                #"sigma apriori" = sigma_apriori,
+                                #"sigma aposteriori" = sd.estimated,
+                                #"Testing Probability" = prob,
+                                #"F-test" = model_adequacy[[2]],
+                                #"Crital value F-test" = model_adequacy[[3]],
+                                #"Test decision" = model_adequacy[[4]])
       results <- list(Summary = Adjustment_summary, Points = points, Observations = observations, Matrices = matrices)
 
     }
@@ -1116,12 +1121,30 @@ plot_surveynet <- function(snet = NULL, snet.adj = NULL, webmap = FALSE, net.1D 
         observation.dis <- observations %>%
           dplyr::filter(type == "distance")
 
+        if(length(observation.dis$ID) == 0){
+          webmap.net.adj <- mapview(points, zcol = "Point_type", col.regions = c("red","grey"), layer.name = "Points_type") +
+            mapview(ellipses, zcol = "fill", col.regions = c("yellow", "red"), layer.name = paste("StDev Position [",result.units,"]", sep = ""))+ #+
+            #mapview(observations, zcol = "fill", color = c("red", "orange"), layer.name = "Reliability measure rii [/]")+
+            mapview(observation.dir, zcol = "fill", color = pink2, layer.name = "Reliability measure rii [/] - direction") # , at = seq(0,1,rii_bound)
+        }else if(length(observation.dir$ID) == 0){
+          webmap.net.adj <- mapview(points, zcol = "Point_type", col.regions = c("red","grey"), layer.name = "Points_type") +
+            mapview(ellipses, zcol = "fill", col.regions = c("yellow", "red"), layer.name = paste("StDev Position [",result.units,"]", sep = ""))+ #+
+            #mapview(observations, zcol = "fill", color = c("red", "orange"), layer.name = "Reliability measure rii [/]")+
+            mapview(observation.dis, zcol = "fill", color = pink2, layer.name = "Reliability measure rii [/] - distance") # , at = seq(0,1,rii_bound)
+        }else{
+          webmap.net.adj <- mapview(points, zcol = "Point_type", col.regions = c("red","grey"), layer.name = "Points_type") +
+            mapview(ellipses, zcol = "fill", col.regions = c("yellow", "red"), layer.name = paste("StDev Position [",result.units,"]", sep = ""))+ #+
+            #mapview(observations, zcol = "fill", color = c("red", "orange"), layer.name = "Reliability measure rii [/]")+
+            mapview(observation.dir, zcol = "fill", color = pink2, layer.name = "Reliability measure rii [/] - direction")+ # , at = seq(0,1,rii_bound)
+            mapview(observation.dis, zcol = "fill", color = pink2, layer.name = "Reliability measure rii [/] - distance") # , at = seq(0,1,rii_bound)
+        }
 
-        webmap.net.adj <- mapview(points, zcol = "Point_type", col.regions = c("red","grey"), layer.name = "Points_type") +
-          mapview(ellipses, zcol = "fill", col.regions = c("yellow", "red"), layer.name = paste("StDev Position [",result.units,"]", sep = ""))+ #+
-          #mapview(observations, zcol = "fill", color = c("red", "orange"), layer.name = "Reliability measure rii [/]")+
-          mapview(observation.dir, zcol = "fill", color = pink2, at = seq(0,1,rii_bound), layer.name = "Reliability measure rii [/] - direction")+
-          mapview(observation.dis, zcol = "fill", color = pink2, at = seq(0,1,rii_bound), layer.name = "Reliability measure rii [/] - distance")
+
+        # webmap.net.adj <- mapview(points, zcol = "Point_type", col.regions = c("red","grey"), layer.name = "Points_type") +
+        #   mapview(ellipses, zcol = "fill", col.regions = c("yellow", "red"), layer.name = paste("StDev Position [",result.units,"]", sep = ""))+ #+
+        #   #mapview(observations, zcol = "fill", color = c("red", "orange"), layer.name = "Reliability measure rii [/]")+
+        #   mapview(observation.dir, zcol = "fill", color = pink2, at = seq(0,1,rii_bound), layer.name = "Reliability measure rii [/] - direction")+
+        #   mapview(observation.dis, zcol = "fill", color = pink2, at = seq(0,1,rii_bound), layer.name = "Reliability measure rii [/] - distance")
 
         return(webmap.net.adj)
 
@@ -1148,15 +1171,15 @@ plot_surveynet <- function(snet = NULL, snet.adj = NULL, webmap = FALSE, net.1D 
       points <- snet.adj$Points
       observations <- snet.adj$Observations
       observations$id <- row_number(observations$from_to)
-     if(!is.null(points$h0)){
+     if(!is.null(points$h)){
        # ADJUST PLOT
-       p.plot <- ggplotly(ggplot()+
+       p.plot <- plotly::ggplotly(ggplot()+
                             geom_crossbar(data = points,
                                           aes(x = id,
                                               y = h,
-                                              ymin = h-sd_h/2,
-                                              ymax = h+sd_h/2,
-                                              fill = sd_h), fatten = 0)+
+                                              ymin = h-sd(h)/2,
+                                              ymax = h+sd(h)/2,
+                                              fill = sd(h)), fatten = 0)+
                             scale_fill_gradient(low="green",
                                                 high="red")+
                             geom_point(data = points,
@@ -1188,16 +1211,16 @@ plot_surveynet <- function(snet = NULL, snet.adj = NULL, webmap = FALSE, net.1D 
          ggplot()+
            geom_point(data = observations,
                      aes(x = id,
-                         y = f,
-                         colour = f))+
+                         y = dh,
+                         colour = dh))+
            geom_area(data = observations,
                       aes(x = id,
-                          y = f),fill="blue", alpha=.2)+
+                          y = dh),fill="blue", alpha=.2)+
            scale_colour_gradient(low="orange",
                                  high="red", guide = FALSE)+
-           geom_text(data=observations, aes(x = id, y = f, label=from_to), nudge_x = 0, nudge_y = 0.03)+
-           scale_y_continuous(limits = c(round(min(observations$f)-sd(observations$f), 0), round( max(observations$f)+sd(observations$f),0)),
-                              breaks = seq(round(min(observations$f)-sd(observations$f), 0), round( max(observations$f)+sd(observations$f),0),
+           geom_text(data=observations, aes(x = id, y = dh, label=from_to), nudge_x = 0, nudge_y = 0.03)+
+           scale_y_continuous(limits = c(round(min(observations$dh)-sd(observations$dh), 0), round( max(observations$dh)+sd(observations$dh),0)),
+                              breaks = seq(round(min(observations$dh)-sd(observations$dh), 0), round( max(observations$dh)+sd(observations$dh),0),
                                            by = 0.05))+
            xlab("ID") +
            ylab("Residuals [mm]") +
@@ -1221,14 +1244,15 @@ plot_surveynet <- function(snet = NULL, snet.adj = NULL, webmap = FALSE, net.1D 
 
 
      }else{
+
        # DESIGN PLOT
        plot.1d.net <- ggplotly(ggplot()+
                   geom_crossbar(data = points,
                                 aes(x = id,
                                     y = h,
-                                    ymin = h-sd_h/2,
-                                    ymax = h+sd_h/2,
-                                    fill = sd_h), fatten = 0)+
+                                    ymin = h-sd(h)/2,
+                                    ymax = h+sd(h)/2,
+                                    fill = sd(h)), fatten = 0)+
                   scale_fill_gradient(low="green",
                                       high="red")+
                   geom_point(data = points,

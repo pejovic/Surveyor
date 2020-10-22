@@ -27,79 +27,86 @@ source("./R/functions.r")
 
 file_path <- here::here("Data/Input/With_observations/Brana/Brana.xlsx")
 brana.snet <- read_surveynet(file = file_path)
-
-
+snet = brana.snet
+snet.adj = brana.snet.adj
+net.2D = TRUE
+webmap = TRUE
+epsg = 3857
+sp_bound =2
+rii_bound = 0.3
 # Summary
 
 # TO DO: da ne prikazuje nazive kolona, da se malo oboji i da mozda ide po tabovima...
 
-summary.adjustment <- data.frame(Parameter = c("Type: ", "Dimension: ", "Number of iterations: ", "Max. coordinate correction in last iteration: ", "Datum definition: "),
-                 Value = c("Weighted", "2D", 1, "0.0000 m",
-                           if(all(brana.snet$points$FIX_2D == FALSE)){
-                             "Datum defined with a minimal trace of the matrix Qx"
-                           }else{"Fixed parameters - classically defined datum"}
-                           ))
-
-summary.adjustment %>%
-  kable(caption = "Adjustment settings", digits = 4, align = "c", col.names = NULL) %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = TRUE)%>%
-  column_spec(1, bold = T, color = "white", background = "#D7261E")
-
-
-summary.stations <- data.frame(Parameter = c("Number of (partly) known stations: ", "Number of unknown stations: ", "Total: "),
-                               Value = c(sum(brana.snet$points$FIX_2D == TRUE),
-                                         sum(brana.snet$points$FIX_2D == FALSE),
-                                         sum(brana.snet$points$FIX_2D == TRUE) + sum(brana.snet$points$FIX_2D == FALSE)))
-
-
-summary.stations %>%
-  kable(caption = "Stations", digits = 4, align = "c") %>%
-  kable_styling(bootstrap_options = "striped", full_width = TRUE)
-
-
-summary.observations <- data.frame(Parameter = c("Directions: ", "Distances: ", "Known coordinates: ", "Total: "),
-                                   Value = c(sum(brana.snet$observations$direction == TRUE),
-                                             sum(brana.snet$observations$distance == TRUE),
-                                             sum(brana.snet$points$FIX_2D == TRUE)*2,
-                                             sum(brana.snet$observations$direction == TRUE)+sum(brana.snet$observations$distance == TRUE)+(sum(brana.snet$points$FIX_2D == TRUE)*2)))
-
-summary.observations %>%
-  kable(caption = "Observations", digits = 4, align = "c") %>%
-  kable_styling(bootstrap_options = "striped", full_width = TRUE)
-
-
-summary.unknowns <- data.frame(Parameter = c("Coordinates: ", "Orientations: ", "Total: "),
-                               Value = c(sum(brana.snet$points$FIX_2D == FALSE)*2,
-                                         length(brana.snet$observations %>% dplyr::filter(direction == TRUE) %>% .$from %>% unique()),
-                                         (sum(brana.snet$points$FIX_2D == FALSE)*2)+length(brana.snet$observations %>% dplyr::filter(direction == TRUE) %>% .$from %>% unique())))
-
-summary.unknowns %>%
-  kable(caption = "Unknowns", digits = 4, align = "c") %>%
-  kable_styling(bootstrap_options = "striped", full_width = TRUE)
-
-
-summary.degrees <- data.frame(Parameter = "Degrees of freedom: ", Value = summary.observations$Value[4]-summary.unknowns$Value[3])
-
-summary.degrees %>%
-  kable(caption = "Degrees of freedom: ", digits = 4, align = "c") %>%
-  kable_styling(bootstrap_options = "striped", full_width = TRUE)
-
+# summary.adjustment <- data.frame(Parameter = c("Type: ", "Dimension: ", "Number of iterations: ", "Max. coordinate correction in last iteration: ", "Datum definition: "),
+#                  Value = c("Weighted", "2D", 1, "0.0000 m",
+#                            if(all(brana.snet$points$FIX_2D == FALSE)){
+#                              "Datum defined with a minimal trace of the matrix Qx"
+#                            }else{"Fixed parameters - classically defined datum"}
+#                            ))
+#
+# summary.adjustment %>%
+#   kable(caption = "Adjustment settings", digits = 4, align = "c", col.names = NULL) %>%
+#   kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = TRUE)%>%
+#   column_spec(1, bold = T, color = "white", background = "#D7261E")
+#
+#
+# summary.stations <- data.frame(Parameter = c("Number of (partly) known stations: ", "Number of unknown stations: ", "Total: "),
+#                                Value = c(sum(brana.snet$points$FIX_2D == TRUE),
+#                                          sum(brana.snet$points$FIX_2D == FALSE),
+#                                          sum(brana.snet$points$FIX_2D == TRUE) + sum(brana.snet$points$FIX_2D == FALSE)))
+#
+#
+# summary.stations %>%
+#   kable(caption = "Stations", digits = 4, align = "c") %>%
+#   kable_styling(bootstrap_options = "striped", full_width = TRUE)
+#
+#
+# summary.observations <- data.frame(Parameter = c("Directions: ", "Distances: ", "Known coordinates: ", "Total: "),
+#                                    Value = c(sum(brana.snet$observations$direction == TRUE),
+#                                              sum(brana.snet$observations$distance == TRUE),
+#                                              sum(brana.snet$points$FIX_2D == TRUE)*2,
+#                                              sum(brana.snet$observations$direction == TRUE)+sum(brana.snet$observations$distance == TRUE)+(sum(brana.snet$points$FIX_2D == TRUE)*2)))
+#
+# summary.observations %>%
+#   kable(caption = "Observations", digits = 4, align = "c") %>%
+#   kable_styling(bootstrap_options = "striped", full_width = TRUE)
+#
+#
+# summary.unknowns <- data.frame(Parameter = c("Coordinates: ", "Orientations: ", "Total: "),
+#                                Value = c(sum(brana.snet$points$FIX_2D == FALSE)*2,
+#                                          length(brana.snet$observations %>% dplyr::filter(direction == TRUE) %>% .$from %>% unique()),
+#                                          (sum(brana.snet$points$FIX_2D == FALSE)*2)+length(brana.snet$observations %>% dplyr::filter(direction == TRUE) %>% .$from %>% unique())))
+#
+# summary.unknowns %>%
+#   kable(caption = "Unknowns", digits = 4, align = "c") %>%
+#   kable_styling(bootstrap_options = "striped", full_width = TRUE)
+#
+#
+# summary.degrees <- data.frame(Parameter = "Degrees of freedom: ", Value = summary.observations$Value[4]-summary.unknowns$Value[3])
+#
+# summary.degrees %>%
+#   kable(caption = "Degrees of freedom: ", digits = 4, align = "c") %>%
+#   kable_styling(bootstrap_options = "striped", full_width = TRUE)
 
 plot_surveynet(snet = brana.snet, webmap = FALSE, net.1D = FALSE, net.2D = TRUE)
 plot_surveynet(snet = brana.snet, webmap = TRUE, net.1D = FALSE, net.2D = TRUE)
-brana.snet.adj <- adjust.snet(adjust = TRUE, survey.net = brana.snet, dim_type = "2D", sd.apriori = 1, ellipse.scale = 10, all = FALSE) # promeniti sd pravca i duzina
+brana.snet.adj <- adjust.snet(adjust = FALSE, survey.net = brana.snet, dim_type = "2D", sd.apriori = 1, ellipse.scale = 10, all = FALSE) # promeniti sd pravca i duzina
 plot_surveynet(snet.adj = brana.snet.adj, webmap = TRUE, net.1D = FALSE, net.2D = TRUE)
 
 file_path <- here::here("Data/Input/With_observations/Makis/Makis_observations.xlsx")
 makis.snet <- read_surveynet(file = file_path)
 # TO DO: set_srs unutar read_surveynet
 plot_surveynet(snet = makis.snet, webmap = FALSE, net.1D = FALSE, net.2D = TRUE)
-makis.snet.adj <- adjust.snet(adjust = TRUE, survey.net = makis.snet, dim_type = "2D", sd.apriori = 3 ,  all = FALSE)
+makis.snet.adj <- adjust.snet(adjust = FALSE, survey.net = makis.snet, dim_type = "2D", sd.apriori = 3 ,  all = FALSE)
+plot_surveynet(snet.adj = makis.snet.adj, webmap = FALSE, net.1D = FALSE, net.2D = TRUE)
 
 
 file_path <- here::here("Data/Input/With_observations/Zadatak 1/Zadatak_1.xlsx")
 zadatak1.snet <- read_surveynet(file = file_path)
 plot_surveynet(snet = zadatak1.snet, webmap = FALSE, net.1D = FALSE, net.2D = TRUE)
+zadatak1.snet$observations$sd_Hz <- 5
+zadatak1.snet$observations$HD[2] <- 12500
 zadatak1.snet.adj <- adjust.snet(adjust = TRUE, survey.net = zadatak1.snet, dim_type = "2D", sd.apriori = 1 ,  all = FALSE)
 
 file_path <- here::here("Data/Input/Without_observations/xlsx/TETO_plan opazanja1.xlsx")
@@ -128,6 +135,10 @@ avala.snet <- read_surveynet(file = file_path)
 plot_surveynet(snet = gorica0.snet, webmap = FALSE, net.1D = FALSE, net.2D = TRUE)
 gorica0.snet.adj <- adjust.snet(adjust = TRUE, survey.net = gorica0.snet, dim_type = "2D", sd.apriori = 1 ,  all = FALSE)
 
+file_path <- here::here("Data/Input/With_observations/Grdelica/Grdelica.xlsx")
+grdelica.snet <- read_surveynet(file = file_path)
+plot_surveynet(snet = grdelica.snet, webmap = FALSE, net.1D = FALSE, net.2D = TRUE)
+grdelica.snet.adj <- adjust.snet(adjust = TRUE, survey.net = grdelica.snet, dim_type = "2D", sd.apriori = 1 ,  all = FALSE)
 
 file_path <- here::here("Data/Input/With_observations/Grdelica/Cut2.xlsx")
 cut2.snet <- read_surveynet(file = file_path)
@@ -139,6 +150,13 @@ cut2.snet.adj <- adjust.snet(adjust = TRUE, result.units = "cm",  survey.net = c
 # 1D design and adjustment
 file_path <- here::here("Data/Input/With_observations/DNS_1D/DNS_1D_nulta.xlsx")
 dns.snet <- read_surveynet(file = file_path)
+
+points <- dns.snet$points
+observations <- dns.snet$observations
+names(observations)
+observations$id <- row_number(observations$from)
+
+
 plot_surveynet(snet = dns.snet, webmap = FALSE, net.1D = TRUE, net.2D = FALSE)
 
 dns.snet.adj <- adjust.snet(adjust = FALSE, survey.net = dns.snet, wdh_model = "n_dh", dim_type = "1D", sd.apriori = 0.2 ,  all = FALSE, result.units = "mm")
