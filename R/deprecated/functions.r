@@ -5,41 +5,17 @@
 
 # Functions:
 
-#' @title Read surveynet data
-#' @description Read raw data stored in pre-defined excel file. 
-#' @param file PARAM_DESCRIPTION
-#' @param dest_crs Destination coordinate system (EPSG), Default: NA
-#' @param axes order of coordinate axes, Default: c("Easting", "Northing")
-#' @return surveynet object
-#' @details 
-#' @examples 
-#' \dontrun{
-#' if(interactive()){
-#'  #EXAMPLE1
-#'  }
-#' }
-#' @seealso 
-#'  \code{\link[readxl]{read_excel}}
-#'  \code{\link[sf]{st_as_sf}},\code{\link[sf]{sfc}},\code{\link[sf]{sf}},\code{\link[sf]{st_crs}}
-#'  \code{\link[dplyr]{rename}},\code{\link[dplyr]{mutate}},\code{\link[dplyr]{select}},\code{\link[dplyr]{filter}}
-#'  \code{\link[purrr]{when}}
-#' @rdname read_surveynet
-#' @export 
-#' @importFrom readxl read_xlsx
-#' @importFrom magrittr %>% %<>%
-#' @importFrom sf st_as_sf st_sfc st_sf st_set_crs st_linestring
-#' @importFrom dplyr rename mutate select filter across
-#' @importFrom purrr when
 read_surveynet <- function(file, dest_crs = NA, axes = c("Easting", "Northing")){
   # TODO: Ako se definise neki model tezina za koji ne postoje podaci stavi warning. Npr. za model "sd_dh" mora da postoji i sd.apriori koji se pretvara u sd0.
+
   # TODO: Set warning if there are different or not used points in two elements of survey.net list.
   # TODO: Check if any point has no sufficient measurements to be adjusted.
   # setting columns type
   points_col_type <- c("numeric", "text", "numeric", "numeric", "numeric", "logical", "logical", "logical")
   obs_col_type <- c("text", "text", rep("numeric", 19))
   # reading data
-  points <- readxl::read_xlsx(path = file, sheet = "Points", col_types = points_col_type) %>% dplyr::mutate(across(.cols = "Name", .fns = as.character)) #mutate_at(., .vars = c("Name"), as.character)
-  observations <- readxl::read_xlsx(path = file, sheet = "Observations", col_types = obs_col_type) %>% dplyr::mutate(across(.cols = c("from", "to"), .fns = as.character))  #mutate_at(., .vars = c("from", "to"), as.character)
+  points <- readxl::read_xlsx(path = file, sheet = "Points", col_types = points_col_type) %>% mutate_at(., .vars = c("Name"), as.character)
+  observations <- readxl::read_xlsx(path = file, sheet = "Observations", col_types = obs_col_type) %>% mutate_at(., .vars = c("from", "to"), as.character)
 
   if(sum(rowSums(is.na(points[, c("x", "y")])) != 0) != 0){
     warning("Network has no spatial coordinates")}else{
@@ -106,37 +82,12 @@ read_surveynet <- function(file, dest_crs = NA, axes = c("Easting", "Northing"))
 }
 
 
-#' @title dec2dms
-#' @description FUNCTION_DESCRIPTION
-#' @param ang PARAM_DESCRIPTION
-#' @return OUTPUT_DESCRIPTION
-#' @details DETAILS
-#' @examples 
-#' \dontrun{
-#' if(interactive()){
-#'  #EXAMPLE1
-#'  }
-#' }
-#' @rdname dec2dms
 dec2dms <- function(ang){
   deg <- floor(ang); minut <- floor((ang-deg)*60); sec <- ((ang-deg)*60-minut)*60
   return(paste(deg, minut, round(sec, 0), sep = " "))
 }
 
 
-#' @title dist
-#' @description Calculate distance
-#' @param pt1_coords PARAM_DESCRIPTION
-#' @param pt2_coords PARAM_DESCRIPTION
-#' @return OUTPUT_DESCRIPTION
-#' @details DETAILS
-#' @examples 
-#' \dontrun{
-#' if(interactive()){
-#'  #EXAMPLE1
-#'  }
-#' }
-#' @rdname dist
 dist <- function(pt1_coords, pt2_coords){
   dEasting <- as.numeric(pt2_coords[1] - pt1_coords[1])
   dNorthing <- as.numeric(pt2_coords[2] - pt1_coords[2])
@@ -146,20 +97,6 @@ dist <- function(pt1_coords, pt2_coords){
 
 
 
-#' @title FUNCTION_TITLE
-#' @description FUNCTION_DESCRIPTION
-#' @param pt1_coords PARAM_DESCRIPTION
-#' @param pt2_coords PARAM_DESCRIPTION
-#' @param type PARAM_DESCRIPTION, Default: list("dec", "dms", "rad")
-#' @return OUTPUT_DESCRIPTION
-#' @details DETAILS
-#' @examples 
-#' \dontrun{
-#' if(interactive()){
-#'  #EXAMPLE1
-#'  }
-#' }
-#' @rdname ni
 ni <- function(pt1_coords, pt2_coords, type = list("dec", "dms", "rad")){
   ## check if the type exists:
   if(length(type) > 1){ type <- type[[1]]}
@@ -184,21 +121,6 @@ ni <- function(pt1_coords, pt2_coords, type = list("dec", "dms", "rad")){
 }
 
 ### coeficients for distances #####################################################
-#' @title FUNCTION_TITLE
-#' @description FUNCTION_DESCRIPTION
-#' @param pt1 PARAM_DESCRIPTION
-#' @param pt2 PARAM_DESCRIPTION
-#' @param pts PARAM_DESCRIPTION
-#' @param units PARAM_DESCRIPTION
-#' @return OUTPUT_DESCRIPTION
-#' @details DETAILS
-#' @examples 
-#' \dontrun{
-#' if(interactive()){
-#'  #EXAMPLE1
-#'  }
-#' }
-#' @rdname coef_d
 coef_d <- function (pt1, pt2, pts, units) {
   units.table <- c("mm" = 1000, "cm" = 100, "m" = 1)
   pt1 <- as.numeric(pt1)
@@ -237,21 +159,6 @@ coef_d <- function (pt1, pt2, pts, units) {
 
 ### coeficients for directions (pravac) #####################################################
 
-#' @title FUNCTION_TITLE
-#' @description FUNCTION_DESCRIPTION
-#' @param pt1 PARAM_DESCRIPTION
-#' @param pt2 PARAM_DESCRIPTION
-#' @param pts PARAM_DESCRIPTION
-#' @param units PARAM_DESCRIPTION
-#' @return OUTPUT_DESCRIPTION
-#' @details DETAILS
-#' @examples 
-#' \dontrun{
-#' if(interactive()){
-#'  #EXAMPLE1
-#'  }
-#' }
-#' @rdname coef_p
 coef_p <- function (pt1, pt2, pts, units) {
   units.table <- c("mm" = 1000, "cm" = 100, "m" = 1)
   pt1 <- as.numeric(pt1)
@@ -293,63 +200,32 @@ coef_p <- function (pt1, pt2, pts, units) {
 }
 
 # net.points <- survey.net[[1]]
-#' @title FUNCTION_TITLE
-#' @description FUNCTION_DESCRIPTION
-#' @param net.points PARAM_DESCRIPTION
-#' @return OUTPUT_DESCRIPTION
-#' @details DETAILS
-#' @examples 
-#' \dontrun{
-#' if(interactive()){
-#'  #EXAMPLE1
-#'  }
-#' }
-#' @rdname fix_params2D
 fix_params2D <- function(net.points){
   rep(as.logical(c(apply(cbind(net.points$FIX_2D), 1, as.numeric))), each = 2)
 }
 
 # survey.net <- brana
-#' @title FUNCTION_TITLE
-#' @description FUNCTION_DESCRIPTION
-#' @param survey.net PARAM_DESCRIPTION
-#' @param units PARAM_DESCRIPTION
-#' @return OUTPUT_DESCRIPTION
-#' @details DETAILS
-#' @examples 
-#' \dontrun{
-#' if(interactive()){
-#'  #EXAMPLE1
-#'  }
-#' }
-#' @seealso 
-#'  \code{\link[dplyr]{filter}},\code{\link[dplyr]{select}}
-#'  \code{\link[tidyr]{spread}}
-#' @rdname Amat
-#' @importFrom dplyr filter select mutate_at
-#' @importFrom tidyr spread
-#' @importFrom sf st_coordinates st_drop_geometry
 Amat <- function(survey.net, units){
 
   if(any(survey.net[[2]]$direction)){
-    A_dir <- survey.net[[2]] %>% dplyr::filter(direction) %>% sf::st_coordinates() %>% as.data.frame() %>% dplyr::mutate(across(.cols = "L1", as.factor)) %>%
+    A_dir <- survey.net[[2]] %>% dplyr::filter(direction) %>% st_coordinates() %>% as.data.frame() %>% mutate_at(vars(L1), as.factor) %>%
       split(., .$L1) %>%
-      lapply(., function(x) coef_p(pt1 = x[1, 1:2], pt2 = x[2, 1:2], pts = sf::st_coordinates(survey.net[[1]][, 1:2]), units = units)) %>%
+      lapply(., function(x) coef_p(pt1 = x[1, 1:2], pt2 = x[2, 1:2], pts = st_coordinates(survey.net[[1]][, 1:2]), units = units)) %>%
       do.call(rbind, .)
   }else{
     A_dir <- NULL
   }
 
   if(any(survey.net[[2]]$distance)){
-    A_dist <- survey.net[[2]] %>% dplyr::filter(distance) %>% sf::st_coordinates() %>% as.data.frame() %>% dplyr::mutate(across(.cols = "L1", as.factor)) %>%
+    A_dist <- survey.net[[2]] %>% dplyr::filter(distance) %>% st_coordinates() %>% as.data.frame() %>% mutate_at(vars(L1), as.factor) %>%
       split(., .$L1) %>%
-      lapply(., function(x) coef_d(pt1 = x[1, 1:2], pt2 = x[2, 1:2], pts = sf::st_coordinates(survey.net[[1]][, 1:2]), units = units)) %>%
+      lapply(., function(x) coef_d(pt1 = x[1, 1:2], pt2 = x[2, 1:2], pts = st_coordinates(survey.net[[1]][, 1:2]), units = units)) %>%
       do.call(rbind, .)
   }else{
     A_dist <- NULL
   }
 
-  station.names <- survey.net[[2]] %>% dplyr::filter(direction) %>% dplyr::select(from) %>% sf::st_drop_geometry() %>% unique() %>% unlist(use.names = FALSE)
+  station.names <- survey.net[[2]] %>% dplyr::filter(direction) %>% dplyr::select(from) %>% st_drop_geometry() %>% unique() %>% unlist(use.names = FALSE)
 
   if(!all(is.na(survey.net[[2]]$sd_Hz))){
     Z_mat <- survey.net[[2]] %>% dplyr::filter(direction) %>%
@@ -380,23 +256,6 @@ Amat <- function(survey.net, units){
 
 # Weights matrix
 # Wmat je ista, samo je promenjen naziv standarda. Stavljeni su "sd_Hz" i "sd_dist".
-#' @title FUNCTION_TITLE
-#' @description FUNCTION_DESCRIPTION
-#' @param survey.net PARAM_DESCRIPTION
-#' @param sd.apriori PARAM_DESCRIPTION, Default: 1
-#' @param res.units PARAM_DESCRIPTION, Default: 'mm'
-#' @return OUTPUT_DESCRIPTION
-#' @details DETAILS
-#' @examples 
-#' \dontrun{
-#' if(interactive()){
-#'  #EXAMPLE1
-#'  }
-#' }
-#' @seealso 
-#'  \code{\link[dplyr]{filter}},\code{\link[dplyr]{select}},\code{\link[dplyr]{mutate}}
-#' @rdname Wmat
-#' @importFrom dplyr filter select mutate
 Wmat <- function(survey.net, sd.apriori = 1, res.units = "mm"){
   res.unit.lookup <- c("mm" = 1, "cm" = 10, "m" = 1000)
   #TODO: Omoguciti zadavanje i drugih kovariacionih formi izmedju merenja.
@@ -413,19 +272,6 @@ Wmat <- function(survey.net, sd.apriori = 1, res.units = "mm"){
 }
 
 # Funkcija koja izdvaja elemente Qx matrice u listu za elipsu svake tacke
-#' @title FUNCTION_TITLE
-#' @description FUNCTION_DESCRIPTION
-#' @param Qx PARAM_DESCRIPTION
-#' @param fix PARAM_DESCRIPTION
-#' @return OUTPUT_DESCRIPTION
-#' @details DETAILS
-#' @examples 
-#' \dontrun{
-#' if(interactive()){
-#'  #EXAMPLE1
-#'  }
-#' }
-#' @rdname Qxy
 Qxy <- function(Qx, fix){
   k = 0
   Qxxx <- as.list(rep(NA, length(fix)))
@@ -440,21 +286,26 @@ Qxy <- function(Qx, fix){
   return(Qxxx)
 }
 
-#' @title FUNCTION_TITLE
-#' @description FUNCTION_DESCRIPTION
-#' @param Qxy PARAM_DESCRIPTION
-#' @param prob PARAM_DESCRIPTION, Default: NA
-#' @param sd.apriori PARAM_DESCRIPTION, Default: 1
-#' @param teta.unit PARAM_DESCRIPTION, Default: list("deg", "rad")
-#' @return OUTPUT_DESCRIPTION
-#' @details DETAILS
-#' @examples 
-#' \dontrun{
-#' if(interactive()){
-#'  #EXAMPLE1
-#'  }
-#' }
-#' @rdname error.ellipse
+# # Funkcija koja izdvaja elemente Qx matrice u listu za elipsu svake tacke
+# Qxy <- function(Qx, n, fixd = fix){
+#   k = 0
+#   fixd <- cbind(fixd, fixd[,1] + fixd[, 2])
+#   Qxxx <- as.list(rep(NA, dim(fixd)[1]))
+#   for(i in 1:length(Qxxx)){
+#     k = fixd[i, 1] + fixd[i, 2] + k
+#     if(fixd[i, 3] == 1){
+#       Qxxx[[i]] <- diag(fixd[i, c(1, 2)])*Qx[k, k]
+#     }
+#     else if (fixd[i, 3] == 2){
+#       Qxxx[[i]] <- cbind(c(Qx[k-1, k-1], Qx[k-1, k]), c(Qx[k, k-1], Qx[k, k]))
+#     } else {
+#       Qxxx[[i]] <- diag(fixd[i, c(1, 2)])
+#     }
+#   }
+#   return(Qxxx)
+# }
+# #
+
 error.ellipse <- function(Qxy, prob = NA, sd.apriori = 1, teta.unit = list("deg", "rad")) {
   Qee <- Qxy[1, 1]
   Qnn <- Qxy[2, 2]
@@ -488,36 +339,8 @@ error.ellipse <- function(Qxy, prob = NA, sd.apriori = 1, teta.unit = list("deg"
 }
 #
 
-#' @title FUNCTION_TITLE
-#' @description FUNCTION_DESCRIPTION
-#' @param a PARAM_DESCRIPTION
-#' @return OUTPUT_DESCRIPTION
-#' @details DETAILS
-#' @examples 
-#' \dontrun{
-#' if(interactive()){
-#'  #EXAMPLE1
-#'  }
-#' }
-#' @rdname rot
 rot = function(a) matrix(c(cos(a), sin(a), -sin(a), cos(a)), 2, 2)
 
-#' @title FUNCTION_TITLE
-#' @description FUNCTION_DESCRIPTION
-#' @param ellipse.param PARAM_DESCRIPTION
-#' @param scale PARAM_DESCRIPTION, Default: 10
-#' @return OUTPUT_DESCRIPTION
-#' @details DETAILS
-#' @examples 
-#' \dontrun{
-#' if(interactive()){
-#'  #EXAMPLE1
-#'  }
-#' }
-#' @seealso 
-#'  \code{\link[nngeo]{st_ellipse}}
-#' @rdname sf.ellipse
-#' @importFrom nngeo st_ellipse
 sf.ellipse <- function(ellipse.param, scale = 10){
   ellipse <- nngeo::st_ellipse(ellipse.param, ey = ellipse.param$A*scale, ex = ellipse.param$B*scale)
   geom.ellipse = st_geometry(ellipse)
@@ -527,19 +350,6 @@ sf.ellipse <- function(ellipse.param, scale = 10){
   return(ellipse.sf)
 }
 
-#' @title FUNCTION_TITLE
-#' @description FUNCTION_DESCRIPTION
-#' @param Qxy.mat PARAM_DESCRIPTION
-#' @param sd.apriori PARAM_DESCRIPTION
-#' @return OUTPUT_DESCRIPTION
-#' @details DETAILS
-#' @examples 
-#' \dontrun{
-#' if(interactive()){
-#'  #EXAMPLE1
-#'  }
-#' }
-#' @rdname sigma.xy
 sigma.xy <- function(Qxy.mat, sd.apriori){
   sigma <- diag(diag(as.numeric(sd.apriori), 2, 2)%*%diag(sqrt(diag(Qxy.mat)), 2, 2))
 }
@@ -554,22 +364,6 @@ sigma.xy <- function(Qxy.mat, sd.apriori){
 #  st.survey.net <- zadatak1.snet[[2]] %>% dplyr::filter(from == "T2")
 # st.survey.net <- cut45[[2]] %>% dplyr::filter(from == "C53")
 
-#' @title FUNCTION_TITLE
-#' @description FUNCTION_DESCRIPTION
-#' @param st.survey.net PARAM_DESCRIPTION
-#' @param units.dir PARAM_DESCRIPTION, Default: 'sec'
-#' @return OUTPUT_DESCRIPTION
-#' @details DETAILS
-#' @examples 
-#' \dontrun{
-#' if(interactive()){
-#'  #EXAMPLE1
-#'  }
-#' }
-#' @seealso 
-#'  \code{\link[dplyr]{mutate}},\code{\link[dplyr]{arrange}}
-#' @rdname fdir_st
-#' @importFrom dplyr mutate arrange
 fdir_st <- function(st.survey.net, units.dir = "sec"){
   units.table <- c("sec" = 3600, "min" = 60, "deg" = 1)
   st.survey.net <- st.survey.net %>% split(., f = as.factor(.$to)) %>%
@@ -586,25 +380,34 @@ fdir_st <- function(st.survey.net, units.dir = "sec"){
   f <- f*units.table[units.dir]
   return(f)
 }
+# ab <- survey.survey.sim
+# survey.net = ab
 
 
-#' @title FUNCTION_TITLE
-#' @description FUNCTION_DESCRIPTION
-#' @param survey.net PARAM_DESCRIPTION
-#' @param units.dir PARAM_DESCRIPTION, Default: 'sec'
-#' @param units.dist PARAM_DESCRIPTION, Default: 'mm'
-#' @return OUTPUT_DESCRIPTION
-#' @details DETAILS
-#' @examples 
-#' \dontrun{
-#' if(interactive()){
-#'  #EXAMPLE1
-#'  }
-#' }
-#' @seealso 
-#'  \code{\link[dplyr]{filter}},\code{\link[dplyr]{mutate}}
-#' @rdname fmat
-#' @importFrom dplyr filter mutate
+# fdir_st <- function(st.survey.net, units.dir = "sec"){
+#   units.table <- c("sec" = 3600, "min" = 60, "deg" = 1)
+#   st.survey.net <- st.survey.net %>% split(., f = as.factor(.$to)) %>%
+#     lapply(., function(x) {x$ni = ni(pt1_coords = as.numeric(x[, c("x_from", "y_from")]), pt2_coords = as.numeric(x[, c("x_to", "y_to")]), type = "dec"); return(x)}) %>%
+#     do.call(rbind,.) %>%
+#     dplyr::mutate(z = Hz-ni) %>%
+#     dplyr::arrange(ID)
+#   st.survey.net$z <- ifelse(st.survey.net$z < 1, st.survey.net$z + 360, st.survey.net$z)
+#   z0_mean <- mean(st.survey.net$z)
+#   st.survey.net$Hz0 <- z0_mean + st.survey.net$ni
+#   st.survey.net$Hz0 <- ifelse(st.survey.net$Hz0 > 359, st.survey.net$Hz0 - 360, st.survey.net$Hz0)
+#   st.survey.net$Hz <- ifelse(st.survey.net$Hz < 1, st.survey.net$Hz + 360, st.survey.net$Hz)
+#   st.survey.net$Hz <- ifelse(st.survey.net$Hz >= 360, st.survey.net$Hz - 360, st.survey.net$Hz)
+#   st.survey.net$f <- (st.survey.net$Hz0 - st.survey.net$Hz)*units.table[units.dir]
+#
+#   f <- (st.survey.net$Hz0 - st.survey.net$Hz)*units.table[units.dir]
+#   return(f)
+# }
+
+
+# survey.net[[2]] %>% dplyr::filter(from == "M2") %>% fdir_st() %>% round(.,2)
+
+# fmat(survey.net = survey.net) %>% round(., 2)
+
 fmat <- function(survey.net, units.dir = "sec", units.dist = "mm"){
   f_dir <- survey.net[[2]] %>% dplyr::filter(direction == TRUE) %>% st_drop_geometry() %>% split(.,factor(.$from, levels = unique(.$from))) %>%
     lapply(., function(x) fdir_st(x, units.dir = units.dir)) %>%
@@ -616,21 +419,6 @@ fmat <- function(survey.net, units.dir = "sec", units.dist = "mm"){
   return(c(f_dir, f_dist))
 }
 
-#' @title FUNCTION_TITLE
-#' @description FUNCTION_DESCRIPTION
-#' @param sd.apriori PARAM_DESCRIPTION
-#' @param sd.estimated PARAM_DESCRIPTION
-#' @param df PARAM_DESCRIPTION
-#' @param prob PARAM_DESCRIPTION
-#' @return OUTPUT_DESCRIPTION
-#' @details DETAILS
-#' @examples 
-#' \dontrun{
-#' if(interactive()){
-#'  #EXAMPLE1
-#'  }
-#' }
-#' @rdname model_adequacy_test
 model_adequacy_test <- function(sd.apriori, sd.estimated, df, prob){
   if(sd.estimated > sd.apriori){
     F.estimated <- sd.estimated^2/sd.apriori^2
@@ -647,21 +435,6 @@ model_adequacy_test <- function(sd.apriori, sd.estimated, df, prob){
   return(list(F.estimated < F.quantile, "F_test" = F.estimated, "Crital value F-test" =  F.quantile, note))
 }
 
-#' @title FUNCTION_TITLE
-#' @description FUNCTION_DESCRIPTION
-#' @param sd.apriori PARAM_DESCRIPTION
-#' @param sd.estimated PARAM_DESCRIPTION
-#' @param df PARAM_DESCRIPTION
-#' @param prob PARAM_DESCRIPTION
-#' @return OUTPUT_DESCRIPTION
-#' @details DETAILS
-#' @examples 
-#' \dontrun{
-#' if(interactive()){
-#'  #EXAMPLE1
-#'  }
-#' }
-#' @rdname model_adequacy_test.shiny
 model_adequacy_test.shiny <- function(sd.apriori, sd.estimated, df, prob){
   if(sd.estimated > sd.apriori){
     F.estimated <- sd.estimated^2/sd.apriori^2
@@ -681,23 +454,12 @@ model_adequacy_test.shiny <- function(sd.apriori, sd.estimated, df, prob){
 }
 
 
-#' @title FUNCTION_TITLE
-#' @description FUNCTION_DESCRIPTION
-#' @param survey.net PARAM_DESCRIPTION
-#' @return OUTPUT_DESCRIPTION
-#' @details DETAILS
-#' @examples 
-#' \dontrun{
-#' if(interactive()){
-#'  #EXAMPLE1
-#'  }
-#' }
-#' @rdname Amat1D
 Amat1D <- function(survey.net){
   used_points <- unique(c(survey.net$observations$from, survey.net$observations$to))
   point_names <- unique(survey.net$points$Name)
   point_names <- point_names[point_names %in% used_points]
   if(!all(used_points %in% point_names)){stop("Some points are missed")}
+
   Amat <- data.frame(matrix(0, ncol = length(point_names), nrow = dim(survey.net$observations)[1]))
   names(Amat) <- point_names
   for(i in 1:dim(Amat)[1]){
@@ -709,26 +471,6 @@ Amat1D <- function(survey.net){
   return(Amat)
 }
 
-#' @title FUNCTION_TITLE
-#' @description FUNCTION_DESCRIPTION
-#' @param survey.net PARAM_DESCRIPTION
-#' @param wdh_model PARAM_DESCRIPTION, Default: list("sd_dh", "d_dh", "n_dh", "E")
-#' @param sd0 PARAM_DESCRIPTION, Default: 1
-#' @param d0 PARAM_DESCRIPTION, Default: NA
-#' @param n0 PARAM_DESCRIPTION, Default: 1
-#' @param res.units PARAM_DESCRIPTION, Default: 'mm'
-#' @return OUTPUT_DESCRIPTION
-#' @details DETAILS
-#' @examples 
-#' \dontrun{
-#' if(interactive()){
-#'  #EXAMPLE1
-#'  }
-#' }
-#' @seealso 
-#'  \code{\link[dplyr]{mutate}}
-#' @rdname Wmat1D
-#' @importFrom dplyr mutate case_when
 Wmat1D <- function(survey.net, wdh_model = list("sd_dh", "d_dh", "n_dh", "E"), sd0 = 1, d0 = NA, n0 = 1, res.units = "mm"){
   res.unit.lookup <- c("mm" = 1, "cm" = 10, "m" = 1000)
   "%!in%" <- Negate("%in%")
@@ -737,7 +479,7 @@ Wmat1D <- function(survey.net, wdh_model = list("sd_dh", "d_dh", "n_dh", "E"), s
   if(is(survey.net[[2]], "sf")){survey.net[[2]] <- survey.net[[2]] %>% st_drop_geometry()}
 
   survey.net[[2]] %<>%
-    dplyr::mutate(weigth = dplyr::case_when(
+    dplyr::mutate(weigth = case_when(
       wdh_model == "sd_dh" ~ (sd0/res.unit.lookup[res.units])^2/sd_dh^2,
       wdh_model == "d_dh" ~ 1/d_dh,
       wdh_model == "n_dh" ~ n0/n_dh,
@@ -747,19 +489,6 @@ Wmat1D <- function(survey.net, wdh_model = list("sd_dh", "d_dh", "n_dh", "E"), s
   return(diag(survey.net[[2]]$weigth))
 }
 
-#' @title FUNCTION_TITLE
-#' @description FUNCTION_DESCRIPTION
-#' @param survey.net PARAM_DESCRIPTION
-#' @param units PARAM_DESCRIPTION, Default: units
-#' @return OUTPUT_DESCRIPTION
-#' @details DETAILS
-#' @examples 
-#' \dontrun{
-#' if(interactive()){
-#'  #EXAMPLE1
-#'  }
-#' }
-#' @rdname fmat1D
 fmat1D <- function(survey.net, units = units){
   unit.lookup <- c("mm" = 1000, "cm" = 100, "m" = 1)
   survey.net[[2]]$h_from <- survey.net[[1]]$h[match(survey.net[[2]]$from, survey.net[[1]]$Name)]
@@ -768,47 +497,9 @@ fmat1D <- function(survey.net, units = units){
   return(f)
 }
 
-#' @title Geodetic control network adjustment and design
-#' @description Adjustment and design computation of the 1D and 2D geodetic control network.
-#' @param adjust logical. If TRUE adjustment will be performed. If FALSE the computation of the control network design quality will be conducted, Default: TRUE
-#' @param survey.net surveynet object. Output from \code{read_surveynet} function
-#' @param dim_type Type of the geodetic control network. Can be either 1D or 2D, Default: list("1D", "2D")
-#' @param sd.apriori Apriori dispersion factor, Default: 1
-#' @param wdh_model Weighted model for leveling measurements, Default: list("n_dh", "sd_dh", "d_dh", "E")
-#' @param n0 Number of station in the reference measurements (only for 1D network), Default: 1
-#' @param maxiter Maximum number of iterations in adjustment computation, Default: 50
-#' @param prob Probability in statistical testing, Default: 0.95
-#' @param output Type of the output. It can be either, \code{spatial} (\code{sf} classes) or \code{report} (data frame), Default: list("spatial", "report")
-#' @param coord_tolerance Tolerance in coordinate difference in two iteration, Default: 0.001
-#' @param result.units Units of the results, Default: list("mm", "cm", "m")
-#' @param ellipse.scale Scale parameter for displaying absolute error ellipses, Default: 1
-#' @param teta.unit Units for orientation angle of the error ellipses, Default: list("deg", "rad")
-#' @param units.dir Units for the residuals of the angular measurements, Default: 'sec'
-#' @param use.sd.estimated logical, if estimated reference standard deviation factor should be used, Default: TRUE
-#' @param all logical, if specific computation matrices should be exported, Default: FALSE
-#' @return if \code{outout = spatial} a list of three sf classes is exported. Otherwise \code{dataframe} object are exported.
-#' @details DETAILS
-#' @examples 
-#' \dontrun{
-#' if(interactive()){
-#'  #EXAMPLE1
-#'  }
-#' }
-#' @seealso 
-#'  \code{\link[sf]{st_crs}},\code{\link[sf]{st_as_sf}},\code{\link[sf]{sfc}},\code{\link[sf]{sf}},\code{\link[sf]{st_geometry}}
-#'  \code{\link[tidyr]{pivot_longer}},\code{\link[tidyr]{separate}},\code{\link[tidyr]{pivot_wider}}
-#'  \code{\link[purrr]{when}},\code{\link[purrr]{keep}}
-#'  \code{\link[dplyr]{select}},\code{\link[dplyr]{mutate}},\code{\link[dplyr]{arrange}},\code{\link[dplyr]{filter}},\code{\link[dplyr]{mutate-joins}},\code{\link[dplyr]{mutate_all}},\code{\link[dplyr]{rename}}
-#'  \code{\link[stringr]{str_c}}
-#'  \code{\link[MASS]{ginv}}
-#' @rdname adjust.snet
-#' @export 
-#' @importFrom sf st_crs st_as_sf st_sfc st_sf st_drop_geometry st_set_crs
-#' @importFrom tidyr pivot_longer separate pivot_wider
-#' @importFrom purrr when discard
-#' @importFrom dplyr select mutate arrange filter right_join mutate_all rename left_join
-#' @importFrom stringr str_c
-#' @importFrom MASS ginv
+
+
+# adjust = TRUE; survey.net = prva; dim_type = "1D"; sd.apriori = 0.7; wdh_model = "n_dh"; n0 = 1; maxiter = 1; prob = 0.95; coord_tolerance = 1e-3; result.units = "mm"; ellipse.scale = 1; output = "spatial"; teta.unit = "dec"; units.dir = "sec"; units.dist = "mm"; use.sd.estimated = TRUE; all = TRUE
 adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), sd.apriori = 1, wdh_model = list("n_dh", "sd_dh", "d_dh", "E"), n0 = 1, maxiter = 50, prob = 0.95, output = list("spatial", "report"), coord_tolerance = 1e-3, result.units = list("mm", "cm", "m"), ellipse.scale = 1, teta.unit = list("deg", "rad"), units.dir = "sec", use.sd.estimated = TRUE, all = TRUE){
 
   dim_type <- dim_type[[1]]
@@ -902,13 +593,13 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
         purrr::discard(~all(is.na(.x))) %>%
         dplyr::right_join(., observations[, c("from", "to", "type")], by = c("from", "to")) %>%
         dplyr::arrange(type) %>%
-        dplyr::mutate(Observations = dplyr::if_else(type == "distance", paste(HD), paste(HzD, HzM, HzS, sep = " "))) %>%
+        dplyr::mutate(Observations = if_else(type == "distance", paste(HD), paste(HzD, HzM, HzS, sep = " "))) %>%
         dplyr::mutate(res = v.mat, f = f.mat, Kl = c(sd.apriori^2)*diag(Ql.mat), Kv =  c(sd.apriori^2)*diag(Qv.mat), rii = diag(r) ) %>%
-        dplyr::mutate(Adj_meas = dplyr::if_else(type == "direction", Hz + res/dir.unit.lookup[units.dir], HD + res/res.unit.lookup[units])) %>%
-        dplyr::mutate(Adj_meas = dplyr::if_else(type == "direction" & Adj_meas < 0, Adj_meas + 360, Adj_meas + 0),
+        dplyr::mutate(Adj_meas = if_else(type == "direction", Hz + res/dir.unit.lookup[units.dir], HD + res/res.unit.lookup[units])) %>%
+        dplyr::mutate(Adj_meas = if_else(type == "direction" & Adj_meas < 0, Adj_meas + 360, Adj_meas + 0),
                       Baarda.test = as.numeric(abs(v.mat)/c(sd.apriori)*(sqrt(diag(Qv.mat))))) %>%
         dplyr::mutate(across(.cols = c("res", "f", "Kl", "Kv", "rii", "Baarda.test"), ~round(.x, disp.unit.lookup[units]))) %>%
-        dplyr::mutate(Adj.observations = dplyr::if_else(type == "distance", paste(HD), dec2dms(Adj_meas)))
+        dplyr::mutate(Adj.observations = if_else(type == "distance", paste(HD), dec2dms(Adj_meas)))
 
       if(model_adequacy[[1]] & use.sd.estimated){sigma_apriori <- sd.apriori; sd.apriori <- sd.estimated}
 
@@ -1202,3 +893,402 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
 
 
 
+##################
+# plot_surveynet
+##################
+
+# Function for data geovisualisation trough package ggplot2 and mapview
+# Parameters:
+#    1. snet -  object from function read_surveynet (can be NULL)
+#    2. snet.adj - object from function adjust.snet (can be NULL)
+#    3. webmap - plot 2d net using mapview package
+#    4. net.1D - 2d net indicator
+#    5. net.2D - 1d net indicator
+#    6. ellipse.scale - criteria argument
+#    7. result.units - criteria argument
+#    8. sp_bound -  criteria argument
+#    9. rii_bound -  criteria argument
+
+# snet = dns.snet
+# snet = brana.snet
+# net.2D = TRUE
+# snet.adj = brana.snet.adj
+
+plot_surveynet <- function(snet = NULL, snet.adj = NULL, webmap = FALSE, net.1D = FALSE, net.2D = FALSE, ellipse.scale = 10, result.units = "mm", sp_bound = 2, rii_bound = 0.3, epsg = 3857){
+
+  if(!is.null(snet)){
+
+  points <- snet$points
+  observations <- snet$observations
+
+  if(net.2D == TRUE) {
+    points %<>% dplyr::mutate(Point_type = dplyr::case_when(Point_object == FALSE ~ "Geodetic network",
+                                                            Point_object == TRUE ~ "Points at object"))
+    observations %<>% dplyr::mutate(Observation_type = dplyr::case_when(distance == TRUE & direction == FALSE ~ "Distance",
+                                                                        distance == FALSE & direction == TRUE ~ "Direction",
+                                                                        distance == TRUE & direction == TRUE ~ "Both",
+                                                                        distance == FALSE & direction == FALSE ~ "None"))
+
+    if(webmap == TRUE){
+
+      if(is.na(sf::st_crs(points)) == TRUE) {
+        points %<>% sf::st_set_crs(., epsg)
+      }
+
+      if(is.na(sf::st_crs(observations)) == TRUE) {
+        observations %<>% sf::st_set_crs(., epsg)
+      }
+
+      points <- st_transform(points, epsg)
+      observations <- st_transform(observations, epsg)
+
+      webmap.net <- mapview(points, zcol = "Point_type", col.regions = c("red","grey")) + mapview(observations, zcol = "Observation_type")
+      return(webmap.net)
+
+    } else {
+      plot.net <- ggplot() +
+        geom_sf(data=observations, aes(color = Observation_type),size=0.5,stroke=0.5)+
+        geom_sf(data=points, aes(fill = Point_type), shape = 24,  size=2, stroke=0.5) +
+        geom_sf_text(data=points, aes(label=Name,hjust = 1.5, vjust =1.5))+
+        xlab("\nEasting [m or °]") +
+        ylab("Northing [m or °]\n") +
+        ggtitle("GEODETIC 2D NETWORK")+
+        labs(subtitle = "Points and Observational plan")+
+        guides(col = guide_legend())+
+        theme_bw()+
+        theme(legend.position = 'bottom')
+
+      return(plot.net)
+    }
+  }
+
+  if(net.1D == TRUE){
+    observations %<>% dplyr::mutate(from_to = paste(from, to, sep = "-"))
+    observations$id <- row_number(observations$from_to)
+    if(!is.null(observations$dh)){
+      p.plot <- ggplotly(ggplot()+
+                           geom_point(data = points,
+                                      aes(x = id,
+                                          y = h,
+                                          colour = h))+
+                           scale_colour_gradient(low="blue",
+                                                 high="red")+
+                           geom_ribbon(data = points,
+                                       aes(x = id,
+                                           ymin = mean(h),
+                                           ymax = h),
+                                       fill="blue",
+                                       alpha=.2)+
+                           geom_text(data = points,
+                                     aes(x = id,
+                                         y = h,
+                                         label=Name),
+                                     nudge_x = 0,
+                                     nudge_y = 0.55)+
+                           scale_y_continuous(limits = c(round(min(points$h)-sd(points$h),0), round(max(points$h)+sd(points$h),0)),
+                                              breaks = seq(round(min(points$h)-sd(points$h),0), round(max(points$h)+sd(points$h),0),
+                                                           by = 1))+
+                           xlab("ID") +
+                           ylab("h [m]") +
+                           ggtitle("GEODETIC 1D NETWORK")+
+                           labs(colour = "h [m]")+
+                           theme_bw(),#+
+                           #ylim(min(points$h)-sd(points$h),
+                           #    max(points$h)+sd(points$h)),
+      showlegend = T
+      )
+
+      o.plot <- ggplotly(
+        ggplot()+
+          geom_point(data = observations,
+                     aes(x = id,
+                         y = dh,
+                         colour = dh))+
+          scale_colour_gradient(low="orange",
+                                high="red")+
+          geom_area(data = observations,
+                    aes(x = id,
+                        y = dh),fill="blue", alpha=.2)+
+          geom_text(data = observations,
+                    aes(x = id,
+                        y = dh,
+                        label = from_to),
+                    nudge_x = 0,
+                    nudge_y = 0.03)+
+          scale_y_continuous(limits = c(round(min(observations$dh)-sd(observations$dh), 0), round( max(observations$dh)+sd(observations$dh),0)),
+                             breaks = seq(round(min(observations$dh)-sd(observations$dh), 0), round( max(observations$dh)+sd(observations$dh),0),
+                                          by = 0.5))+
+          xlab("ID") +
+          ylab("dh [m]") +
+          ggtitle("GEODETIC 1D NETWORK")+
+          labs(colour = "dh [m]")+
+          theme_bw(),#+
+          #ylim(min(observations$dh)-sd(observations$dh),
+          #     max(observations$dh)+sd(observations$dh)),
+        showlegend = T
+      )
+
+      plot.1d.net <- plotly::subplot(style(p.plot, showlegend = FALSE),
+                                     style(o.plot, showlegend = TRUE),
+                                     nrows = 2,
+                                     shareX = FALSE,
+                                     shareY = FALSE,
+                                     titleX = TRUE,
+                                     titleY = TRUE)
+      return(plot.1d.net)
+
+    }else{
+      p.plot <- ggplotly(ggplot()+
+                           geom_point(data = points,
+                                      aes(x = id,
+                                          y = h,
+                                          colour = h))+
+                           scale_colour_gradient(low="blue",
+                                                 high="red")+
+                           geom_ribbon(data = points,
+                                       aes(x = id,
+                                           ymin = mean(h),
+                                           ymax = h),
+                                       fill="blue",
+                                       alpha=.2)+
+                           geom_text(data = points,
+                                     aes(x = id,
+                                         y = h,
+                                         label=Name),
+                                     nudge_x = 0,
+                                     nudge_y = 0.55)+
+                           scale_y_continuous(limits = c(round(min(points$h)-sd(points$h),0), round(max(points$h)+sd(points$h),0)),
+                                              breaks = seq(round(min(points$h)-sd(points$h),0), round(max(points$h)+sd(points$h),0),
+                                                           by = 1))+
+                           xlab("ID") +
+                           ylab("h [m]") +
+                           ggtitle("GEODETIC 1D NETWORK")+
+                           labs(colour = "h [m]")+
+                           theme_bw(),#+
+                           #ylim(min(points$h)-sd(points$h),
+                                #max(points$h)+sd(points$h)),
+                         showlegend = T
+      )
+
+
+      return(p.plot)
+
+    }
+  }
+  }
+
+  if(!is.null(snet.adj)){
+    if(net.2D == TRUE) {
+      points <- snet.adj$Points$net.points
+      observations <- snet.adj$Observations
+      ellipses <- snet.adj$Points$ellipse.net
+      if(webmap == TRUE){
+
+        if(is.na(sf::st_crs(points)) == TRUE) {
+          points %<>% sf::st_set_crs(., epsg)
+        }
+
+        if(is.na(sf::st_crs(observations)) == TRUE) {
+          observations %<>% sf::st_set_crs(., epsg)
+        }
+
+        if(is.na(sf::st_crs(ellipses)) == TRUE) {
+          ellipses %<>% sf::st_set_crs(., epsg)
+        }
+
+        points %<>% sf::st_transform(., epsg)
+        observations %<>% sf::st_transform(., epsg)
+        ellipses %<>% sf::st_transform(., epsg)
+
+        points %<>% dplyr::mutate(Point_type = dplyr::case_when(Point_object == FALSE ~ "Geodetic network",
+                                                                Point_object == TRUE ~ "Points at object"))
+
+        ellipses %<>% dplyr::mutate(fill = dplyr::case_when(
+          sp < sp_bound ~  paste("<",sp_bound),
+          sp > sp_bound ~  paste(">",sp_bound),
+          sp == sp_bound ~  paste("=",sp_bound)))
+
+        observations %<>% dplyr::mutate(fill = dplyr::case_when(
+          rii < rii_bound ~  paste("<",rii_bound),
+          rii > rii_bound ~  paste(">",rii_bound),
+          rii == rii_bound ~  paste("=",rii_bound)
+          ))
+
+        pink2 = colorRampPalette(c('deeppink', 'orange'))
+
+        observation.dir <- observations %>%
+          dplyr::filter(type == "direction")
+        observation.dis <- observations %>%
+          dplyr::filter(type == "distance")
+
+        if(length(observation.dis$ID) == 0){
+          webmap.net.adj <- mapview(points, zcol = "Point_type", col.regions = c("red","grey"), layer.name = "Points_type") +
+            mapview(ellipses, zcol = "fill", col.regions = c("yellow", "red"), layer.name = paste("StDev Position [",result.units,"]", sep = ""))+ #+
+            #mapview(observations, zcol = "fill", color = c("red", "orange"), layer.name = "Reliability measure rii [/]")+
+            mapview(observation.dir, zcol = "fill", color = pink2, layer.name = "Reliability measure rii [/] - direction") # , at = seq(0,1,rii_bound)
+        }else if(length(observation.dir$ID) == 0){
+          webmap.net.adj <- mapview(points, zcol = "Point_type", col.regions = c("red","grey"), layer.name = "Points_type") +
+            mapview(ellipses, zcol = "fill", col.regions = c("yellow", "red"), layer.name = paste("StDev Position [",result.units,"]", sep = ""))+ #+
+            #mapview(observations, zcol = "fill", color = c("red", "orange"), layer.name = "Reliability measure rii [/]")+
+            mapview(observation.dis, zcol = "fill", color = pink2, layer.name = "Reliability measure rii [/] - distance") # , at = seq(0,1,rii_bound)
+        }else{
+          webmap.net.adj <- mapview(points, zcol = "Point_type", col.regions = c("red","grey"), layer.name = "Points_type") +
+            mapview(ellipses, zcol = "fill", col.regions = c("yellow", "red"), layer.name = paste("StDev Position [",result.units,"]", sep = ""))+ #+
+            #mapview(observations, zcol = "fill", color = c("red", "orange"), layer.name = "Reliability measure rii [/]")+
+            mapview(observation.dir, zcol = "fill", color = pink2, layer.name = "Reliability measure rii [/] - direction")+ # , at = seq(0,1,rii_bound)
+            mapview(observation.dis, zcol = "fill", color = pink2, layer.name = "Reliability measure rii [/] - distance") # , at = seq(0,1,rii_bound)
+        }
+
+
+        # webmap.net.adj <- mapview(points, zcol = "Point_type", col.regions = c("red","grey"), layer.name = "Points_type") +
+        #   mapview(ellipses, zcol = "fill", col.regions = c("yellow", "red"), layer.name = paste("StDev Position [",result.units,"]", sep = ""))+ #+
+        #   #mapview(observations, zcol = "fill", color = c("red", "orange"), layer.name = "Reliability measure rii [/]")+
+        #   mapview(observation.dir, zcol = "fill", color = pink2, at = seq(0,1,rii_bound), layer.name = "Reliability measure rii [/] - direction")+
+        #   mapview(observation.dis, zcol = "fill", color = pink2, at = seq(0,1,rii_bound), layer.name = "Reliability measure rii [/] - distance")
+
+        return(webmap.net.adj)
+
+      } else {
+        ellipses %<>% dplyr::rename(`StDev Position` = sp)
+        adj.net_plot <- ggplot() +
+          geom_sf(data = observations)+
+          geom_sf(data=ellipses, aes(fill = `StDev Position`))+
+          geom_sf_text(data=ellipses, aes(label=Name,hjust = 1.5, vjust = 1.5))+
+          xlab("\nEasting [m or °]") +
+          ylab("Northing [m or °]\n") +
+          ggtitle("GEODETIC 2D NETWORK")+
+          labs(subtitle = "Adjusted observational plan - net quality",
+               caption = paste("Ellipse scale = ", ellipse.scale))+
+          guides(col = guide_legend())+
+          theme_bw()+
+          theme(legend.position = 'bottom')
+
+        return(adj.net_plot)
+      }
+    }
+
+    if(net.1D == TRUE){
+      points <- snet.adj$Points
+      observations <- snet.adj$Observations
+      observations$id <- row_number(observations$from_to)
+     if(!is.null(points$h)){
+       # ADJUST PLOT
+       p.plot <- plotly::ggplotly(ggplot()+
+                            geom_crossbar(data = points,
+                                          aes(x = id,
+                                              y = h,
+                                              ymin = h-sd(h)/2,
+                                              ymax = h+sd(h)/2,
+                                              fill = sd(h)), fatten = 0)+
+                            scale_fill_gradient(low="green",
+                                                high="red")+
+                            geom_point(data = points,
+                                       aes(x = id,
+                                           y = h,
+                                           colour = h))+
+                            scale_colour_gradient(low="blue",
+                                                  high="red",
+                                                  guide=FALSE)+
+                            geom_ribbon(data = points,
+                                        aes(x = id,
+                                            ymin = mean(h),
+                                            ymax = h),fill="blue", alpha=.2)+
+                            geom_text(data=points, aes(x = id, y = h, label=Name), nudge_x = 0, nudge_y = 0.55)+
+                            scale_y_continuous(limits = c(round(min(points$h)-sd(points$h),0), round(max(points$h)+sd(points$h),0)),
+                                               breaks = seq(round(min(points$h)-sd(points$h),0), round(max(points$h)+sd(points$h),0),
+                                                            by = 1))+
+                            xlab("ID") +
+                            ylab("h [m]") +
+                            ggtitle("GEODETIC 1D NETWORK")+
+                            labs(colour = "h [m]", fill = "sd_h [m]")+
+                            theme_bw()+
+                            theme(axis.title.x = element_blank()),#+
+                            #ylim(min(points$h)-sd(points$h),
+                            #     max(points$h)+sd(points$h)),
+                          showlegend = TRUE
+       )
+       o.plot <- ggplotly(
+         ggplot()+
+           geom_point(data = observations,
+                     aes(x = id,
+                         y = dh,
+                         colour = dh))+
+           geom_area(data = observations,
+                      aes(x = id,
+                          y = dh),fill="blue", alpha=.2)+
+           scale_colour_gradient(low="orange",
+                                 high="red", guide = FALSE)+
+           geom_text(data=observations, aes(x = id, y = dh, label=from_to), nudge_x = 0, nudge_y = 0.03)+
+           scale_y_continuous(limits = c(round(min(observations$dh)-sd(observations$dh), 0), round( max(observations$dh)+sd(observations$dh),0)),
+                              breaks = seq(round(min(observations$dh)-sd(observations$dh), 0), round( max(observations$dh)+sd(observations$dh),0),
+                                           by = 0.05))+
+           xlab("ID") +
+           ylab("Residuals [mm]") +
+           ggtitle("GEODETIC 1D NETWORK")+
+           labs(colour = "Residuals [mm]")+
+           theme_bw(),#+
+           #ylim(min(observations$f)-sd(observations$f),
+           #    max(observations$f)+sd(observations$f)),
+         showlegend = TRUE
+       )
+       plot.1d.net <- plotly::subplot(style(p.plot, showlegend = FALSE),
+                                      style(o.plot, showlegend = TRUE),
+                                      nrows = 2,
+                                      shareX = FALSE,
+                                      shareY = FALSE,
+                                      titleX = TRUE,
+                                      titleY = TRUE)
+       return(plot.1d.net)
+
+
+
+
+     }else{
+
+       # DESIGN PLOT
+       plot.1d.net <- ggplotly(ggplot()+
+                  geom_crossbar(data = points,
+                                aes(x = id,
+                                    y = h,
+                                    ymin = h-sd(h)/2,
+                                    ymax = h+sd(h)/2,
+                                    fill = sd(h)), fatten = 0)+
+                  scale_fill_gradient(low="green",
+                                      high="red")+
+                  geom_point(data = points,
+                               aes(x = id,
+                                   y = h,
+                                   colour = h))+
+                  scale_colour_gradient(low="blue",
+                                          high="red")+
+                  geom_ribbon(data = points,
+                                aes(x = id,
+                                    ymin = mean(h),
+                                    ymax = h), fill = "blue", alpha=.2)+
+                  geom_text(data=points, aes(x = id, y = h, label=Name), nudge_x = 0, nudge_y = 0.55)+
+                  scale_y_continuous(limits = c(round(min(points$h)-sd(points$h),0), round(max(points$h)+sd(points$h),0)),
+                                     breaks = seq(round(min(points$h)-sd(points$h),0), round(max(points$h)+sd(points$h),0),
+                                                  by = 1))+
+                  xlab("ID") +
+                  ylab("h [m]") +
+                  ggtitle("GEODETIC 1D NETWORK")+
+                  labs(colour = "h [m]", fill = "sd_h [m]")+
+                  theme_bw(),#+
+                  #ylim(min(points$h)-sd(points$h),
+                  #     max(points$h)+sd(points$h)),
+                  showlegend = TRUE
+       )
+
+       return(plot.1d.net)
+
+     }
+
+    }
+
+
+
+
+  }
+
+
+}

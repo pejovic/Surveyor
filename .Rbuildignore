@@ -4,3 +4,4 @@
 ^README\.Rmd$
 ^LICENSE\.md$
 ^\./R/deprecated$
+^data-raw$

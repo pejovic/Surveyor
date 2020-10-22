@@ -1,5 +1,14 @@
 
 
+#' @title f-test
+#' @description f-test
+#' @param sd1 First standard deviation
+#' @param sd2 Second standard deviation
+#' @param df1 First degrees of freedom
+#' @param df2 Second degrees of freedom
+#' @param prob Probability
+#' @return Test decision
+#' @rdname f_test
 f_test <- function(sd1, sd2, df1, df2, prob){
   if(sd1 > sd2){
     F.estimated <- sd1^2/sd2^2
@@ -16,16 +25,31 @@ f_test <- function(sd1, sd2, df1, df2, prob){
   return(list(f_estimated = F.estimated, f_quantile = F.quantile, decision = note))
 }
 
-# snet1 = "C:/R_projects/Surveyer/Data/Input/With_observations/Brose/Brose_nulta.xlsx"
-# snet2 = "C:/R_projects/Surveyer/Data/Input/With_observations/Brose/Brose_prva.xlsx"
-# snet_1_path = snet1; snet_2_path = snet2; sd.apriori = 0.4; units = "mm";  dim_type = "1D"; prob = 0.99
-
-# snet1 = "C:/R_projects/Surveyer/Data/Input/With_observations/1D_case_1/epoch_1.xlsx"
-# snet2 = "C:/R_projects/Surveyer/Data/Input/With_observations/1D_case_1/epoch_2.xlsx"
-# snet_1_path = snet1; snet_2_path = snet2; sd.apriori = 0.5; units = "mm";  dim_type = "1D"; prob = 0.95; wdh_model = "n_dh"
-
-
-snet.stable <- function(snet_1_path, snet_2_path, sd.apriori, units = "mm",  dim_type = "1D", prob = 0.95, wdh_model = list("n_dh", "sd_dh", "d_dh", "E"), ...){
+#' @title deform.snet
+#' @description Two-epochs deformation analysis based on congruency testing
+#' @param snet_1_path Path to the data of the first epoch of the measurements
+#' @param snet_2_path Path to the data of the second epoch of the measurements
+#' @param sd.apriori Apriori standard deviation
+#' @param units Units of the results, Default: 'mm'
+#' @param dim_type Dimension type of the network, Default: '1D'
+#' @param prob Probability for statistical testing, Default: 0.95
+#' @param wdh_model Weightening model for leveling measurements, Default: list("n_dh", "sd_dh", "d_dh", "E")
+#' @return dataframe with two columns: "Name" indicating the name of the point and "stable" indicating the stability status of the point (TRUE or FALSE)
+#' @details DETAILS
+#' @examples 
+#' \dontrun{
+#' if(interactive()){
+#'  #EXAMPLE1
+#'  }
+#' }
+#' @seealso 
+#'  \code{\link[dplyr]{arrange}},\code{\link[dplyr]{select}}
+#'  \code{\link[MASS]{ginv}}
+#' @rdname snet.stable
+#' @export 
+#' @importFrom dplyr arrange select case_when
+#' @importFrom MASS ginv
+deform.snet <- function(snet_1_path, snet_2_path, sd.apriori, units = "mm",  dim_type = "1D", prob = 0.95, wdh_model = list("n_dh", "sd_dh", "d_dh", "E")){
   "%!in%" <- Negate("%in%")
   wdh_model <- wdh_model[[1]]
   units.lookup.table <- c(mm = 1000, cm = 100, m = 1)
