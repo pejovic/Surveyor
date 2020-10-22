@@ -108,7 +108,7 @@ library(kableExtra)
 ```
 
 
-``` {r eval=T, echo=F, message = F, warning = F}
+``` {r eval=F, echo=F, message = F, warning = F}
 source("D:/R_projects/Surveyer/R/functions.r")
 file_path <- "D:/R_projects/Surveyer [dodatno]/Rmarkdown_usage/Grdelica.xlsx"
 grdelica.snet <- read_surveynet(file = file_path, dest_crs = 3909)
@@ -118,7 +118,7 @@ grdelica.snet.adj <- adjust.snet(adjust = TRUE, survey.net = grdelica.snet, dim_
 
 Visualization of the results is possible using ggplot2 package:
 
-``` {r eval = T, echo = T}
+``` r
 plotSurveynet <- function(snet.adj = snet.adj){
   snet.adj$Points$ellipse.net %<>% dplyr::rename(`StDev Position` = sp)
   adj.net_plot <- ggplot() +
@@ -139,13 +139,15 @@ plotSurveynet <- function(snet.adj = snet.adj){
 }
 ```
 
-``` {r echo = FALSE, warning = FALSE, message = FALSE, fig.width = 10, fig.height = 8, fig.align='center'}
+``` r 
 plotSurveynet(snet.adj = grdelica.snet.adj)
 ```
 
+![Input xlsx file](man/figures/README-unnamed-chunk-5-1.png)
+
 Visualization of the results is also possible using mapview package:
 
-``` {r eval = T, echo = T}
+``` r 
 mapviewSurveynet <- function(snet.adj = snet.adj, epsg = 3909){
   points <- snet.adj$Points$net.points
   points %<>% dplyr::mutate(Point_type = dplyr::case_when(Point_object == FALSE ~ "Geodetic network",
@@ -160,7 +162,7 @@ mapviewSurveynet <- function(snet.adj = snet.adj, epsg = 3909){
 ```
 
 ``` r 
-mapviewSurveynet(snet.adj = grdelica.snet.adj)@map
+mapviewSurveynet(snet.adj = grdelica.snet.adj)
 ```
 ![Input xlsx file](man/figures/mapviewSurveynet.png)
 
@@ -169,7 +171,17 @@ mapviewSurveynet(snet.adj = grdelica.snet.adj)@map
 Package functionality that enables the deformation analysis of 1D and 2D geodetic networks, created by functions based on least-square calculation, can be called as follows:
 
 ``` r
-snet.stable(snet_1_path = "Data/Input/With_observations/Dam/Dam_epoch_0.xlsx", snet_2_path = "Data/Input/With_observations/Dam/Dam_epoch_1.xlsx", sd.apriori = 3, units = "mm",  dim_type = "1D", prob = 0.95, wdh_model = "n_dh")
+deform.snet(snet_1_path = "inst/extdata/snet1D_epoch_1.xlsx", snet_2_path = "inst/extdata/net1D_epoch_2.xlsx", sd.apriori = 0.5, units = "mm",  dim_type = "1D", prob = 0.95, wdh_model = "n_dh")
+```
+![Example - 1D network deformation analysis](man/figures/Example_def_1D.png)
+
+
+``` {r eval = T, echo = F}
+source(here::here("R/functions.r"))
+```
+
+``` {r eval = T, echo = T}
+deform.snet(snet_1_path = "inst/extdata/snet1D_epoch_1.xlsx", snet_2_path = "inst/extdata/net1D_epoch_2.xlsx", sd.apriori = 0.5, units = "mm",  dim_type = "1D", prob = 0.95, wdh_model = "n_dh")
 ```
 
 ## Contact
