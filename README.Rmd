@@ -123,7 +123,7 @@ plotSurveynet <- function(snet.adj = snet.adj){
   snet.adj$Points$ellipse.net %<>% dplyr::rename(`StDev Position` = sp)
   adj.net_plot <- ggplot() +
     geom_sf(data = snet.adj$Observations)+
-    geom_sf(data = snet.adj$Points$ellipse.net, aes(fill = `StDev Position`))+
+    geom_sf(data = snet.adj$Points$ellipse.net, aes(fill = `StDev Position`, alpha = 10))+
     geom_sf_text(data = snet.adj$Points$ellipse.net,
                  aes(label=Name,
                      hjust = 2,
@@ -178,10 +178,11 @@ deform.snet(snet_1_path = "inst/extdata/snet1D_epoch_1.xlsx", snet_2_path = "ins
 
 ``` {r eval = T, echo = F}
 source(here::here("R/functions.r"))
+source(here::here("R/Deformation_analysis_functions.r"))
 ```
 
 ``` {r eval = T, echo = T}
-deform.snet(snet_1_path = "inst/extdata/snet1D_epoch_1.xlsx", snet_2_path = "inst/extdata/net1D_epoch_2.xlsx", sd.apriori = 0.5, units = "mm",  dim_type = "1D", prob = 0.95, wdh_model = "n_dh")
+deform.snet(snet_1_path = "inst/extdata/snet1D_epoch_1.xlsx", snet_2_path = "inst/extdata/snet1D_epoch_2.xlsx", sd.apriori = 0.5, units = "mm",  dim_type = "1D", prob = 0.95, wdh_model = "n_dh")
 ```
 
 ## Contact

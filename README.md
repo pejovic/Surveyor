@@ -54,8 +54,7 @@ and distances and elevation differences.
 
 ### Abstraction of geodetic network - survey.net
 
-First you need to show the path to the input
-file:
+First you need to show the path to the input file:
 
 ``` r
 file_path <- here::here("Data/Input/With_observations/Grdelica/Grdelica.xlsx")
@@ -76,8 +75,7 @@ given in the defined CRS - Reference Coordinate System.
 
 Package functionality that enables the design of 1D and 2D geodetic
 networks, created by using functions with least-square based
-calculation, can be called as
-follows:
+calculation, can be called as follows:
 
 ``` r
 grdelica.snet.des <- adjust.snet(adjust = FALSE, survey.net = grdelica.snet, dim_type = "2D", sd.apriori = 3,  all = FALSE)
@@ -87,14 +85,11 @@ grdelica.snet.des <- adjust.snet(adjust = FALSE, survey.net = grdelica.snet, dim
 
 Package functionality that enables the adjustment of 1D and 2D geodetic
 networks, created by functions based on least-square calculation, can be
-called as
-follows:
+called as follows:
 
 ``` r
 grdelica.snet.adj <- adjust.snet(adjust = TRUE, survey.net = grdelica.snet, dim_type = "2D", sd.apriori = 3,  maxiter = 50, prob = 0.95, result.units = "cm", all = FALSE)
 ```
-
-    #> [1] "Model is correct"
 
 Visualization of the results is possible using ggplot2 package:
 
@@ -103,7 +98,7 @@ plotSurveynet <- function(snet.adj = snet.adj){
   snet.adj$Points$ellipse.net %<>% dplyr::rename(`StDev Position` = sp)
   adj.net_plot <- ggplot() +
     geom_sf(data = snet.adj$Observations)+
-    geom_sf(data = snet.adj$Points$ellipse.net, aes(fill = `StDev Position`))+
+    geom_sf(data = snet.adj$Points$ellipse.net, aes(fill = `StDev Position`, alpha = 10))+
     geom_sf_text(data = snet.adj$Points$ellipse.net,
                  aes(label=Name,
                      hjust = 2,
@@ -119,7 +114,11 @@ plotSurveynet <- function(snet.adj = snet.adj){
 }
 ```
 
-<img src="man/figures/README-unnamed-chunk-5-1.png" width="100%" style="display: block; margin: auto;" />
+``` r
+plotSurveynet(snet.adj = grdelica.snet.adj)
+```
+
+![Input xlsx file](man/figures/README-unnamed-chunk-5-1.png)
 
 Visualization of the results is also possible using mapview package:
 
@@ -138,7 +137,7 @@ mapviewSurveynet <- function(snet.adj = snet.adj, epsg = 3909){
 ```
 
 ``` r
-mapviewSurveynet(snet.adj = grdelica.snet.adj)@map
+mapviewSurveynet(snet.adj = grdelica.snet.adj)
 ```
 
 ![Input xlsx file](man/figures/mapviewSurveynet.png)
@@ -147,11 +146,29 @@ mapviewSurveynet(snet.adj = grdelica.snet.adj)@map
 
 Package functionality that enables the deformation analysis of 1D and 2D
 geodetic networks, created by functions based on least-square
-calculation, can be called as
-follows:
+calculation, can be called as follows:
 
 ``` r
-snet.stable(snet_1_path = "Data/Input/With_observations/Dam/Dam_epoch_0.xlsx", snet_2_path = "Data/Input/With_observations/Dam/Dam_epoch_1.xlsx", sd.apriori = 3, units = "mm",  dim_type = "1D", prob = 0.95, wdh_model = "n_dh")
+deform.snet(snet_1_path = "inst/extdata/snet1D_epoch_1.xlsx", snet_2_path = "inst/extdata/net1D_epoch_2.xlsx", sd.apriori = 0.5, units = "mm",  dim_type = "1D", prob = 0.95, wdh_model = "n_dh")
+```
+
+![Example - 1D network deformation
+analysis](man/figures/Example_def_1D.png)
+
+``` r
+deform.snet(snet_1_path = "inst/extdata/snet1D_epoch_1.xlsx", snet_2_path = "inst/extdata/snet1D_epoch_2.xlsx", sd.apriori = 0.5, units = "mm",  dim_type = "1D", prob = 0.95, wdh_model = "n_dh")
+#> [1] "Model is correct"
+#> [1] "Model is correct"
+#> # A tibble: 7 x 3
+#>      id Name  Stable
+#>   <dbl> <chr> <lgl> 
+#> 1     1 RM1   TRUE  
+#> 2     2 RM2   TRUE  
+#> 3     3 RM3   TRUE  
+#> 4     4 R1    FALSE 
+#> 5     5 R2    FALSE 
+#> 6     6 R3    FALSE 
+#> 7     7 R4    FALSE
 ```
 
 ## Contact
