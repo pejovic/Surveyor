@@ -129,6 +129,12 @@ plot_surveynet(snet = gorica0.snet, webmap = FALSE, net.1D = FALSE, net.2D = TRU
 gorica0.snet.adj <- adjust.snet(adjust = TRUE, survey.net = gorica0.snet, dim_type = "2D", sd.apriori = 1 ,  all = FALSE)
 
 
+file_path <- here::here("Data/Input/With_observations/Grdelica/Cut2.xlsx")
+cut2.snet <- read_surveynet(file = file_path)
+plot_surveynet(snet = cut2.snet, webmap = FALSE, net.1D = FALSE, net.2D = TRUE)
+cut2.snet.adj <- adjust.snet(adjust = TRUE, result.units = "cm",  survey.net = cut2.snet, prob = 0.99, output = "report", dim_type = "2D", sd.apriori = 1 ,  all = FALSE)
+
+
 
 # 1D design and adjustment
 file_path <- here::here("Data/Input/With_observations/DNS_1D/DNS_1D_nulta.xlsx")
