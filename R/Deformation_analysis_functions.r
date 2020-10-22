@@ -43,8 +43,6 @@ f_test <- function(sd1, sd2, df1, df2, prob){
 #'  }
 #' }
 #' @seealso 
-#'  \code{\link[dplyr]{arrange}},\code{\link[dplyr]{select}}
-#'  \code{\link[MASS]{ginv}}
 #' @rdname snet.stable
 #' @export 
 #' @importFrom dplyr arrange select case_when
