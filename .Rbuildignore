@@ -1,3 +1,5 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
 ^Avala\.r$
+^README\.Rmd$
+^LICENSE\.md$
