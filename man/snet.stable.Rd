@@ -46,6 +46,5 @@ if(interactive()){
 }
 }
 \seealso{
-\code{\link[dplyr]{arrange}},\code{\link[dplyr]{select}}
-\code{\link[MASS]{ginv}}
+
 }

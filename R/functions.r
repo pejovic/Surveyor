@@ -694,6 +694,7 @@ model_adequacy_test.shiny <- function(sd.apriori, sd.estimated, df, prob){
 #' }
 #' @rdname Amat1D
 Amat1D <- function(survey.net){
+  survey.net[[2]] %<>% dplyr::filter(diff_level)
   used_points <- unique(c(survey.net$observations$from, survey.net$observations$to))
   point_names <- unique(survey.net$points$Name)
   point_names <- point_names[point_names %in% used_points]
@@ -730,6 +731,7 @@ Amat1D <- function(survey.net){
 #' @rdname Wmat1D
 #' @importFrom dplyr mutate case_when
 Wmat1D <- function(survey.net, wdh_model = list("sd_dh", "d_dh", "n_dh", "E"), sd0 = 1, d0 = NA, n0 = 1, res.units = "mm"){
+  survey.net[[2]] %<>% dplyr::filter(diff_level)
   res.unit.lookup <- c("mm" = 1, "cm" = 10, "m" = 1000)
   "%!in%" <- Negate("%in%")
   if(wdh_model %!in% c("sd_dh", "d_dh", "n_dh", "E")){stop("Model of weigths is not properly specified, see help")}
@@ -817,7 +819,7 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
   if(!adjust){use.sd.estimated <- FALSE}
   units <- result.units[[1]]
   res.unit.lookup <- c("mm" = 1000, "cm" = 100, "m" = 1)
-  disp.unit.lookup <- c("mm" = 2, "cm" = 3, "m" = 4)
+  disp.unit.lookup <- c("mm" = 3, "cm" = 4, "m" = 5)
   dir.unit.lookup <- c("sec" = 3600, "min" = 60, "deg" = 1)
   if(is.na(sf::st_crs(survey.net$points) == TRUE)) {
     net.crs <- 3857
@@ -1054,7 +1056,7 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
       sd.estimated <- sqrt((crossprod(v.mat, W.mat) %*% v.mat)/(df))
       sd.apriori <- sd.apriori/(1000/res.unit.lookup[units])
       model_adequacy <- model_adequacy_test(sd.apriori, sd.estimated, df, prob = prob)
-      if(use.sd.estimated){sigma_apriori <- sd.apriori; sd.apriori <- sd.estimated}
+      if(model_adequacy[[1]] & use.sd.estimated){sigma_apriori <- sd.apriori; sd.apriori <- sd.estimated}
     }
       # Results
       if(adjust){
@@ -1076,13 +1078,13 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
 
 
       }else{
-        h.inc <- data.frame(Name = as.character(colnames(A.mat)), sd_h = c(sd.apriori)*sqrt(diag(Qx.mat)), stringsAsFactors  = FALSE)
+        h.inc <- data.frame(Name = as.character(colnames(A.mat)), sd_h = c(sd.apriori)*sqrt(diag(Qx.mat)), dp = sqrt((7.459*sd.apriori^2)/(1/diag(2*Qx.mat))), stringsAsFactors  = FALSE)
         points <- dplyr::left_join(survey.net[[1]], h.inc, by = "Name") %>%
-          dplyr::mutate(across(.cols = c("sd_h"), ~replace(., is.na(.), 0))) %>%
-          dplyr::mutate(across(.cols = c("sd_h"), ~round(.x, disp.unit.lookup[units]))) %>%
-          dplyr::select(id, Name, x, y, h, sd_h, FIX_1D, Point_object)
+          dplyr::mutate(across(.cols = c("sd_h", "dp"), ~replace(., is.na(.), 0))) %>%
+          dplyr::mutate(across(.cols = c("sd_h", "dp"), ~round(.x, disp.unit.lookup[units]))) %>%
+          dplyr::select(id, Name, x, y, h, sd_h, dp, FIX_1D, Point_object)
 
-        observations <- observations %>%
+        observations <- observations %>% dplyr::select(-from_to) %>%
           dplyr::mutate(Kl =  c(sd.apriori^2)*diag(Ql.mat),
                         Kv =  c(sd.apriori^2)*diag(Qv.mat),
                         rii = diag(r)) %>%
