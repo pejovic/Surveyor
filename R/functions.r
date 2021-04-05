@@ -66,10 +66,10 @@ read_surveynet <- function(file, dest_crs = NA, axes = c("Easting", "Northing"))
 
   observations <- observations %>% dplyr::mutate(Hz = HzD + HzM/60 + HzS/3600,
                                                  Vz = VzD + VzM/60 + VzS/3600,
-                                                 tdh = SD*cos(Vz*pi/180),
+                                                 tdh = SD*cos(Vz*pi/180), # ne znam cemu ovo sluzi
                                                  distance = (!is.na(HD) | !is.na(SD)) & !is.na(sd_dist),
                                                  direction = !is.na(Hz) & !is.na(sd_Hz),
-                                                 diff_level = (!is.na(dh) | !is.na(tdh)))
+                                                 diff_level = !is.na(dh) & (!is.na(d_dh) | !is.na(sd_dh) | !is.na(n_dh)))
 
   # In network design, observation is included if measurement standard is provided
   if(observations %>% purrr::when(is(., "sf") ~ st_drop_geometry(.), ~.) %>% dplyr::select(HzD, HzM, HzS) %>% is.na() %>% all()){
@@ -79,7 +79,7 @@ read_surveynet <- function(file, dest_crs = NA, axes = c("Easting", "Northing"))
     observations$distance[!is.na(observations$sd_dist)] <- TRUE
   }
   if(observations %>% purrr::when(is(., "sf") ~ st_drop_geometry(.), ~.) %>% dplyr::select(dh) %>% is.na() %>% all()){
-    observations$diff_level[(!is.na(observations$dh) | !is.na(observations$sd_dh) | !is.na(observations$d_dh) | !is.na(observations$n_dh))] <- TRUE
+    observations$diff_level[(!is.na(observations$sd_dh) | !is.na(observations$d_dh) | !is.na(observations$n_dh))] <- TRUE
   }
 
   # Eliminacija merenih duzina i visinsih razlika izmedju fiksnih tacaka duzina izmedju
@@ -763,6 +763,7 @@ Wmat1D <- function(survey.net, wdh_model = list("sd_dh", "d_dh", "n_dh", "E"), s
 #' }
 #' @rdname fmat1D
 fmat1D <- function(survey.net, units = units){
+  survey.net[[2]] %<>% dplyr::filter(diff_level)
   unit.lookup <- c("mm" = 1000, "cm" = 100, "m" = 1)
   survey.net[[2]]$h_from <- survey.net[[1]]$h[match(survey.net[[2]]$from, survey.net[[1]]$Name)]
   survey.net[[2]]$h_to <- survey.net[[1]]$h[match(survey.net[[2]]$to, survey.net[[1]]$Name)]
