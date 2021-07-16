@@ -40,7 +40,7 @@ read_surveynet <- function(file, dest_crs = NA, axes = c("Easting", "Northing"))
   # reading data
   points <- readxl::read_xlsx(path = file, sheet = "Points", col_types = points_col_type) %>% dplyr::mutate(across(.cols = "Name", .fns = as.character)) #mutate_at(., .vars = c("Name"), as.character)
   observations <- readxl::read_xlsx(path = file, sheet = "Observations", col_types = obs_col_type) %>% dplyr::mutate(across(.cols = c("from", "to"), .fns = as.character))  #mutate_at(., .vars = c("from", "to"), as.character)
-
+  if(any(duplicated(observations[, c(1:2)]))){warning("There are duplicated measurements!")}
   if(sum(rowSums(is.na(points[, c("x", "y")])) != 0) != 0){
     warning("Network has no spatial coordinates")}else{
       # Creating sf class from observations
@@ -573,7 +573,7 @@ sigma.xy <- function(Qxy.mat, sd.apriori){
 fdir_st <- function(st.survey.net, units.dir = "sec"){
   units.table <- c("sec" = 3600, "min" = 60, "deg" = 1)
   st.survey.net <- st.survey.net %>% split(., f = as.factor(.$to)) %>%
-    lapply(., function(x) {x$ni = ni(pt1_coords = as.numeric(x[, c("x_from", "y_from")]), pt2_coords = as.numeric(x[, c("x_to", "y_to")]), type = "dec"); return(x)}) %>%
+    lapply(., function(x) {x$ni = ni(pt1_coords = as.numeric(x[1, c("x_from", "y_from")]), pt2_coords = as.numeric(x[1, c("x_to", "y_to")]), type = "dec"); return(x)}) %>%
     do.call(rbind,.) %>%
     dplyr::mutate(z = Hz-ni) %>%
     dplyr::arrange(ID)
