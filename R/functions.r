@@ -898,21 +898,48 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
       x.mat <- (coords.est-coords.iter_0)*res.unit.lookup[units] #x.mat[1:sum(fix.mat)]
       sd.estimated <- sqrt((crossprod(v.mat, W.mat) %*% v.mat)/(df))
       model_adequacy <- model_adequacy_test(sd.apriori, sd.estimated, df, prob = prob)
-
-      observations <- survey.net[[2]] %>%
-        sf::st_drop_geometry() %>%
-        dplyr::select(ID:dh, "Hz", "Vz", "tdh") %>%
-        purrr::discard(~all(is.na(.x))) %>%
-        dplyr::right_join(., observations[, c("from", "to", "type")], by = c("from", "to")) %>%
-        dplyr::arrange(type) %>%
-        dplyr::mutate(Observations = dplyr::if_else(type == "distance", paste(HD), paste(HzD, HzM, HzS, sep = " "))) %>%
-        dplyr::mutate(res = v.mat, f = f.mat, Kl = c(sd.apriori^2)*diag(Ql.mat), Kv =  c(sd.apriori^2)*diag(Qv.mat), rii = diag(r) ) %>%
-        dplyr::mutate(Adj_meas = dplyr::if_else(type == "direction", Hz + res/dir.unit.lookup[units.dir], HD + res/res.unit.lookup[units])) %>%
-        dplyr::mutate(Adj_meas = dplyr::if_else(type == "direction" & Adj_meas < 0, Adj_meas + 360, Adj_meas + 0),
-                      Baarda.test = as.numeric(abs(v.mat)/c(sd.apriori)*(sqrt(diag(Qv.mat))))) %>%
+      
+      results <- data.frame(res = v.mat, f = f.mat, Kl = c(sd.apriori^2)*diag(Ql.mat), Kv =  c(sd.apriori^2)*diag(Qv.mat), rii = diag(r), Baarda.test = as.numeric(abs(v.mat)/c(sd.apriori)*(sqrt(diag(Qv.mat)))))
+      
+      adj.directions <- survey.net[[2]] %>% sf::st_drop_geometry() %>% 
+        dplyr::mutate(from_to = stringr::str_c(.$from, .$to, sep = "_")) %>%
+        dplyr::filter(direction) %>% 
+        dplyr::mutate(Observations = paste(HzD, HzM, HzS, sep = " "), type = "direction") %>%
+        cbind(results[observations$type == "direction", ]) %>% 
+        dplyr::mutate(Adj_meas = Hz + res/dir.unit.lookup[units.dir]) %>%
+        dplyr::mutate(Adj_meas = dplyr::if_else(Adj_meas < 0, Adj_meas + 360, Adj_meas + 0)) %>%
         dplyr::mutate(across(.cols = c("res", "f", "Kl", "Kv", "rii", "Baarda.test"), ~round(.x, disp.unit.lookup[units]))) %>%
-        dplyr::mutate(Adj.observations = dplyr::if_else(type == "distance", paste(HD), dec2dms(Adj_meas)))
+        dplyr::mutate(Adj.observations = dec2dms(Adj_meas)) %>%
+        dplyr::select(from = from, to = to, type = type, Observations, Residuals = res, Adj.observations, f, Kl, Kv, rii, Baarda.test)
+      
+      
+      adj.distances <- survey.net[[2]] %>% sf::st_drop_geometry() %>% 
+        dplyr::mutate(from_to = stringr::str_c(.$from, .$to, sep = "_")) %>%
+        dplyr::filter(distance) %>% 
+        dplyr::mutate(Observations = paste(HD), type = "distance") %>%
+        cbind(results[observations$type == "distance", ]) %>% 
+        dplyr::mutate(Adj.observations = HD + res/res.unit.lookup[units]) %>%
+        dplyr::mutate(across(.cols = c("res", "f", "Kl", "Kv", "rii", "Baarda.test"), ~round(.x, disp.unit.lookup[units]))) %>%
+        dplyr::select(from = from, to = to, type = type, Observations, Residuals = res, Adj.observations, f, Kl, Kv, rii, Baarda.test)
 
+      observations <- rbind(adj.directions, adj.distances)  
+
+        
+      # observations <- survey.net[[2]] %>% 
+      #   sf::st_drop_geometry() %>%
+      #   dplyr::select(ID:dh, "Hz", "Vz", "tdh") %>% 
+      #   purrr::discard(~all(is.na(.x))) %>%
+      #   dplyr::right_join(., observations[, c("from", "to", "type")], by = c("from", "to")) %>%
+      #   dplyr::arrange(type) %>%
+      #   dplyr::mutate(Observations = dplyr::if_else(type == "distance", paste(HD), paste(HzD, HzM, HzS, sep = " "))) %>%
+      #   dplyr::mutate(res = v.mat, f = f.mat, Kl = c(sd.apriori^2)*diag(Ql.mat), Kv =  c(sd.apriori^2)*diag(Qv.mat), rii = diag(r) ) %>%
+      #   dplyr::mutate(Adj_meas = dplyr::if_else(type == "direction", Hz + res/dir.unit.lookup[units.dir], HD + res/res.unit.lookup[units])) %>%
+      #   dplyr::mutate(Adj_meas = dplyr::if_else(type == "direction" & Adj_meas < 0, Adj_meas + 360, Adj_meas + 0),
+      #                 Baarda.test = as.numeric(abs(v.mat)/c(sd.apriori)*(sqrt(diag(Qv.mat))))) %>%
+      #   dplyr::mutate(across(.cols = c("res", "f", "Kl", "Kv", "rii", "Baarda.test"), ~round(.x, disp.unit.lookup[units]))) %>%
+      #   dplyr::mutate(Adj.observations = dplyr::if_else(type == "distance", paste(HD), dec2dms(Adj_meas)))
+      
+      
       if(model_adequacy[[1]] & use.sd.estimated){sigma_apriori <- sd.apriori; sd.apriori <- sd.estimated}
 
       # Results
@@ -1092,6 +1119,9 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
           dplyr::mutate(across(where(is.numeric), ~round(.x, disp.unit.lookup[units])))
       }
   }
+  
+  #====== End of adjustment ====================================================
+  
   if(adjust){
     matrices = list(A = A.mat, W = W.mat, Qx = Qx.mat, Ql = Ql.mat, Qv = Qv.mat, f = f.mat)
   }else{
@@ -1138,7 +1168,7 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
                                 "F-test" = model_adequacy[[2]],
                                 "Crital value F-test" = model_adequacy[[3]],
                                 "Test decision" = model_adequacy[[4]])
-      results <- list(Summary = Adjustment_summary, Points = points, Observations = observations %>% dplyr::select(ID, from, to, type, Observations, residuals = res, Adj.observations, Kl, Kv, rii, Baarda.test), Matrices = matrices)
+      results <- list(Summary = Adjustment_summary, Points = points, Observations = observations %>% dplyr::select(ID, from, to, type, Observations, Residuals = Residuals, Adj.observations, Kl, Kv, rii, Baarda.test), Matrices = matrices)
 
     }else{
       Adjustment_summary = list(Type = if(sum(!fix.mat) == 0){"inner constrained"}else{"constrained"},
