@@ -367,6 +367,8 @@ Amat <- function(survey.net, units){
   }else{
     rest_mat <- NULL
   }
+  
+  # OVde je nesto bilo pa smo obrisali
 
   A <- cbind(rbind(A_dir, A_dist)[, !fix], rbind(Z_mat, rest_mat))
 
