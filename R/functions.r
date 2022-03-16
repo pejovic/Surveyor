@@ -340,7 +340,6 @@ Amat <- function(survey.net, units){
     A_dir <- NULL
   }
   
-
   if(any(survey.net[[2]]$distance)){
     A_dist <- survey.net[[2]] %>% dplyr::filter(distance) %>% sf::st_coordinates() %>% as.data.frame() %>% dplyr::mutate(across(.cols = "L1", as.factor)) %>%
       split(., .$L1) %>%
@@ -370,9 +369,6 @@ Amat <- function(survey.net, units){
   }
 
   A <- cbind(rbind(A_dir, A_dist)[, !fix], rbind(Z_mat, rest_mat))
-
-  # Removing zero rows (measured distances between the fixed points)
-  # A <- A[apply(A !=0, 1, any), , drop=FALSE]
 
   sufix <- c("dx", "dy")
   colnames(A) <- c(paste(rep(survey.net[[1]]$Name, each = 2), rep(sufix, length(survey.net[[1]]$Name)), sep = "_")[!fix], paste(colnames(Z_mat), "z", sep = "_"))
