@@ -339,6 +339,7 @@ Amat <- function(survey.net, units){
   }else{
     A_dir <- NULL
   }
+  
 
   if(any(survey.net[[2]]$distance)){
     A_dist <- survey.net[[2]] %>% dplyr::filter(distance) %>% sf::st_coordinates() %>% as.data.frame() %>% dplyr::mutate(across(.cols = "L1", as.factor)) %>%
