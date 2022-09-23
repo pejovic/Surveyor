@@ -960,7 +960,7 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
         sf::st_drop_geometry() %>%
         dplyr::mutate(x0 = x - dx/res.unit.lookup[units], y0 = y - dy/res.unit.lookup[units]) %>%
         dplyr::mutate(across(.cols = c("dx", "dy"), ~round(.x, disp.unit.lookup[units]))) %>%
-        sf::st_as_sf(coords = c("x","y"), remove = FALSE) %>%
+        sf::st_as_sf(coords = c("x", "y", "h"), remove = FALSE) %>%
         dplyr::select(id, Name, x0, y0, dx, dy, x, y, h, FIX_2D, Point_object, geometry)
       # TODO: Gubi se projekcija!!!!
       # TODO: Srediti oko velikog i malog X i Y.
@@ -1026,7 +1026,7 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
       # TODO Proveriti da li elipse uzimaju definitivne koordinate ili priblizne!
       ellipse.net <- do.call(rbind, lapply(split(points, factor(survey.net[[1]]$Name, levels = points$Name)), function(x) sf.ellipse(x, scale = ellipse.scale)))
       ellipse.net <- merge(ellipse.net, sigmas)
-      ellipse.net %<>% sf::st_set_crs(., net.crs)#st_crs(survey.net[[2]]))
+      ellipse.net %<>% sf::st_set_crs(., net.crs) #st_crs(survey.net[[2]]))
 
       points <- list(net.points = points, ellipse.net = ellipse.net)
     }
@@ -1132,21 +1132,24 @@ adjust.snet <- function(adjust = TRUE, survey.net, dim_type = list("1D", "2D"), 
   }
 
   if(output == "spatial"){
-    if(sum(rowSums(is.na(survey.net[[1]][, c("x", "y")])) != 0) == 0){
+    if(!any(is.na(survey.net[[1]][, c("x", "y")]))){
+      if(any(is.na(survey.net[[1]]$h))){survey.net[[1]]$h <- 0}
       observations <- observations %>%
         dplyr::mutate(x_from = survey.net[[1]]$x[match(observations$from, survey.net[[1]]$Name)],
                       y_from = survey.net[[1]]$y[match(observations$from, survey.net[[1]]$Name)],
+                      h_from = survey.net[[1]]$h[match(observations$from, survey.net[[1]]$Name)],
                       x_to = survey.net[[1]]$x[match(observations$to, survey.net[[1]]$Name)],
-                      y_to = survey.net[[1]]$y[match(observations$to, survey.net[[1]]$Name)])
+                      y_to = survey.net[[1]]$y[match(observations$to, survey.net[[1]]$Name)],
+                      h_to = survey.net[[1]]$h[match(observations$to, survey.net[[1]]$Name)])
 
       observations <- observations %>%
         dplyr::mutate(id = seq.int(nrow(.))) %>%
         split(., f = as.factor(.$id)) %>%
-        lapply(., function(row) {lmat <- matrix(unlist(row[c("x_from", "y_from", "x_to", "y_to")]), ncol = 2, byrow = TRUE)
+        lapply(., function(row) {lmat <- matrix(unlist(row[c("x_from", "y_from", "h_from", "x_to", "y_to", "h_to")]), ncol = 3, byrow = TRUE)
         st_linestring(lmat)}) %>%
         sf::st_sfc() %>%
         sf::st_sf('ID' = seq.int(nrow(observations)), observations, 'geometry' = .) %>%
-        dplyr::select(-c(x_from, y_from, x_to, y_to))
+        dplyr::select(-c(x_from, y_from, h_from, x_to, y_to, h_to))
       observations %<>% sf::st_set_crs(.,net.crs)#st_crs(survey.net[[2]]))
 
     }
