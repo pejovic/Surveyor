@@ -41,19 +41,23 @@ read_surveynet <- function(file, dest_crs = NA, axes = c("Easting", "Northing"))
   points <- readxl::read_xlsx(path = file, sheet = "Points", col_types = points_col_type) %>% dplyr::mutate(across(.cols = "Name", .fns = as.character)) #mutate_at(., .vars = c("Name"), as.character)
   observations <- readxl::read_xlsx(path = file, sheet = "Observations", col_types = obs_col_type) %>% dplyr::mutate(across(.cols = c("from", "to"), .fns = as.character))  #mutate_at(., .vars = c("from", "to"), as.character)
   if(any(duplicated(observations[, c(1:2)]))){warning("There are duplicated measurements!")}
-  if(sum(rowSums(is.na(points[, c("x", "y")])) != 0) != 0){
-    warning("Network has no spatial coordinates")}else{
+  if((any(is.na(points[, c("x", "y")])))){
+    warning("Spatial coordinates is missing for some points")}else{
+      if(any(is.na(points$h))){points$h <- 0}
       # Creating sf class from observations
       observations$x_from <- points$x[match(observations$from, points$Name)]
       observations$y_from <- points$y[match(observations$from, points$Name)]
+      observations$h_from <- points$h[match(observations$from, points$Name)]
       observations$x_to <- points$x[match(observations$to, points$Name)]
       observations$y_to <- points$y[match(observations$to, points$Name)]
+      observations$h_to <- points$h[match(observations$to, points$Name)]
+      
 
-      points <- points %>% as.data.frame() %>% sf::st_as_sf(coords = c("x","y"), remove = FALSE)
+      points <- points %>% as.data.frame() %>% sf::st_as_sf(coords = c("x", "y", "h"), remove = FALSE)
       if(which(axes == "Easting") == 2){points <- points %>% dplyr::rename(x = y,  y = x)}
 
       observations <- observations %>% dplyr::mutate(id = seq.int(nrow(.))) %>% split(., f = as.factor(.$id)) %>%
-        lapply(., function(row) {lmat <- matrix(unlist(row[c("x_from", "y_from", "x_to", "y_to")]), ncol = 2, byrow = TRUE)
+        lapply(., function(row) {lmat <- matrix(unlist(row[c("x_from", "y_from", "h_from", "x_to", "y_to", "h_to")]), ncol = 3, byrow = TRUE)
         st_linestring(lmat)}) %>%
         sf::st_sfc() %>%
         sf::st_sf('ID' = seq.int(nrow(observations)), observations, 'geometry' = .)
