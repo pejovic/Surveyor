@@ -22,6 +22,12 @@ sim_st <- function(survey.net.st, red){
   ro <- 180/pi*3600
   st_data <- survey.net.st %>% st_drop_geometry() %>% .[1, c("x_from", "y_from", "e_cent_from", "seed_from")] %>% as.numeric()
   st_coords_e <- ecent_coords(pts = st_data)
+  dist <- function(pt1_coords, pt2_coords){
+    dEasting <- as.numeric(pt2_coords[1] - pt1_coords[1])
+    dNorthing <- as.numeric(pt2_coords[2] - pt1_coords[2])
+    distance <- sqrt(dEasting^2 + dNorthing^2)
+    return(distance)
+  }
   e_cent_from <- dist(pt1_coords = st_data[1:2], pt2_coords = st_coords_e)*1000
 
 
